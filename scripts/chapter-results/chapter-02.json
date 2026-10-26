@@ -5,16 +5,16 @@
   "lineCount": 157,
   "startLine": 156,
   "endLine": 312,
-  "label": "nondet-run3",
-  "timestamp": "2026-10-26T16:26:40.912Z",
+  "label": "heading-spacing-v1",
+  "timestamp": "2026-10-26T16:52:35.738Z",
   "pageCount": 18,
   "geomSummary": {
-    "total": 1,
+    "total": 2,
     "high": 0,
-    "medium": 1,
+    "medium": 2,
     "low": 0,
     "byKind": {
-      "containment": 1
+      "containment": 2
     }
   },
   "geomIssues": [
@@ -40,11 +40,34 @@
       "overflowPx": 6.2,
       "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
       "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.234375} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
+    },
+    {
+      "kind": "containment",
+      "severity": "medium",
+      "pageIdx": 15,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 17094,
+        "w": 680,
+        "h": 914
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 69.671875
+      },
+      "overflowPx": 69.7,
+      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":69.671875} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
     }
   ],
   "geomStats": {
     "pageCount": 18,
-    "extractMs": 93.9
+    "extractMs": 74.2
   },
   "highSeverityIssues": [],
   "error": null

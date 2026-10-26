@@ -5,63 +5,20 @@
   "lineCount": 95,
   "startLine": 921,
   "endLine": 1015,
-  "label": "nondet-run3",
-  "timestamp": "2026-10-26T16:26:55.844Z",
+  "label": "heading-spacing-v1",
+  "timestamp": "2026-10-26T16:52:47.867Z",
   "pageCount": 13,
   "geomSummary": {
-    "total": 2,
+    "total": 0,
     "high": 0,
-    "medium": 1,
-    "low": 1,
-    "byKind": {
-      "sparse-line": 1,
-      "containment": 1
-    }
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
   },
-  "geomIssues": [
-    {
-      "kind": "sparse-line",
-      "severity": "low",
-      "pageIdx": 3,
-      "location": "page > wrapper > body-flow > block-2col > column > p-cut(\"ובגמרא נקראת הוצאה מ\")",
-      "lastW": 29,
-      "firstW": 59,
-      "pText": "ובגמרא נקראת הוצאה מרה\"י לרה\"ר הוצאה, וה",
-      "childRect": {
-        "x": 644,
-        "y": 4388,
-        "w": 29,
-        "h": 21
-      },
-      "message": "שורה דלילה בסוף p-cut: רוחב אחרון=29px ראשון=59px"
-    },
-    {
-      "kind": "containment",
-      "severity": "medium",
-      "pageIdx": 6,
-      "location": "page > wrapper > body-flow",
-      "childType": "block-2col",
-      "childText": "",
-      "childRect": {
-        "x": 57,
-        "y": 6902,
-        "w": 680,
-        "h": 919
-      },
-      "overflow": {
-        "left": 0,
-        "top": 0,
-        "right": 0,
-        "bottom": 3.796875
-      },
-      "overflowPx": 3.8,
-      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":3.796875} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
-    }
-  ],
+  "geomIssues": [],
   "geomStats": {
     "pageCount": 13,
-    "extractMs": 40
+    "extractMs": 36.9
   },
   "highSeverityIssues": [],
   "error": null

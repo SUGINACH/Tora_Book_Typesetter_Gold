@@ -1002,6 +1002,73 @@ function applyWordSpacing(col, factor) {
    - [תיקון רגרסיה] בודק אחרי כל פקטור אם עברנו את היעד, ואם כן — חוזר לפקטור הקודם.
      ללא תיקון זה, הפונקציה הייתה מכווצת יותר מדי וגורמת לאי-איזון.
    - [תיקון נוסף] הסף revert הועלה מ-+2px ל-+10px כדי לאפשר כיווץ יעיל יותר מבלי לגרום לרגרסיה. */
+/* [חדש — שלב 4] מרחיב טור על-ידי הוספת margin-top/margin-bottom לכותרות
+   (title-level-4/5/6). זהו הכלי הכי פחות פולשני — רק מוסיף ריווח סביב
+   כותרות, שנראה טבעי לקורא. הריווח נשמר ב-data-base-mt/mb כדי לאפשר
+   כיווץ חזרה על-ידי shrinkColumnVertically (אם יידרש).
+   - מחזיר את כמות הפיקסלים שנוספה בפועל
+   - maxAdd קובע את התוספת המקסימלית לכל margin (top/bottom) — ברירת מחדל 15px
+   - לא מוסיף margin-top לכותרת ראשונה בטור (CSS קובע margin-top:0 ל-first-child) */
+function stretchByHeadingSpacing(col, neededPx, maxAdd) {
+    if (!(neededPx > 0)) return 0;
+    if (maxAdd === undefined) {
+        maxAdd = parseInt(document.getElementById('aq-heading-spacing-max')?.value) || 15;
+    }
+    if (!(maxAdd > 0)) return 0;
+
+    // מצא כותרות title-level-4/5/6 (ילדים ישירים של הטור)
+    const headings = Array.from(col.children).filter(c =>
+        c.classList.contains('title-level-4') ||
+        c.classList.contains('title-level-5') ||
+        c.classList.contains('title-level-6')
+    );
+    if (headings.length === 0) return 0;
+
+    // שמור base margins ב-data attributes (פעם אחת)
+    headings.forEach(h => {
+        if (!h.hasAttribute('data-base-mt')) {
+            const cs = getComputedStyle(h);
+            h.setAttribute('data-base-mt', String(parseFloat(cs.marginTop) || 0));
+            h.setAttribute('data-base-mb', String(parseFloat(cs.marginBottom) || 0));
+        }
+    });
+
+    const before = col.scrollHeight;
+
+    // חשב קיבולת כוללת: כל כותרת יכולה לקבל maxAdd ל-margin-bottom,
+    // ועוד maxAdd ל-margin-top (אלא אם first-child).
+    let totalCap = 0;
+    headings.forEach(h => {
+        const isFirstChild = h === col.firstElementChild;
+        totalCap += isFirstChild ? maxAdd : (maxAdd * 2);
+    });
+    if (totalCap <= 0) return 0;
+
+    // חשב factor — כמה מ-maxAdd להוסיף לכל margin.
+    // משתמשים ב-110% מ-neededPx כדי לפצות על עיגול דפדפן (כל margin מעוגל לפיקסל שלם).
+    const factor = Math.min(1, (neededPx * 1.1) / totalCap);
+
+    headings.forEach(h => {
+        const origMt = parseFloat(h.getAttribute('data-base-mt')) || 0;
+        const origMb = parseFloat(h.getAttribute('data-base-mb')) || 0;
+        const isFirstChild = h === col.firstElementChild;
+
+        const addMt = isFirstChild ? 0 : (maxAdd * factor);
+        const addMb = maxAdd * factor;
+
+        h.style.marginTop = (origMt + addMt) + 'px';
+        h.style.marginBottom = (origMb + addMb) + 'px';
+    });
+
+    return col.scrollHeight - before;
+}
+
+/* [חדש] מכווץ טור על-ידי כיווץ רווח מילים (word-spacing).
+   - משחרר את הפיקסלים שנוספו על-ידי stretchByWordSpacing
+   - מנסה כיווץ הדרגתי: 0.98 → 0.95 → 0.92 → 0.90
+   - [תיקון רגרסיה קריטי] בודק אחרי כל פקטור אם עברנו את היעד, ואם כן — חוזר לפקטור הקודם.
+     ללא תיקון זה, הפונקציה הייתה מכווצת יותר מדי וגורמת לאי-איזון.
+   - [תיקון נוסף] הסף revert הועלה מ-+2px ל-+10px כדי לאפשר כיווץ יעיל יותר מבלי לגרום לרגרסיה. */
 function compressByWordSpacing(col, neededPx) {
     if (!(neededPx > 0)) return 0;
     const factors = [0.98, 0.95, 0.92, 0.90];
@@ -1390,6 +1457,7 @@ function justifyColumnVertically(col, targetHeight, styleObj, maxStretch = 60, l
     const aqWordSpacing = document.getElementById('aq-word-spacing')?.checked ?? true;
     const aqParaSpacing = document.getElementById('aq-para-spacing')?.checked ?? true;
     const aqLineHeight = document.getElementById('aq-line-height')?.checked ?? true;
+    const aqHeadingSpacing = document.getElementById('aq-heading-spacing')?.checked ?? true;
     const aqParaMax = parseInt(document.getElementById('aq-para-spacing-max')?.value) || 9;
     const aqLhMax = parseInt(document.getElementById('aq-line-height-max')?.value) || 3;
 
@@ -1398,7 +1466,17 @@ function justifyColumnVertically(col, targetHeight, styleObj, maxStretch = 60, l
 
     const kids = Array.from(col.children);
 
-    // 0. [חדש — שלב 1] רווח מילים דינמי — הכלי השקוף ביותר
+    // 0. [חדש — שלב 4] רווח כותרות דינמי — הכלי הכי פחות פולשני
+    //    מוסיף margin-top/margin-bottom לכותרות title-level-4/5/6.
+    //    פועל לפני word-spacing כי הוא שקוף יותר לקורא.
+    //    מכובד על-ידי aq-enabled ו-aq-heading-spacing.
+    if (aqEnabled && aqHeadingSpacing) {
+        stretchByHeadingSpacing(col, diff);
+        diff = targetHeight - col.scrollHeight;
+        if (!(diff > 0.5)) return col.scrollHeight;
+    }
+
+    // 1. [שלב 1 הישן] רווח מילים דינמי — הכלי השקוף השני
     //    רק כש-useWordSpacing=true (לא ב-stretchLastBlockToBottom שיכול לגרום לגלישה)
     //    וכש-aq-enabled ו-aq-word-spacing מסומנים
     //    [תיקון רגרסיה] דלג על word-spacing כשהמתיחה הדרושה קטנה (<15px) —

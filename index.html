@@ -654,6 +654,17 @@
                 <span class="btn-toggle-box"><span class="check-icon">✓</span>הפעל איכות עימוד אוטומטי</span>
               </label>
 
+              <div class="panel-sub-header" style="margin-top:8px;">כלי 0: רווח כותרות דינמי</div>
+              <div style="font-size:7.2pt; color:#64748b; margin-bottom:6px;">הוספת margin-top/margin-bottom לכותרות H4/H5/H6 כדי למתוח טור. הכלי הכי פחות פולשני — נראה טבעי לקורא.</div>
+              <label class="btn-toggle full-width">
+                <input type="checkbox" id="aq-heading-spacing" checked="checked" onchange="typesetDocument()">
+                <span class="btn-toggle-box"><span class="check-icon">✓</span>הפעל רווח כותרות דינמי</span>
+              </label>
+              <div class="inline-cfg-row" style="margin-top:4px;">
+                <label>מקסימום תוספת לכל margin (px):</label>
+                <input type="number" id="aq-heading-spacing-max" value="15" step="1" min="0" max="30" class="size-input" onchange="typesetDocument()">
+              </div>
+
               <div class="panel-sub-header" style="margin-top:8px;">כלי 1: רווח מילים דינמי</div>
               <div style="font-size:7.2pt; color:#64748b; margin-bottom:6px;">כיווץ/הרחבת רווח בין מילים בטווח בטוח. הכלי השקוף ביותר לעין.</div>
               <label class="btn-toggle full-width">

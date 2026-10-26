@@ -5,8 +5,8 @@
   "lineCount": 155,
   "startLine": 313,
   "endLine": 467,
-  "label": "nondet-run3",
-  "timestamp": "2026-10-26T16:26:43.137Z",
+  "label": "heading-spacing-v1",
+  "timestamp": "2026-10-26T16:52:36.922Z",
   "pageCount": 18,
   "geomSummary": {
     "total": 3,
@@ -66,7 +66,7 @@
       "location": "page יב",
       "fillRatio": 88,
       "availableH": 824,
-      "usedH": 721,
+      "usedH": 722,
       "wastedPx": 102,
       "note": "(פער קל — פחות מ-85% מילוי)",
       "message": "עמוד דליל: 88% מילוי (102px ריקים מתוך 824px) (פער קל — פחות מ-85% מילוי)"
@@ -74,7 +74,7 @@
   ],
   "geomStats": {
     "pageCount": 18,
-    "extractMs": 128.5
+    "extractMs": 94
   },
   "highSeverityIssues": [],
   "error": null

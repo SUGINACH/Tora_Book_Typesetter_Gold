@@ -5,46 +5,20 @@
   "lineCount": 139,
   "startLine": 17,
   "endLine": 155,
-  "label": "nondet-run3",
-  "timestamp": "2026-10-26T16:26:39.782Z",
+  "label": "heading-spacing-v1",
+  "timestamp": "2026-10-26T16:52:34.703Z",
   "pageCount": 16,
   "geomSummary": {
-    "total": 1,
+    "total": 0,
     "high": 0,
-    "medium": 1,
+    "medium": 0,
     "low": 0,
-    "byKind": {
-      "containment": 1
-    }
+    "byKind": {}
   },
-  "geomIssues": [
-    {
-      "kind": "containment",
-      "severity": "medium",
-      "pageIdx": 13,
-      "location": "page > wrapper > body-flow",
-      "childType": "block-2col",
-      "childText": "",
-      "childRect": {
-        "x": 57,
-        "y": 14829,
-        "w": 680,
-        "h": 917
-      },
-      "overflow": {
-        "left": 0,
-        "top": 0,
-        "right": 0,
-        "bottom": 2.1875
-      },
-      "overflowPx": 2.2,
-      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":2.1875} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
-    }
-  ],
+  "geomIssues": [],
   "geomStats": {
     "pageCount": 16,
-    "extractMs": 90.7
+    "extractMs": 57.6
   },
   "highSeverityIssues": [],
   "error": null
