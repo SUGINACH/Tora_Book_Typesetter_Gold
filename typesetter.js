@@ -3573,19 +3573,101 @@ function typesetDocumentCore() {
     // אחרי כל שלב עיקרי ושומר את התוצאות ב-window.__auditCheckpoints.
     if (window.__stepByStepAudit === true) {
         window.__auditCheckpoints = [];
+        // [דיוק] פונקציית עזר: מתעדת את ההגדרות (type, cls, rect, text) של אלמנט בעמוד
+        function describeNode(node, depth) {
+            if (!node) return null;
+            const desc = {
+                type: node.type,
+                cls: (node.cls || '').slice(0, 60),
+                rect: node.rect ? {
+                    x: Math.round(node.rect.x),
+                    y: Math.round(node.rect.y),
+                    w: Math.round(node.rect.w),
+                    h: Math.round(node.rect.h)
+                } : null,
+                text: (node.text || '').slice(0, 50),
+                lines: (node.lines || []).length,
+                childCount: (node.children || []).length,
+            };
+            if (depth > 0 && node.children) {
+                desc.children = node.children.slice(0, 8).map(c => describeNode(c, depth - 1));
+            }
+            return desc;
+        }
+        // [דיוק] פונקציית עזר: מוצאת את כל האלמנטים בעמוד מסוים (רקורסיבית)
+        function collectPageElements(page, maxDepth) {
+            const elements = [];
+            function walk(node, depth) {
+                if (depth > maxDepth) return;
+                elements.push({
+                    type: node.type,
+                    cls: (node.cls || '').slice(0, 40),
+                    rect: node.rect ? {
+                        y: Math.round(node.rect.y),
+                        h: Math.round(node.rect.h),
+                        bottom: Math.round(node.rect.bottom || (node.rect.y + node.rect.h))
+                    } : null,
+                    text: (node.text || '').slice(0, 30),
+                });
+                for (const c of (node.children || [])) walk(c, depth + 1);
+            }
+            for (const c of (page.children || [])) walk(c, 0);
+            return elements;
+        }
         window.__runAuditCheckpoint = function(name) {
             if (!window.__geomAudit) return;
             try {
                 const model = window.__geomAudit.extract();
                 const audit = window.__geomAudit.audit(model);
+                // [דיוק] עבור כל בעיה, תעד את האלמנטים הבעייתיים ואת שאר האלמנטים בעמוד
+                const enrichedIssues = audit.issues.map(i => {
+                    const pageIdx = (i.pageIdx !== undefined && i.pageIdx >= 0) ? i.pageIdx : -1;
+                    let problemElements = [];
+                    let pageElements = [];
+                    if (pageIdx >= 0 && pageIdx < model.pages.length) {
+                        const page = model.pages[pageIdx];
+                        // תעד את כל האלמנטים בעמוד (עד עומק 3 לביצועים)
+                        pageElements = collectPageElements(page, 3);
+                        // תעד את האלמנט הבעייתי עצמו (אם יש childType/childRect ב-issue)
+                        if (i.childType || i.location) {
+                            // חפש את הבלוק/טור שעליו מדווחת הבעיה
+                            function findProblemNode(node) {
+                                if (!node) return null;
+                                // אם זה הסוג הבעייתי
+                                if (i.childType && node.type === i.childType) return node;
+                                // אם זה block-2col והבעיה היא containment/imbalance
+                                if ((i.kind === 'containment' || i.kind === 'imbalance' || i.kind === 'block-gap') &&
+                                    (node.type === 'block-2col' || node.type === 'block-single-col' || node.type === 'block-h3-span')) {
+                                    return node;
+                                }
+                                for (const c of (node.children || [])) {
+                                    const found = findProblemNode(c);
+                                    if (found) return found;
+                                }
+                                return null;
+                            }
+                            const problemNode = findProblemNode(page);
+                            if (problemNode) {
+                                problemElements = [describeNode(problemNode, 2)];
+                            }
+                        }
+                    }
+                    return {
+                        kind: i.kind,
+                        severity: i.severity,
+                        pageIdx: i.pageIdx,
+                        message: (i.message || '').slice(0, 150),
+                        // [דיוק] הגדרות האלמנט הבעייתי
+                        problemElement: problemElements[0] || null,
+                        // [דיוק] כל האלמנטים בעמוד מאז הופעת האלמנט הבעייתי
+                        pageElements: pageElements,
+                    };
+                });
                 window.__auditCheckpoints.push({
                     stage: name,
+                    pageCount: model.pages.length,
                     summary: audit.summary,
-                    issues: audit.issues.map(i => ({
-                        kind: i.kind, severity: i.severity,
-                        pageIdx: i.pageIdx,
-                        message: (i.message || '').slice(0, 120)
-                    }))
+                    issues: enrichedIssues
                 });
             } catch(e) { /* התעלם משגיאות ב-checkpoint */ }
         };

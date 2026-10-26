@@ -4883,3 +4883,41 @@ Stage Summary:
 Files Modified/Created:
 - typesetter.js: +checkpoint mechanism (4 checkpoints in typesetDocumentCore)
 - scripts/step-by-step-audit.js: חדש — אבחון שלב-אחר-שלב לפרק בודד
+
+---
+Task ID: 23-refine-checkpoint + 24-step-by-step-audit-Method.md
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: דיוק הכלי — תיעוד הגדרות אלמנטים בעייתיים + כל אלמנטים בעמוד + מסמך הסבר מפורט.
+
+Work Log:
+- דייקתי את מנגנון ה-checkpoint ב-typesetter.js:
+  * הוספתי `describeNode(node, depth)` — מתעד type, cls, rect (x,y,w,h), text, lines, childCount, children (רקורסיבית עד עומק 2).
+  * הוספתי `collectPageElements(page, maxDepth)` — אוסף את כל האלמנטים בעמוד (עד עומק 3) עם type, cls, rect (y,h,bottom), text.
+  * הוספתי `findProblemNode(page)` — מוצא את הבלוק/טור הבעייתי בעמוד לפי kind ו-childType.
+  * כל issue עכשיו כולל: `problemElement` (האלמנט הבעייתי עם ילדיו) + `pageElements` (כל אלמנטים בעמוד).
+  * הוספתי `pageCount` לכל checkpoint — מאפשר הבחנה "לא יכלה להופיע" vs "נגרמה".
+- בדקתי על פרק 9 — הנתונים מגיעים מלאים:
+  * problemElement: block-2col עם 4 children (margin-col, column R=355, column L=289, margin-col).
+  * pageElements: 16 אלמנטים בעמוד 6 (wrapper, body-flow, block-2col, columns, block-h3-span, block-2col שני).
+  * pageCount=19 בכל 4 ה-checkpoints → ודאי שהבעיה "נגרמה" (מקרה ב').
+- כתבתי מסמך `step-by-step-audit-Method.md` (עד 9 סעיפים):
+  * סעיף 1: מטרה
+  * סעיף 2: ארכיטקטורה — זרימת נתונים מלאה
+  * סעיף 3: מה קורה בכל checkpoint (extractGeometry + auditGeometry + העשרת נתונים)
+  * סעיף 4: לוגיקת אבחון — 5 מקרים (לא יכלה להופיע, נגרמה, נעלמה, הונעה פתרון, ביטל פתרון)
+  * סעיף 5: שימוש — הרצה, פלט, נתונים מועשרים
+  * סעיף 6: אפשרויות כיוונון — checkpoint פר-עמוד, בתוך balanceColumns, השוואת מצבים, debug מפורט, השוואת עמודים
+  * סעיף 7: מגבלות נוכחיות
+  * סעיף 8: דוגמה מעשית — פרק 9 עמוד 6 (עם נתונים מלאים)
+  * סעיף 9: כללי זהב
+
+Stage Summary:
+- הכלי דויק: כל בעיה כוללת problemElement + pageElements + pageCount.
+- מסמך הסבר נוצר: step-by-step-audit-Method.md.
+- אפשרויות כיוונון מתועדות למקרים שהסיבה לא תתגלה.
+- baseline לא נבדק (שינוי רק בקוד checkpoint שלא פעיל כברירת מחדל).
+
+Files Modified/Created:
+- typesetter.js: checkpoint mechanism דויק (describeNode, collectPageElements, findProblemNode, enrichedIssues)
+- step-by-step-audit-Method.md: חדש — מסמך הסבר מפורט
