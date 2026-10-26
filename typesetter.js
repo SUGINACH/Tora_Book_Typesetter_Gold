@@ -3571,22 +3571,39 @@ function typesetDocumentCore() {
     // [חדש — step-by-step audit] מנגנון checkpoint לאבחון שלב-אחר-שלב
     // כאשר window.__stepByStepAudit === true, ה-engine מפעיל בדיקה גיאומממטרית
     // אחרי כל שלב עיקרי ושומר את התוצאות ב-window.__auditCheckpoints.
+    //
+    // [דיוק — נכון ל-2026-10-27] נוספו:
+    //   (a) תיעוד role/tokenId/dataAttrs/lineRects/typography של כל אלמנט בעייתי
+    //   (b) תיעוד pageMetrics (bodyFlow/footnoteArea/counts) של כל עמוד עם בעיה
+    //   (c) מעקב delta: מי מכל האלמנטים נוסף/הוסר/השתנה בין checkpoint N-1 ל-N
+    //   (d) מזהה חיוני: pageSignature = tokenId|cls|y|h — משמש להתאמה חוצת-שלבים
     if (window.__stepByStepAudit === true) {
         window.__auditCheckpoints = [];
+        // [דיוק] מאגר של ה-signatures מה-checkpoint הקודם, לחישוב delta
+        window.__prevCheckpointSignatures = null;
         // [דיוק] פונקציית עזר: מתעדת את ההגדרות (type, cls, rect, text) של אלמנט בעמוד
         function describeNode(node, depth) {
             if (!node) return null;
+            // [חדש] העשרת role/tokenId/dataAttrs/lineRects/typography מתוך DOM
+            try { window.__geomAudit.enrichNode(node); } catch(_) {}
             const desc = {
                 type: node.type,
-                cls: (node.cls || '').slice(0, 60),
+                role: node.role || node.type,
+                cls: (node.cls || '').slice(0, 80),
+                tokenId: node.tokenId || null,
+                dataAttrs: node.dataAttrs || null,
                 rect: node.rect ? {
                     x: Math.round(node.rect.x),
                     y: Math.round(node.rect.y),
                     w: Math.round(node.rect.w),
-                    h: Math.round(node.rect.h)
+                    h: Math.round(node.rect.h),
+                    bottom: Math.round(node.rect.bottom != null ? node.rect.bottom : (node.rect.y + node.rect.h))
                 } : null,
-                text: (node.text || '').slice(0, 50),
+                text: (node.text || '').slice(0, 80),
                 lines: (node.lines || []).length,
+                lineCount: node.lineCount != null ? node.lineCount : ((node.lines || []).length),
+                lineRects: node.lineRects || null,
+                typography: node.typography || null,
                 childCount: (node.children || []).length,
             };
             if (depth > 0 && node.children) {
@@ -3599,43 +3616,132 @@ function typesetDocumentCore() {
             const elements = [];
             function walk(node, depth) {
                 if (depth > maxDepth) return;
+                // [חדש] העשרת role/tokenId וכו'
+                try { window.__geomAudit.enrichNode(node); } catch(_) {}
                 elements.push({
                     type: node.type,
-                    cls: (node.cls || '').slice(0, 40),
+                    role: node.role || node.type,
+                    cls: (node.cls || '').slice(0, 60),
+                    tokenId: node.tokenId || null,
                     rect: node.rect ? {
                         y: Math.round(node.rect.y),
                         h: Math.round(node.rect.h),
                         bottom: Math.round(node.rect.bottom || (node.rect.y + node.rect.h))
                     } : null,
-                    text: (node.text || '').slice(0, 30),
+                    text: (node.text || '').slice(0, 50),
                 });
                 for (const c of (node.children || [])) walk(c, depth + 1);
             }
             for (const c of (page.children || [])) walk(c, 0);
             return elements;
         }
+        // [חדש — דיוק] בונה signature של כל אלמנט בעמוד לצורך השוואת delta חוצת-שלבים.
+        // signature = tokenId (אם יש) | type | cls-trim | round(y) | round(h)
+        // כאשר tokenId זמין, הוא מאפשר לעקוב אחר אותה ישות לוגית למרות שינויי מיקום.
+        function collectPageSignatures(page, maxDepth) {
+            const sigs = [];
+            function walk(node, depth) {
+                if (depth > maxDepth) return;
+                try { window.__geomAudit.enrichNode(node); } catch(_) {}
+                const r = node.rect || {};
+                const y = Math.round(r.y || 0);
+                const h = Math.round(r.h || 0);
+                const tokenId = node.tokenId || null;
+                const sig = tokenId ? `tok:${tokenId}` : `${node.type}|${(node.cls || '').slice(0, 40)}|${y}|${h}`;
+                sigs.push({
+                    sig,
+                    type: node.type,
+                    role: node.role || node.type,
+                    cls: (node.cls || '').slice(0, 60),
+                    tokenId,
+                    rect: { y, h, bottom: Math.round(r.bottom || (y + h)) },
+                    text: (node.text || '').slice(0, 50)
+                });
+                for (const c of (node.children || [])) walk(c, depth + 1);
+            }
+            for (const c of (page.children || [])) walk(c, 0);
+            return sigs;
+        }
+        // [חדש — דיוק] משווה signatures של שני checkpoints ומחזיר added/removed/changed
+        function computeDelta(prevSigs, currSigs) {
+            const prevMap = new Map();
+            for (const s of (prevSigs || [])) {
+                if (!prevMap.has(s.sig)) prevMap.set(s.sig, []);
+                prevMap.get(s.sig).push(s);
+            }
+            const currMap = new Map();
+            for (const s of (currSigs || [])) {
+                if (!currMap.has(s.sig)) currMap.set(s.sig, []);
+                currMap.get(s.sig).push(s);
+            }
+            const added = [], removed = [], changed = [];
+            for (const [sig, list] of currMap) {
+                if (!prevMap.has(sig)) {
+                    for (const s of list) added.push(s);
+                } else {
+                    // אותו sig — בדוק האם ה-rect השתנה
+                    const prev = prevMap.get(sig)[0];
+                    const curr = list[0];
+                    if (prev.rect.y !== curr.rect.y || prev.rect.h !== curr.rect.h) {
+                        changed.push({ sig, before: prev, after: curr });
+                    }
+                }
+            }
+            for (const [sig, list] of prevMap) {
+                if (!currMap.has(sig)) for (const s of list) removed.push(s);
+            }
+            return { added, removed, changed };
+        }
         window.__runAuditCheckpoint = function(name) {
             if (!window.__geomAudit) return;
             try {
                 const model = window.__geomAudit.extract();
                 const audit = window.__geomAudit.audit(model);
-                // [דיוק] עבור כל בעיה, תעד את האלמנטים הבעייתיים ואת שאר האלמנטים בעמוד
+                // [חדש — דיוק] אסוף pageMetrics לכל עמוד (לא רק לעמודים עם בעיה — גם כדי לתעד גובה body-flow)
+                const pageMetricsByPage = {};
+                for (const p of model.pages) {
+                    pageMetricsByPage[p.idx] = window.__geomAudit.getPageMetrics(p);
+                }
+                // [חדש — דיוק] אסוף signatures לכל עמוד, וחשב delta מול ה-checkpoint הקודם
+                const sigsByPage = {};
+                for (const p of model.pages) {
+                    sigsByPage[p.idx] = collectPageSignatures(p, 3);
+                }
+                const deltasByPage = {};
+                if (window.__prevCheckpointSignatures) {
+                    for (const p of model.pages) {
+                        deltasByPage[p.idx] = computeDelta(
+                            window.__prevCheckpointSignatures[p.idx] || [],
+                            sigsByPage[p.idx] || []
+                        );
+                    }
+                } else {
+                    // ב-checkpoint הראשון — הכל "added"
+                    for (const p of model.pages) {
+                        deltasByPage[p.idx] = {
+                            added: sigsByPage[p.idx] || [],
+                            removed: [], changed: []
+                        };
+                    }
+                }
+                window.__prevCheckpointSignatures = sigsByPage;
+                // [דיוק] עבור כל בעיה, תעד את האלמנטים הבעייתיים, שאר האלמנטים בעמוד,
+                // ה-pageMetrics, וה-delta של העמוד (מה השתנה בין checkpoint הקודם)
                 const enrichedIssues = audit.issues.map(i => {
                     const pageIdx = (i.pageIdx !== undefined && i.pageIdx >= 0) ? i.pageIdx : -1;
                     let problemElements = [];
                     let pageElements = [];
+                    let pageMetrics = null;
+                    let pageDelta = null;
                     if (pageIdx >= 0 && pageIdx < model.pages.length) {
                         const page = model.pages[pageIdx];
-                        // תעד את כל האלמנטים בעמוד (עד עומק 3 לביצועים)
                         pageElements = collectPageElements(page, 3);
-                        // תעד את האלמנט הבעייתי עצמו (אם יש childType/childRect ב-issue)
+                        pageMetrics = pageMetricsByPage[pageIdx] || null;
+                        pageDelta = deltasByPage[pageIdx] || null;
                         if (i.childType || i.location) {
-                            // חפש את הבלוק/טור שעליו מדווחת הבעיה
                             function findProblemNode(node) {
                                 if (!node) return null;
-                                // אם זה הסוג הבעייתי
                                 if (i.childType && node.type === i.childType) return node;
-                                // אם זה block-2col והבעיה היא containment/imbalance
                                 if ((i.kind === 'containment' || i.kind === 'imbalance' || i.kind === 'block-gap') &&
                                     (node.type === 'block-2col' || node.type === 'block-single-col' || node.type === 'block-h3-span')) {
                                     return node;
@@ -3656,17 +3762,23 @@ function typesetDocumentCore() {
                         kind: i.kind,
                         severity: i.severity,
                         pageIdx: i.pageIdx,
-                        message: (i.message || '').slice(0, 150),
+                        message: (i.message || '').slice(0, 200),
                         // [דיוק] הגדרות האלמנט הבעייתי
                         problemElement: problemElements[0] || null,
-                        // [דיוק] כל האלמנטים בעמוד מאז הופעת האלמנט הבעייתי
+                        // [דיוק] כל האלמנטים בעמוד
                         pageElements: pageElements,
+                        // [חדש — דיוק] pageMetrics: bodyFlow/footnoteArea/counts
+                        pageMetrics: pageMetrics,
+                        // [חדש — דיוק] delta: אילו אלמנטים נוספו/הוסרו/השתנו מאז ה-checkpoint הקודם
+                        pageDelta: pageDelta,
                     };
                 });
                 window.__auditCheckpoints.push({
                     stage: name,
                     pageCount: model.pages.length,
                     summary: audit.summary,
+                    pageMetricsByPage: pageMetricsByPage,
+                    deltasByPage: deltasByPage,
                     issues: enrichedIssues
                 });
             } catch(e) { /* התעלם משגיאות ב-checkpoint */ }

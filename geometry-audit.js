@@ -1787,6 +1787,138 @@ function clearHighlight() {
     if (c) c.remove();
 }
 
+/* [חדש — דיוק step-by-step audit] מחזיר את ה-DOM element של node מהעץ שנבנה ע"י extractGeometryWithDomRefs */
+function findDomForNodePublic(node) {
+    return _nodeToEl.get(node);
+}
+
+/* [חדש — דיוק step-by-step audit] role סמנטי עבור אלמנט (לתיעוד עשוי יותר)
+   משלים את classifyElement.type עם סיווג פנימי יותר של שורות המשך (p-cut/p-end),
+   drop-cap, parenthetical-run, running-header וכו'. */
+function semanticRole(el) {
+    if (!el || el.nodeType !== 1) return 'unknown';
+    const c = typeof el.className === 'string' ? el.className : (el.className?.baseVal || '');
+    if (c.includes('a4-page')) return 'page';
+    if (c.includes('page-content-wrapper')) return 'page-wrapper';
+    if (c.includes('page-body-flow')) return 'body-flow';
+    if (c.includes('block-2col')) return 'two-column-block';
+    if (c.includes('block-single-col')) return 'single-column-block';
+    if (c.includes('block-h3-span')) return 'full-width-heading-block';
+    if (c.includes('main-column')) return c.includes('right-col') ? 'right-column' : (c.includes('left-col') ? 'left-column' : 'main-column');
+    if (c.includes('single-wide-col')) return 'single-wide-column';
+    if (el.tagName === 'P') {
+        if (c.includes('p-cut')) return 'paragraph-continuation-cut';
+        if (c.includes('p-end')) return 'paragraph-continuation-end';
+        return 'paragraph';
+    }
+    if (/title-level-2-standalone|title-level-\d|title-level-custom/.test(c)) return 'heading';
+    if (c.includes('footnote-area') || c.includes('note-block') || c.includes('note-line') || c.includes('note-line-num')) return 'footnote';
+    if (c.includes('side-note-anchor') || c.includes('margin-notes-column')) return 'side-note';
+    if (/ornament/i.test(c)) return 'ornament';
+    if (/divider|rule|sec-divider/i.test(c)) return 'divider';
+    if (/note-marker/.test(c)) return 'note-marker';
+    if (/paren-text/.test(c)) return 'parenthetical-run';
+    if (/drop-cap|first-word-window/.test(c)) return 'drop-word';
+    if (c.includes('top-header-grid') || c.includes('header-col-r') || c.includes('header-col-c') || c.includes('header-col-l')) return 'running-header';
+    if (c.includes('page-number-footer')) return 'page-number';
+    return 'layout-element';
+}
+
+/* [חדש — דיוק step-by-step audit] מעשיר node עם נתונים נוספים מתוך ה-DOM element שלו:
+   - role: סיווג סמנטי מורחב
+   - tokenId: data-token-id (למעקב חוצה-שלבים)
+   - dataAttrs: data-token-id, data-is-cont, data-raw-text, data-side-note, data-end-note,
+     data-note-style-id, data-note-level + כל data-layout-* שיוגדרו בעתיד
+   - lineRects: רשימת שורות עם (x,y,w,h) — נחוץ לאבחון widow/orphan ושורות דלילות
+   - typography: fontFamily, fontSize, fontWeight, lineHeight, textAlign, textAlignLast, whiteSpace,
+     marginTop, marginBottom, paddingTop, paddingBottom, display — נחוץ לאבחון בעיות פונט/spacing */
+function enrichNode(node) {
+    if (!node) return node;
+    const el = _nodeToEl.get(node);
+    if (!el) return node;
+    try {
+        node.role = semanticRole(el);
+        node.tokenId = el.getAttribute('data-token-id') || null;
+        // אסוף את כל תכונות data-* הרלוונטיות (allowlist צר של תכונות החלטה)
+        const attrRe = /^(data-token-id|data-is-cont|data-raw-text|data-side-note|data-end-note|data-note-style-id|data-note-level|data-layout-.*)$/;
+        const attrs = {};
+        for (const a of Array.from(el.attributes)) {
+            if (attrRe.test(a.name)) attrs[a.name] = (a.value || '').slice(0, 600);
+        }
+        node.dataAttrs = attrs;
+        // lineRects — רק עבור אלמנטי טקסט (p, heading, note-line)
+        if (el.matches('p, [class*="title-level-"], .note-line')) {
+            try {
+                const range = document.createRange();
+                range.selectNodeContents(el);
+                const pr = rectOf(el.parentElement || el);
+                const map = new Map();
+                for (const r of range.getClientRects()) {
+                    if (r.width < 0.1 || r.height < 0.1) continue;
+                    const k = Math.round(r.top * 2) / 2;
+                    const b = map.get(k) || { l: r.left, r: r.right, t: r.top, b: r.bottom };
+                    b.l = Math.min(b.l, r.left);
+                    b.r = Math.max(b.r, r.right);
+                    b.t = Math.min(b.t, r.top);
+                    b.b = Math.max(b.b, r.bottom);
+                    map.set(k, b);
+                }
+                node.lineRects = Array.from(map.values()).sort((a, b) => a.t - b.t).map(r => ({
+                    x: Math.round(r.l - pr.x), y: Math.round(r.t - pr.y),
+                    w: Math.round(r.r - r.l), h: Math.round(r.b - r.t)
+                }));
+                node.lineCount = node.lineRects.length;
+            } catch (_) { /* ignore */ }
+        }
+        // typography — רק עבור אלמנטי טקסט
+        if (el.matches('p, [class*="title-level-"], .note-line, .paren-text, .note-marker')) {
+            try {
+                const s = getComputedStyle(el);
+                node.typography = {
+                    fontFamily: s.fontFamily,
+                    fontSize: s.fontSize,
+                    fontWeight: s.fontWeight,
+                    lineHeight: s.lineHeight,
+                    textAlign: s.textAlign,
+                    textAlignLast: s.textAlignLast,
+                    whiteSpace: s.whiteSpace,
+                    marginTop: s.marginTop,
+                    marginBottom: s.marginBottom,
+                    paddingTop: s.paddingTop,
+                    paddingBottom: s.paddingBottom,
+                    display: s.display
+                };
+            } catch (_) { /* ignore */ }
+        }
+    } catch (_) { /* ignore */ }
+    return node;
+}
+
+/* [חדש — דיוק step-by-step audit] מחזיר מדדי עמוד מלאים: גובה body-flow, אזור הערות,
+   ספירות בלוקים/פסקאות/שורות-הערה. נחוץ לאבחון overflow, sparse page ועוד.
+   הקואורדינטות יחסיות לראש העמוד עצמו (page-relative). */
+function getPageMetrics(page) {
+    if (!page) return null;
+    const el = _nodeToEl.get(page);
+    if (!el) return null;
+    const pgRect = el.getBoundingClientRect();
+    const rel = (r) => ({
+        y: Math.round(r.top - pgRect.top),
+        h: Math.round(r.height),
+        bottom: Math.round(r.bottom - pgRect.top)
+    });
+    const bf = el.querySelector('.page-body-flow');
+    const fn = el.querySelector('.footnote-area');
+    return {
+        page: { w: Math.round(pgRect.width), h: Math.round(pgRect.height) },
+        bodyFlow: bf ? rel(bf.getBoundingClientRect()) : null,
+        footnoteArea: fn ? rel(fn.getBoundingClientRect()) : null,
+        twoColumnBlocks: el.querySelectorAll('.block-2col').length,
+        bodyParagraphs: el.querySelectorAll('.main-column p, .single-wide-col p').length,
+        noteLines: el.querySelectorAll('.footnote-area .note-line').length
+    };
+}
+
 window.__geomAudit = {
     extract: extractGeometryWithDomRefs,
     audit: auditGeometry,
@@ -1795,6 +1927,11 @@ window.__geomAudit = {
     highlightIssue: highlightIssue,
     clearHighlight: clearHighlight,
     types: TYPE_COLORS,
+    // [חדש — דיוק step-by-step audit] API נוסף
+    findDom: findDomForNodePublic,
+    enrichNode: enrichNode,
+    getPageMetrics: getPageMetrics,
+    semanticRole: semanticRole,
     // [חדש] מנקה את העץ מ-_parent (circular) לפני ייצוא JSON
     cleanForExport: function(node) {
         if (!node) return node;
