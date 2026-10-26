@@ -5,14 +5,14 @@
   "lineCount": 68,
   "startLine": 4504,
   "endLine": 4571,
-  "label": "fix1-all",
-  "timestamp": "2026-10-26T13:02:33.341Z",
+  "label": "fix6-all",
+  "timestamp": "2026-10-26T13:49:24.588Z",
   "pageCount": 9,
   "geomSummary": {
     "total": 1,
     "high": 0,
-    "medium": 0,
-    "low": 1,
+    "medium": 1,
+    "low": 0,
     "byKind": {
       "containment": 1
     }
@@ -20,7 +20,7 @@
   "geomIssues": [
     {
       "kind": "containment",
-      "severity": "low",
+      "severity": "medium",
       "pageIdx": 5,
       "location": "page > wrapper > body-flow",
       "childType": "block-2col",
@@ -38,13 +38,13 @@
         "bottom": 6.859375
       },
       "overflowPx": 6.9,
-      "note": "(גלישה טבעית מ-stretchPageToBottom)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.859375} (גלישה טבעית מ-stretchPageToBottom)"
+      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.859375} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
     }
   ],
   "geomStats": {
     "pageCount": 9,
-    "extractMs": 32.1
+    "extractMs": 30.8
   },
   "highSeverityIssues": [],
   "error": null

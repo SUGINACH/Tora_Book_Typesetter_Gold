@@ -5,22 +5,23 @@
   "lineCount": 61,
   "startLine": 2575,
   "endLine": 2635,
-  "label": "fix1-all",
-  "timestamp": "2026-10-26T13:01:24.727Z",
+  "label": "fix6-all",
+  "timestamp": "2026-10-26T13:48:17.997Z",
   "pageCount": 10,
   "geomSummary": {
-    "total": 1,
+    "total": 3,
     "high": 0,
-    "medium": 0,
-    "low": 1,
+    "medium": 3,
+    "low": 0,
     "byKind": {
-      "containment": 1
+      "containment": 2,
+      "imbalance": 1
     }
   },
   "geomIssues": [
     {
       "kind": "containment",
-      "severity": "low",
+      "severity": "medium",
       "pageIdx": 7,
       "location": "page > wrapper > body-flow",
       "childType": "block-2col",
@@ -38,13 +39,58 @@
         "bottom": 6.75
       },
       "overflowPx": 6.8,
-      "note": "(גלישה טבעית מ-stretchPageToBottom)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.75} (גלישה טבעית מ-stretchPageToBottom)"
+      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.75} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
+    },
+    {
+      "kind": "containment",
+      "severity": "medium",
+      "pageIdx": 8,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 9728,
+        "w": 680,
+        "h": 397
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 43.75
+      },
+      "overflowPx": 43.8,
+      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":43.75} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
+    },
+    {
+      "kind": "imbalance",
+      "severity": "medium",
+      "pageIdx": 8,
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 524,
+      "leftH": 480,
+      "diff": 43,
+      "rightRect": {
+        "x": 404,
+        "y": 9167,
+        "w": 269,
+        "h": 524
+      },
+      "leftRect": {
+        "x": 121,
+        "y": 9167,
+        "w": 269,
+        "h": 480
+      },
+      "message": "אי-איזון טורים: ימין=524px שמאל=480px פער=43px (block-2col עם p-cut cross-page)"
     }
   ],
   "geomStats": {
     "pageCount": 10,
-    "extractMs": 37.7
+    "extractMs": 39.5
   },
   "highSeverityIssues": [],
   "error": null

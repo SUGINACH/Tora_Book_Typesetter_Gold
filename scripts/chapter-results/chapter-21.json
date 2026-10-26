@@ -5,8 +5,8 @@
   "lineCount": 41,
   "startLine": 2449,
   "endLine": 2489,
-  "label": "fix1-all",
-  "timestamp": "2026-10-26T13:01:22.591Z",
+  "label": "fix6-all",
+  "timestamp": "2026-10-26T13:48:15.926Z",
   "pageCount": 8,
   "geomSummary": {
     "total": 1,
@@ -38,12 +38,12 @@
         "w": 269,
         "h": 65
       },
-      "message": "אי-איזון טורים: ימין=71px שמאל=65px פער=6px"
+      "message": "אי-איזון טורים: ימין=71px שמאל=65px פער=6px (block-2col עם p-cut cross-page)"
     }
   ],
   "geomStats": {
     "pageCount": 8,
-    "extractMs": 24.8
+    "extractMs": 27.4
   },
   "highSeverityIssues": [],
   "error": null

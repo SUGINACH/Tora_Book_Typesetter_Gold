@@ -5,13 +5,13 @@
   "lineCount": 170,
   "startLine": 1955,
   "endLine": 2124,
-  "label": "fix1-all",
-  "timestamp": "2026-10-26T13:01:05.941Z",
+  "label": "fix6-all",
+  "timestamp": "2026-10-26T13:47:59.054Z",
   "pageCount": 19,
   "geomSummary": {
     "total": 2,
-    "high": 1,
-    "medium": 0,
+    "high": 0,
+    "medium": 1,
     "low": 1,
     "byKind": {
       "containment": 1,
@@ -21,7 +21,7 @@
   "geomIssues": [
     {
       "kind": "containment",
-      "severity": "high",
+      "severity": "medium",
       "pageIdx": 14,
       "location": "page > wrapper > body-flow > block-2col > margin-col",
       "childType": "side-note",
@@ -68,32 +68,8 @@
   ],
   "geomStats": {
     "pageCount": 19,
-    "extractMs": 86.5
+    "extractMs": 106.6
   },
-  "highSeverityIssues": [
-    {
-      "kind": "containment",
-      "severity": "high",
-      "pageIdx": 14,
-      "location": "page > wrapper > body-flow > block-2col > margin-col",
-      "childType": "side-note",
-      "childText": "",
-      "childRect": {
-        "x": 57,
-        "y": 16823,
-        "w": 51,
-        "h": 76
-      },
-      "overflow": {
-        "left": 0,
-        "top": 0,
-        "right": 0,
-        "bottom": 23.15625
-      },
-      "overflowPx": 23.2,
-      "note": "(הערת צד גולשת משטח המרזב)",
-      "message": "תיבת side-note בולטת מ-margin-col: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":23.15625} (הערת צד גולשת משטח המרזב)"
-    }
-  ],
+  "highSeverityIssues": [],
   "error": null
 }

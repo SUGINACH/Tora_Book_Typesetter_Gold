@@ -1,0 +1,29 @@
+{
+  "label": "fix2-ch9",
+  "startChapter": 9,
+  "endChapter": 9,
+  "timestamp": "2026-10-26T13:26:52.358Z",
+  "totals": {
+    "high": 2,
+    "medium": 0,
+    "low": 0,
+    "errors": 0
+  },
+  "chapters": [
+    {
+      "chapterNum": 9,
+      "title": "כותרת 2 מספר 4 - המוציא מחנות לפלטיא (ה:)",
+      "pageCount": 19,
+      "summary": {
+        "total": 2,
+        "high": 2,
+        "medium": 0,
+        "low": 0,
+        "byKind": {
+          "containment": 2
+        }
+      },
+      "error": null
+    }
+  ]
+}

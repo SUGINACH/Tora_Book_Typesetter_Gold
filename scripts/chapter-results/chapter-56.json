@@ -5,14 +5,14 @@
   "lineCount": 109,
   "startLine": 4268,
   "endLine": 4376,
-  "label": "fix1-all",
-  "timestamp": "2026-10-26T13:02:24.069Z",
+  "label": "fix6-all",
+  "timestamp": "2026-10-26T13:49:16.588Z",
   "pageCount": 21,
   "geomSummary": {
     "total": 4,
     "high": 0,
-    "medium": 1,
-    "low": 3,
+    "medium": 3,
+    "low": 1,
     "byKind": {
       "containment": 3,
       "imbalance": 1
@@ -21,7 +21,7 @@
   "geomIssues": [
     {
       "kind": "containment",
-      "severity": "low",
+      "severity": "medium",
       "pageIdx": 3,
       "location": "page > wrapper > body-flow",
       "childType": "block-2col",
@@ -39,8 +39,8 @@
         "bottom": 3.171875
       },
       "overflowPx": 3.2,
-      "note": "(גלישה טבעית מ-stretchPageToBottom)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":3.171875} (גלישה טבעית מ-stretchPageToBottom)"
+      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":3.171875} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
     },
     {
       "kind": "containment",
@@ -67,7 +67,7 @@
     },
     {
       "kind": "containment",
-      "severity": "low",
+      "severity": "medium",
       "pageIdx": 15,
       "location": "page > wrapper > body-flow",
       "childType": "block-2col",
@@ -85,8 +85,8 @@
         "bottom": 1.46875
       },
       "overflowPx": 1.5,
-      "note": "(גלישה טבעית מ-stretchPageToBottom)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.46875} (גלישה טבעית מ-stretchPageToBottom)"
+      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.46875} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
     },
     {
       "kind": "imbalance",
@@ -108,12 +108,12 @@
         "w": 269,
         "h": 65
       },
-      "message": "אי-איזון טורים: ימין=71px שמאל=65px פער=6px"
+      "message": "אי-איזון טורים: ימין=71px שמאל=65px פער=6px (block-2col עם p-cut cross-page)"
     }
   ],
   "geomStats": {
     "pageCount": 21,
-    "extractMs": 91.4
+    "extractMs": 120.1
   },
   "highSeverityIssues": [],
   "error": null

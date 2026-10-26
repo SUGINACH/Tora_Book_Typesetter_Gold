@@ -1,0 +1,31 @@
+{
+  "label": "fix2-ch63",
+  "startChapter": 63,
+  "endChapter": 63,
+  "timestamp": "2026-10-26T13:27:09.327Z",
+  "totals": {
+    "high": 1,
+    "medium": 2,
+    "low": 2,
+    "errors": 0
+  },
+  "chapters": [
+    {
+      "chapterNum": 63,
+      "title": "כותרת 2 מספר 1 - הערות בסוגיית הגרמה",
+      "pageCount": 21,
+      "summary": {
+        "total": 5,
+        "high": 1,
+        "medium": 2,
+        "low": 2,
+        "byKind": {
+          "containment-rounding": 1,
+          "imbalance": 2,
+          "containment": 2
+        }
+      },
+      "error": null
+    }
+  ]
+}

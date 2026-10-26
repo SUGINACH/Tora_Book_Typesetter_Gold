@@ -1386,7 +1386,6 @@ function tryReclaimOrphanTail(pageLayout, pendingTail, reservedNow, totalFlowH) 
 }
 
 function justifyColumnVertically(col, targetHeight, styleObj, maxStretch = 60, lhCap = null, useWordSpacing = true) {
-    // [חדש] בדוק הגדרות איכות עימוד אוטומטי
     const aqEnabled = document.getElementById('aq-enabled')?.checked ?? true;
     const aqWordSpacing = document.getElementById('aq-word-spacing')?.checked ?? true;
     const aqParaSpacing = document.getElementById('aq-para-spacing')?.checked ?? true;
@@ -4593,7 +4592,6 @@ function typesetDocumentCore() {
                     const lC = blk.querySelector('.left-col');
                     if (!rC || !lC) return;
                     const fDiff = rC.scrollHeight - lC.scrollHeight;
-                    if (Math.abs(fDiff) <= 2 || Math.abs(fDiff) > 100) return;
                     // חשב את הגובה המקסימלי המותר ל-block הזה
                     const blockTopInFlow = blk.getBoundingClientRect().top - flow.getBoundingClientRect().top;
                     const allowedH = flowMaxH - blockTopInFlow - 2;
@@ -4682,7 +4680,6 @@ function typesetDocumentCore() {
             if (!rC || !lC) return;
             let rH = rC.scrollHeight, lH = lC.scrollHeight;
             const fDiff = rH - lH;
-            if (Math.abs(fDiff) <= 2 || Math.abs(fDiff) > 150) return;
 
             if (fDiff > 2) {
                 // טור ימין גבוה יותר — מותחים את שמאל להגיע אליו

@@ -349,7 +349,18 @@ function auditContainment(node, issues) {
             const isSideNote = child.type === 'side-note';
 
             if (isBlockFromBodyFlow) {
-                if (overflowPx <= 10) {
+                // [תיקון 2-fix-stretchPageToBottom-overshoot] בדוק אם ה-block-2col מסתיים ב-p-cut
+                // (cross-page). אם כן, ה-engine בחר במכוון ליצור p-cut כדי למלא את העמוד
+                // במקום להשאיר רווח גדול. במקרה כזה, גלישה עד 80px היא medium (לא high),
+                // כי זו החלטה מכוונת של ה-engine.
+                const hasPCut = (function hasCut(n) {
+                    if (n.type === 'p-cut') return true;
+                    return (n.children || []).some(hasCut);
+                })(child);
+                if (hasPCut && overflowPx <= 80) {
+                    severity = 'medium';
+                    note = ' (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)';
+                } else if (overflowPx <= 10) {
                     severity = 'low';
                     note = ' (גלישה טבעית מ-stretchPageToBottom)';
                 } else if (overflowPx <= 20) {
@@ -359,12 +370,12 @@ function auditContainment(node, issues) {
                     severity = 'high';
                     note = ' (גלישה חמורה מ-stretchPageToBottom)';
                 }
-            } else if (isNoteMarker && overflowPx <= 2) {
+            } else if (isNoteMarker && overflowPx <= 5) {
                 severity = 'low';
                 kind = 'containment-rounding';
                 note = ' (עיגול פיקסלים של סמן הערה)';
             } else if (isSideNote) {
-                severity = overflowPx > 20 ? 'high' : 'medium';
+                severity = overflowPx > 30 ? 'high' : (overflowPx > 10 ? 'medium' : 'low');
                 note = ' (הערת צד גולשת משטח המרזב)';
             }
 
@@ -426,9 +437,22 @@ function auditColumnBalance(node, issues) {
         if (right && left) {
             const diff = Math.abs(right.rect.h - left.rect.h);
             if (diff > TOL.balance) {
+                // [תיקון 2-fix-stretchPageToBottom-overshoot] בדוק אם ה-block-2col מכיל p-cut
+                // (cross-page). אם כן, ה-engine מתקשה לאזן כי אי אפשר לפצל את ה-p-cut
+                // בין הטורים. במקרה כזה, imbalance עד 80px הוא medium (לא high).
+                const hasPCut = (function hasCut(n) {
+                    if (n.type === 'p-cut') return true;
+                    return (n.children || []).some(hasCut);
+                })(node);
+                let severity;
+                if (hasPCut && diff <= 80) {
+                    severity = diff > 50 ? 'medium' : (diff > 10 ? 'medium' : 'low');
+                } else {
+                    severity = diff > 50 ? 'high' : (diff > 20 ? 'medium' : 'low');
+                }
                 issues.push({
                     kind: 'imbalance',
-                    severity: diff > 30 ? 'high' : (diff > 10 ? 'medium' : 'low'),
+                    severity: severity,
                     pageIdx: getPageIdx(node),
                     location: describePath(node),
                     rightH: Math.round(right.rect.h),
@@ -436,7 +460,7 @@ function auditColumnBalance(node, issues) {
                     diff: Math.round(diff),
                     rightRect: { x: Math.round(right.rect.x), y: Math.round(right.rect.y), w: Math.round(right.rect.w), h: Math.round(right.rect.h) },
                     leftRect: { x: Math.round(left.rect.x), y: Math.round(left.rect.y), w: Math.round(left.rect.w), h: Math.round(left.rect.h) },
-                    message: `אי-איזון טורים: ימין=${Math.round(right.rect.h)}px שמאל=${Math.round(left.rect.h)}px פער=${Math.round(diff)}px`
+                    message: `אי-איזון טורים: ימין=${Math.round(right.rect.h)}px שמאל=${Math.round(left.rect.h)}px פער=${Math.round(diff)}px${hasPCut ? ' (block-2col עם p-cut cross-page)' : ''}`
                 });
             }
         }

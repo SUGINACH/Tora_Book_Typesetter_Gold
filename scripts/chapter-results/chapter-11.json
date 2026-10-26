@@ -5,39 +5,45 @@
   "lineCount": 69,
   "startLine": 1753,
   "endLine": 1821,
-  "label": "fix1-all",
-  "timestamp": "2026-10-26T13:01:03.090Z",
+  "label": "fix6-all",
+  "timestamp": "2026-10-26T13:47:56.734Z",
   "pageCount": 10,
   "geomSummary": {
     "total": 1,
     "high": 0,
-    "medium": 0,
-    "low": 1,
+    "medium": 1,
+    "low": 0,
     "byKind": {
-      "sparse-line": 1
+      "imbalance": 1
     }
   },
   "geomIssues": [
     {
-      "kind": "sparse-line",
-      "severity": "low",
+      "kind": "imbalance",
+      "severity": "medium",
       "pageIdx": 9,
-      "location": "page > wrapper > body-flow > block-2col > column > p-cut(\"שאינו זה שהיה בו) לא\")",
-      "lastW": 23,
-      "firstW": 54,
-      "pText": "שאינו זה שהיה בו) לאיכות (מקום שהוא מסוג",
-      "childRect": {
-        "x": 650,
-        "y": 10527,
-        "w": 23,
-        "h": 17
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 233,
+      "leftH": 252,
+      "diff": 19,
+      "rightRect": {
+        "x": 404,
+        "y": 10299,
+        "w": 269,
+        "h": 233
       },
-      "message": "שורה דלילה בסוף p-cut: רוחב אחרון=23px ראשון=54px"
+      "leftRect": {
+        "x": 121,
+        "y": 10299,
+        "w": 269,
+        "h": 252
+      },
+      "message": "אי-איזון טורים: ימין=233px שמאל=252px פער=19px (block-2col עם p-cut cross-page)"
     }
   ],
   "geomStats": {
     "pageCount": 10,
-    "extractMs": 152.2
+    "extractMs": 35.7
   },
   "highSeverityIssues": [],
   "error": null

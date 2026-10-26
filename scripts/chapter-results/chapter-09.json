@@ -5,23 +5,23 @@
   "lineCount": 162,
   "startLine": 1532,
   "endLine": 1693,
-  "label": "fix1-all",
-  "timestamp": "2026-10-26T13:00:49.767Z",
+  "label": "fix6-all",
+  "timestamp": "2026-10-26T13:47:41.142Z",
   "pageCount": 19,
   "geomSummary": {
-    "total": 3,
-    "high": 2,
-    "medium": 0,
-    "low": 1,
+    "total": 4,
+    "high": 0,
+    "medium": 4,
+    "low": 0,
     "byKind": {
       "containment": 2,
-      "imbalance": 1
+      "imbalance": 2
     }
   },
   "geomIssues": [
     {
       "kind": "containment",
-      "severity": "high",
+      "severity": "medium",
       "pageIdx": 5,
       "location": "page > wrapper > body-flow",
       "childType": "block-2col",
@@ -39,12 +39,12 @@
         "bottom": 63.625
       },
       "overflowPx": 63.6,
-      "note": "(גלישה חמורה מ-stretchPageToBottom)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":63.625} (גלישה חמורה מ-stretchPageToBottom)"
+      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":63.625} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
     },
     {
       "kind": "imbalance",
-      "severity": "high",
+      "severity": "medium",
       "pageIdx": 5,
       "location": "page > wrapper > body-flow > block-2col",
       "rightH": 355,
@@ -62,11 +62,11 @@
         "w": 269,
         "h": 289
       },
-      "message": "אי-איזון טורים: ימין=355px שמאל=289px פער=66px"
+      "message": "אי-איזון טורים: ימין=355px שמאל=289px פער=66px (block-2col עם p-cut cross-page)"
     },
     {
       "kind": "containment",
-      "severity": "low",
+      "severity": "medium",
       "pageIdx": 9,
       "location": "page > wrapper > body-flow",
       "childType": "block-2col",
@@ -75,69 +75,45 @@
         "x": 57,
         "y": 10875,
         "w": 680,
-        "h": 341
+        "h": 362
       },
       "overflow": {
         "left": 0,
         "top": 0,
         "right": 0,
-        "bottom": 1.203125
+        "bottom": 22.609375
       },
-      "overflowPx": 1.2,
-      "note": "(גלישה טבעית מ-stretchPageToBottom)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.203125} (גלישה טבעית מ-stretchPageToBottom)"
+      "overflowPx": 22.6,
+      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":22.609375} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
+    },
+    {
+      "kind": "imbalance",
+      "severity": "medium",
+      "pageIdx": 9,
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 362,
+      "leftH": 339,
+      "diff": 23,
+      "rightRect": {
+        "x": 404,
+        "y": 10875,
+        "w": 269,
+        "h": 362
+      },
+      "leftRect": {
+        "x": 121,
+        "y": 10875,
+        "w": 269,
+        "h": 339
+      },
+      "message": "אי-איזון טורים: ימין=362px שמאל=339px פער=23px (block-2col עם p-cut cross-page)"
     }
   ],
   "geomStats": {
     "pageCount": 19,
-    "extractMs": 75.1
+    "extractMs": 85
   },
-  "highSeverityIssues": [
-    {
-      "kind": "containment",
-      "severity": "high",
-      "pageIdx": 5,
-      "location": "page > wrapper > body-flow",
-      "childType": "block-2col",
-      "childText": "",
-      "childRect": {
-        "x": 57,
-        "y": 6162,
-        "w": 680,
-        "h": 586
-      },
-      "overflow": {
-        "left": 0,
-        "top": 0,
-        "right": 0,
-        "bottom": 63.625
-      },
-      "overflowPx": 63.6,
-      "note": "(גלישה חמורה מ-stretchPageToBottom)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":63.625} (גלישה חמורה מ-stretchPageToBottom)"
-    },
-    {
-      "kind": "imbalance",
-      "severity": "high",
-      "pageIdx": 5,
-      "location": "page > wrapper > body-flow > block-2col",
-      "rightH": 355,
-      "leftH": 289,
-      "diff": 66,
-      "rightRect": {
-        "x": 404,
-        "y": 5769,
-        "w": 269,
-        "h": 355
-      },
-      "leftRect": {
-        "x": 121,
-        "y": 5769,
-        "w": 269,
-        "h": 289
-      },
-      "message": "אי-איזון טורים: ימין=355px שמאל=289px פער=66px"
-    }
-  ],
+  "highSeverityIssues": [],
   "error": null
 }

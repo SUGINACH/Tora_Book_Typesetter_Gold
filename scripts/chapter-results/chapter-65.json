@@ -5,8 +5,8 @@
   "lineCount": 48,
   "startLine": 4879,
   "endLine": 4926,
-  "label": "fix1-all",
-  "timestamp": "2026-10-26T13:02:41.817Z",
+  "label": "fix6-all",
+  "timestamp": "2026-10-26T13:49:33.312Z",
   "pageCount": 9,
   "geomSummary": {
     "total": 3,
@@ -39,8 +39,8 @@
         "bottom": 13.46875
       },
       "overflowPx": 13.5,
-      "note": "(גלישה מ-stretchPageToBottom)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":13.46875} (גלישה מ-stretchPageToBottom)"
+      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":13.46875} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
     },
     {
       "kind": "imbalance",
@@ -62,7 +62,7 @@
         "w": 269,
         "h": 66
       },
-      "message": "אי-איזון טורים: ימין=71px שמאל=66px פער=5px"
+      "message": "אי-איזון טורים: ימין=71px שמאל=66px פער=5px (block-2col עם p-cut cross-page)"
     },
     {
       "kind": "imbalance",
@@ -84,12 +84,12 @@
         "w": 269,
         "h": 65
       },
-      "message": "אי-איזון טורים: ימין=71px שמאל=65px פער=6px"
+      "message": "אי-איזון טורים: ימין=71px שמאל=65px פער=6px (block-2col עם p-cut cross-page)"
     }
   ],
   "geomStats": {
     "pageCount": 9,
-    "extractMs": 32.5
+    "extractMs": 25.5
   },
   "highSeverityIssues": [],
   "error": null
