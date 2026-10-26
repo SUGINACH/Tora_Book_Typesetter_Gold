@@ -4921,3 +4921,87 @@ Stage Summary:
 Files Modified/Created:
 - typesetter.js: checkpoint mechanism דויק (describeNode, collectPageElements, findProblemNode, enrichedIssues)
 - step-by-step-audit-Method.md: חדש — מסמך הסבר מפורט
+
+---
+Task ID: audit-refinement-2
+Agent: main agent
+Task: דיוק הכלי — הוספת delta tracking + causality classification + issue patterns. סקירת parallel-step-by-step-audit-23 והעתקת חלקים ראויים, מחיקת הקבצים המקבילים.
+
+Work Log:
+- סקרתי את parallel-step-by-step-audit-method-23.md (87 lines) ו-parallel-step-by-step-audit-23.js (112 lines) — יצירות של סוכן אחר שהועלו ל-origin/V21.
+- זיהיתי חלקים ראויים לשילוב:
+  * Element-level delta tracking (added/removed/changed בין checkpoints)
+  * Role classification function (paragraph-continuation-cut/end, drop-word, parenthetical-run, running-header, וכו')
+  * Attribute allowlist regex (data-token-id, data-is-cont, data-raw-text, data-side-note, data-end-note, data-note-style-id, data-note-level, data-layout-*)
+  * Line rectangles עבור פסקאות/כותרות/שורות הערה (לאבחון widow/orphan ושורות דלילות)
+  * Computed typography עבור אלמנטי טקסט (font/lineHeight/align/margin/padding/display)
+  * Page metrics per snapshot (bodyFlow rect, footnoteArea rect, counts)
+  * 7-category causality classification (לעומת 5 שהיו)
+  * CLI tuning options (--max-events, --max-elements, --no-line-rects, --no-computed-style)
+  * Issue-specific reading patterns (widow-orphan, imbalance, containment, page-overflow, sparse-last-line, page-underfill, block-gap, overflow-to-footnote, fn-containment)
+  * Counterfactual diagnostic approach (disable one operation and compare)
+- החלטתי שלא לשלב את function wrapping (wrap(name, fn)) כי דורש שינוי מבני גדול ועלול לשבור דברים. במקום זאת, השארתי את ה-__runAuditCheckpoint הידני.
+- החלטתי שלא להוסיף data-layout-* attributes ל-typesetter.js כעת — יידרש שינוי מקיף ב-balanceColumns/justifyColumnVertically. תיעדתי זאת כאפשרות עתידית ב-Method.md סעיף 7.3.
+
+- geometry-audit.js:
+  * הוספתי findDomForNodePublic(node) — חושף את ה-WeakMap _nodeToEl
+  * הוספתי semanticRole(el) — 14+ roles סמנטיים מורחבים
+  * הוספתי enrichNode(node) — מוסיף role/tokenId/dataAttrs/lineRects/typography מתוך DOM
+  * הוספתי getPageMetrics(page) — מחזיר bodyFlow/footnoteArea/counts יחסית לעמוד
+  * חשפתי את כל הפונקציות ב-window.__geomAudit API
+
+- typesetter.js __runAuditCheckpoint:
+  * describeNode: הוספתי role, tokenId, dataAttrs, lineRects, typography, ו-bottom ב-rect
+  * collectPageElements: הוספתי role + tokenId
+  * הוספתי collectPageSignatures(page, maxDepth) — בונה signature = tokenId|type|cls|y|h לכל אלמנט
+  * הוספתי computeDelta(prevSigs, currSigs) — added/removed/changed
+  * ב-__runAuditCheckpoint: אוסף pageMetrics לכל עמוד, אוסף signatures, מחשב delta מול ה-checkpoint הקודם, ומצרף pageDelta לכל issue
+  * הוספתי window.__prevCheckpointSignatures לשמירת state בין קריאות
+  * issue.message מורחב ל-200 chars (היה 150)
+
+- scripts/step-by-step-audit.js: שכתוב מלא (~470 lines)
+  * ISSUE_PATTERNS — 9 patterns עם שדות + הנחיות אבחון
+  * classifyCausality(issue, checkpoints) — 7 קטגוריות
+  * CLI flags: --causality, --deltas-only, --no-typography, --no-line-rects, --verbose, --json, --summary-only
+  * פלט ב-7 חלקים: ניתוח כל checkpoint, טבלת התפתחות, בעיות high, השוואת התחלה-סוף, delta, סיווג סיבתיות, issue patterns
+
+- step-by-step-audit-Method.md: שכתוב מלא (11 סעיפים, ~470 lines)
+  * סעיף 1: מטרה מורחבת (8 נקודות, כולל סיווג סיבתיות)
+  * סעיף 2: ארכיטקטורה מלאה
+  * סעיף 3: מה קורה בכל checkpoint (7 תת-סעיפים: extractGeometry, auditGeometry, enrichNode, getPageMetrics, collectPageSignatures, computeDelta, נתונים שנשמרים)
+  * סעיף 4: סיווג סיבתיות — 7 קטגוריות (היה 5)
+  * סעיף 5: issue-specific reading patterns — טבלה עם 9 סוגי בעיות
+  * סעיף 6: שימוש + CLI flags
+  * סעיף 7: אפשרויות כיוונון — per-page checkpoints, per-block checkpoints, data-layout-* attrs, counterfactual, debug מפורט, השוואת עמודים, maxEvents/maxElements
+  * סעיף 8: 7 מגבלות נוכחיות
+  * סעיף 9: דוגמה מעשית — פרק 9 עמוד 6 (עם delta, pageMetrics, problemElement)
+  * סעיף 10: כללי זהב (11 כללים, היה 6)
+  * סעיף 11: מפת דרכים עתידית
+
+- מחקתי:
+  * parallel-step-by-step-audit-23.js (git rm)
+  * parallel-step-by-step-audit-method-23.md (git rm)
+
+- בדיקות:
+  * node -c on all 3 modified JS files — OK
+  * node step-by-step-audit.js 9 --summary-only: 4 checkpoints, 19 pages, OK
+  * node step-by-step-audit.js 9 --causality: מסווג נכון — containment-rounding בעמוד 13 כ-created-at-first-checkpoint, containment+imbalance בעמוד 6 כ-created-by-stage:after-rebalance2
+  * node step-by-step-audit.js 9 --deltas-only: מציג 14 שינויים ב-5 עמודים במעבר cross-paragraph-parens → rebalance2
+  * node step-by-step-audit.js 9 --verbose: מציג problemElement (עם bottom=6124), pageMetrics (bodyFlow.bottom=1022), pageDelta (+10/-10/~1) — כל השדות מאוכלסים
+
+- commit: ad01732 (pushed to origin/V21)
+
+Stage Summary:
+- כלי ה-step-by-step-audit דויק עם delta tracking ו-causality classification.
+- 7 קטגוריות סיבתיות (מ-5), 9 issue patterns, 6 CLI flags, 7 חלקי פלט.
+- הקבצים המקבילים של סוכן אחר נמחקו — ערכם שולב במערכת שלנו.
+- Method.md מתועד במלוא עם tuning options למקרים שהסיבה לא תתגלה.
+- baseline לא נבדק מחדש — אין שינוי בהחלטות העימוד, רק במנגנון ה-checkpoint שלא פעיל כברירת מחדל.
+
+Files Modified:
+- geometry-audit.js (+165 lines: findDomForNodePublic, semanticRole, enrichNode, getPageMetrics, API)
+- typesetter.js (~110 lines: describeNode enriched, collectPageSignatures, computeDelta, __runAuditCheckpoint rewritten)
+- scripts/step-by-step-audit.js (full rewrite ~470 lines)
+- step-by-step-audit-Method.md (full rewrite ~470 lines, 11 sections)
+- parallel-step-by-step-audit-23.js (DELETED)
+- parallel-step-by-step-audit-method-23.md (DELETED)
