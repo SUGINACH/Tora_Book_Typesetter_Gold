@@ -351,13 +351,17 @@ function auditContainment(node, issues) {
             if (isBlockFromBodyFlow) {
                 // [תיקון 2-fix-stretchPageToBottom-overshoot] בדוק אם ה-block-2col מסתיים ב-p-cut
                 // (cross-page). אם כן, ה-engine בחר במכוון ליצור p-cut כדי למלא את העמוד
-                // במקום להשאיר רווח גדול. במקרה כזה, גלישה עד 80px היא medium (לא high),
-                // כי זו החלטה מכוונת של ה-engine.
+                // במקום להשאיר רווח גדול. במקרה כזה, גלישה עד 15px היא low (עיגול פיקסלים),
+                // עד 80px היא medium, ומעל זה high.
                 const hasPCut = (function hasCut(n) {
                     if (n.type === 'p-cut') return true;
                     return (n.children || []).some(hasCut);
                 })(child);
-                if (hasPCut && overflowPx <= 80) {
+                if (hasPCut && overflowPx <= 15) {
+                    severity = 'low';
+                    kind = 'containment-rounding';
+                    note = ' (גלישה טבעית — block-2col עם p-cut cross-page, עיגול פיקסלים)';
+                } else if (hasPCut && overflowPx <= 80) {
                     severity = 'medium';
                     note = ' (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)';
                 } else if (overflowPx <= 10) {

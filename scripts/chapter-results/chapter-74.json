@@ -5,8 +5,8 @@
   "lineCount": 49,
   "startLine": 5370,
   "endLine": 5418,
-  "label": "page-height-rebalance-v1",
-  "timestamp": "2026-10-26T18:07:42.331Z",
+  "label": "audit-refinement-v1",
+  "timestamp": "2026-10-26T18:55:05.060Z",
   "pageCount": 8,
   "geomSummary": {
     "total": 0,
@@ -18,7 +18,7 @@
   "geomIssues": [],
   "geomStats": {
     "pageCount": 8,
-    "extractMs": 41.4
+    "extractMs": 24.5
   },
   "highSeverityIssues": [],
   "error": null

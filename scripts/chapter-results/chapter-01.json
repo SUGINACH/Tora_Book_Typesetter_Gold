@@ -5,8 +5,8 @@
   "lineCount": 139,
   "startLine": 17,
   "endLine": 155,
-  "label": "relative-path-test",
-  "timestamp": "2026-10-26T18:10:35.717Z",
+  "label": "audit-refinement-v1",
+  "timestamp": "2026-10-26T18:52:25.345Z",
   "pageCount": 16,
   "geomSummary": {
     "total": 0,
@@ -18,7 +18,7 @@
   "geomIssues": [],
   "geomStats": {
     "pageCount": 16,
-    "extractMs": 60.5
+    "extractMs": 78.8
   },
   "highSeverityIssues": [],
   "error": null

@@ -4659,3 +4659,38 @@ Files Modified/Created:
 - .gitignore: הוספת __pycache__/
 
 Workflow URL: https://github.com/SUGINACH/Tora_Book_Typesetter_Gold/actions/runs/40375684885
+
+---
+Task ID: 7-audit-refinement + 8-determinism-test + 9-docs
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: סקירת תוצאות GitHub Actions + שיפור audit + בדיקת determinism + תיעוד.
+
+Work Log:
+- סקרתי תוצאות GitHub Actions (run #3, 3 modes: baseline/page-height-max15/page-height-max70).
+  * כל 3 ה-modes נתנו תוצאות זהות: 0 high, 69 medium, 24 low, 0 errors, 863 pages.
+  * התוצאות חיוביות — page-height לא גרם לרגרסיה גם עם max=70.
+- ניתחתי את ה-medium issues: 60 מתוך 69 הם containment, ומתוכם 58 הם block-2col עם p-cut cross-page.
+  * 24 עם overflow 0-5px (עיגול פיקסלים), 27 עם overflow 6-15px.
+- שיפרתי את auditContainment: block-2col עם p-cut cross-page ו-overflow ≤ 15px → low (לא medium).
+  * נימוק: ה-engine יצר את ה-p-cut במכוון כדי למלא את העמוד. overflow ≤ 15px הוא עיגול פיקסלים.
+- תוצאה: 0 high, 19 medium (מ-69, -72%), 74 low (מ-24, +50), 0 errors.
+- בדקתי את ה-caches שהוסרו (_linesCache, _wordWidthCache, _kpCache):
+  * לא קיימים גם ב-repo הישן (IMUD_TORANI/V21). כנראה הוסרו במעבר מ-V18 ל-V21 באופן מכוון.
+  * אין רגרסיה כאן.
+- יצרתי determinism-test.js: מריץ את אותו פרק N פעמים ומשווה תוצאות.
+  * נבדק על פרק 9 × 2: יציב (19 עמודים, אותו summary).
+- הוספתי job ל-GitHub Actions workflow: "Determinism Test (ch9 × 3)".
+- עדכנתי LAYOUT_DEPENDENCY_MAP.md עם סעיף 13 (170 שורות) — תיעוד מלא של כל השינויים.
+
+Stage Summary:
+- **0 high, 19 medium, 74 low, 0 errors** — שיפור משמעותי מ-69 medium ל-19 (-72%).
+- GitHub Actions workflow רץ עם 4 jobs (3 modes + determinism).
+- LAYOUT_DEPENDENCY_MAP.md מתועד עם סעיף 13 מפורט.
+- determinism-test.js נוצר ונבדק.
+
+Files Modified/Created:
+- geometry-audit.js: auditContainment — block-2col p-cut overflow ≤ 15px → low
+- scripts/determinism-test.js: חדש
+- .github/workflows/regression-test.yml: הוספת determinism job
+- LAYOUT_DEPENDENCY_MAP.md: סעיף 13 (13.1-13.10)

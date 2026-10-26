@@ -5,17 +5,18 @@
   "lineCount": 312,
   "startLine": 1220,
   "endLine": 1531,
-  "label": "page-height-rebalance-v1",
-  "timestamp": "2026-10-26T18:05:27.889Z",
+  "label": "audit-refinement-v1",
+  "timestamp": "2026-10-26T18:52:50.638Z",
   "pageCount": 34,
   "geomSummary": {
     "total": 5,
     "high": 0,
-    "medium": 5,
-    "low": 0,
+    "medium": 2,
+    "low": 3,
     "byKind": {
-      "containment": 4,
-      "imbalance": 1
+      "containment": 1,
+      "imbalance": 1,
+      "containment-rounding": 3
     }
   },
   "geomIssues": [
@@ -65,8 +66,8 @@
       "message": "אי-איזון טורים: ימין=634px שמאל=570px פער=64px (block-2col עם p-cut cross-page)"
     },
     {
-      "kind": "containment",
-      "severity": "medium",
+      "kind": "containment-rounding",
+      "severity": "low",
       "pageIdx": 12,
       "location": "page > wrapper > body-flow",
       "childType": "block-2col",
@@ -84,12 +85,12 @@
         "bottom": 3.3125
       },
       "overflowPx": 3.3,
-      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":3.3125} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
+      "note": "(גלישה טבעית — block-2col עם p-cut cross-page, עיגול פיקסלים)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":3.3125} (גלישה טבעית — block-2col עם p-cut cross-page, עיגול פיקסלים)"
     },
     {
-      "kind": "containment",
-      "severity": "medium",
+      "kind": "containment-rounding",
+      "severity": "low",
       "pageIdx": 26,
       "location": "page > wrapper > body-flow",
       "childType": "block-2col",
@@ -107,12 +108,12 @@
         "bottom": 6.234375
       },
       "overflowPx": 6.2,
-      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.234375} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
+      "note": "(גלישה טבעית — block-2col עם p-cut cross-page, עיגול פיקסלים)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.234375} (גלישה טבעית — block-2col עם p-cut cross-page, עיגול פיקסלים)"
     },
     {
-      "kind": "containment",
-      "severity": "medium",
+      "kind": "containment-rounding",
+      "severity": "low",
       "pageIdx": 30,
       "location": "page > wrapper > body-flow",
       "childType": "block-2col",
@@ -130,13 +131,13 @@
         "bottom": 1.75
       },
       "overflowPx": 1.8,
-      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.75} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
+      "note": "(גלישה טבעית — block-2col עם p-cut cross-page, עיגול פיקסלים)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.75} (גלישה טבעית — block-2col עם p-cut cross-page, עיגול פיקסלים)"
     }
   ],
   "geomStats": {
     "pageCount": 34,
-    "extractMs": 212.4
+    "extractMs": 151.7
   },
   "highSeverityIssues": [],
   "error": null

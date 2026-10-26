@@ -5,22 +5,22 @@
   "lineCount": 32,
   "startLine": 3417,
   "endLine": 3448,
-  "label": "page-height-rebalance-v1",
-  "timestamp": "2026-10-26T18:06:26.947Z",
+  "label": "audit-refinement-v1",
+  "timestamp": "2026-10-26T18:53:51.671Z",
   "pageCount": 9,
   "geomSummary": {
     "total": 1,
     "high": 0,
-    "medium": 1,
-    "low": 0,
+    "medium": 0,
+    "low": 1,
     "byKind": {
-      "containment": 1
+      "containment-rounding": 1
     }
   },
   "geomIssues": [
     {
-      "kind": "containment",
-      "severity": "medium",
+      "kind": "containment-rounding",
+      "severity": "low",
       "pageIdx": 3,
       "location": "page > wrapper > body-flow",
       "childType": "block-2col",
@@ -38,13 +38,13 @@
         "bottom": 6.171875
       },
       "overflowPx": 6.2,
-      "note": "(גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)",
-      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.171875} (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)"
+      "note": "(גלישה טבעית — block-2col עם p-cut cross-page, עיגול פיקסלים)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.171875} (גלישה טבעית — block-2col עם p-cut cross-page, עיגול פיקסלים)"
     }
   ],
   "geomStats": {
     "pageCount": 9,
-    "extractMs": 16.5
+    "extractMs": 11.8
   },
   "highSeverityIssues": [],
   "error": null
