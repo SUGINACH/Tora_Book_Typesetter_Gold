@@ -4788,3 +4788,31 @@ Stage Summary:
 
 Files Modified:
 - geometry-audit.js: +auditBlockGaps, +auditSettingsVerification, +first-word-window classification, +calls in auditGeometry
+
+---
+Task ID: 17-c2-determinism-clarification + 18-b5-page-height-overflow-fix
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: C2 (הבהרת determinism-test) + B5 (תיקון page-height overflow 7px).
+
+Work Log:
+- C2: עדכנתי את התיעוד ב-determinism-test.js — הבהרתי שהמטרה העיקרית היא וידוא ששינויי קוד (שלא נועדו להשפיע על העימוד) אכן לא משפיעים. הוספתי תרחיש שימוש עם baseline/after comparison.
+- B5: תיקנתי את בדיקת המקום הפנוי ב-page-height adjustment:
+  * לפני: בדק מ-body-flow bottom ל-page bottom → התעלם מ-header/footer/fnArea
+  * אחרי: בדק מ-wrapper bottom ל-page bottom → כולל את כל האלמנטים בעמוד
+  * תוצאה: page-height לא יפעל כשאין מקום אמיתי → אין page-overflow חדש!
+- בדקתי עם max=70 על פרק 9:
+  * לפני B5: 2 high (imbalance + page-overflow 7px)
+  * אחרי B5: 0 high!, 2 medium (containment + imbalance), 0 page-overflow!
+- baseline (page-height כבוי): 0 high, 19 medium, 81 low, 0 errors — אין רגרסיה.
+- ה-+8 low החדשים הם מ-auditSettingsVerification (בעיות אמיתיות שלא התגלו קודם).
+
+Stage Summary:
+- C2: determinism-test מתועד עם מטרה ברורה ותרחיש שימוש.
+- B5: page-height overflow נפתר — 0 high (מ-2 high) כש-page-height מופעל עם max=70.
+- baseline: 0 high, 19 medium, 81 low, 0 errors — יציב.
+
+Files Modified:
+- scripts/determinism-test.js: הבהרת מטרה + תרחיש שימוש
+- typesetter.js: page-height adjustment — בדיקה מ-wrapper bottom (לא body-flow bottom)
+- typesetter.js: page-height — בדיקת overflow חוזרת אחרי rebalance

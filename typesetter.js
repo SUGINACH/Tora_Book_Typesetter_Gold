@@ -4877,7 +4877,12 @@ function typesetDocumentCore() {
 
                 if (overflow >= 5 && overflow <= maxAdjust) {
                     const pageRect = page.getBoundingClientRect();
-                    const availToPageBottom = Math.round(pageRect.bottom - bodyRect.bottom);
+                    // [תיקון B5] בדוק מ-wrapper bottom (לא body-flow bottom) כי
+                    // wrapper כולל גם header/footer/fnArea — הגדלת wrapper חייבת
+                    // להישאר בתוך גבולות העמוד הפיזי.
+                    const wrapperEl = page.querySelector('.page-content-wrapper');
+                    const wrapperRect = wrapperEl ? wrapperEl.getBoundingClientRect() : bodyRect;
+                    const availToPageBottom = Math.round(pageRect.bottom - wrapperRect.bottom);
                     if (availToPageBottom >= overflow + 10) {
                         // הגדל את body-flow וגם את wrapper (page-content-wrapper) כי
                         // wrapper קובע height: 1009px ו-body-flow הוא ילד שלו — בלי להגדיל
@@ -4921,6 +4926,31 @@ function typesetDocumentCore() {
                                 }
                                 if (typeof repositionBlockNotes === 'function') {
                                     repositionBlockNotes(lastBlock, Math.max(rC.scrollHeight, lC.scrollHeight));
+                                }
+                            }
+                        }
+
+                        // [תיקון B5 — מניעת page-overflow חדש אחרי rebalance]
+                        // rebalance עלול להגדיל את ה-block (כי מתח את הטור הקצר),
+                        // ואז ה-block חורג מ-wrapper שהוגדל. בדוק אם יש overflow חדש
+                        // מ-page, ואם כן — הקטן את wrapper בחזרה.
+                        const newBlockRect = lastBlock.getBoundingClientRect();
+                        const newWrapper = page.querySelector('.page-content-wrapper');
+                        if (newWrapper) {
+                            const wrapperRect = newWrapper.getBoundingClientRect();
+                            const newOverflow = Math.round(newBlockRect.bottom - wrapperRect.bottom);
+                            if (newOverflow > 5) {
+                                // ה-block חורג מ-wrapper — הגדל wrapper ב-newOverflow
+                                const wrapH = newWrapper.clientHeight;
+                                newWrapper.style.height = (wrapH + newOverflow) + 'px';
+                                // ודא ש-wrapper לא חורג מ-page
+                                const pageRect2 = page.getBoundingClientRect();
+                                const wrapRect2 = newWrapper.getBoundingClientRect();
+                                if (wrapRect2.bottom > pageRect2.bottom) {
+                                    // wrapper חורג מ-page — הקטן בחזרה
+                                    const excess = Math.round(wrapRect2.bottom - pageRect2.bottom);
+                                    newWrapper.style.height = (wrapH + newOverflow - excess) + 'px';
+                                    bodyFlow.style.height = (currentBodyH + overflow - excess) + 'px';
                                 }
                             }
                         }

@@ -1,15 +1,36 @@
 /* ==========================================================================
    determinism-test.js — בדיקת יציבות (determinism) של מנוע העימוד
    --------------------------------------------------------------------------
-   מטרה: להריץ את אותו פרק N פעמים (עם browser חדש כל פעם) ולהשוות תוצאות.
-   אם יש הבדל ב-pageCount או ב-summary — יש non-determinism.
+   מטרה עיקרית: וידוא ששינויי קוד (שלא נועדו להשפיע על העימוד) אכן לא משפיעים.
+   
+   תרחיש שימוש:
+   1. מפתח משנה קוד ב-typesetter.js / geometry-audit.js / style.css
+      (למשל: הוספת פונקציה חדשה, שינוי comment, רפקטורינג)
+   2. לפני ה-commit, מריץ determinism-test כדי לוודא שהשינוי לא השפיע על העימוד
+   3. אם התוצאות זהות לפני ואחרי — השינוי בטוח
+   4. אם יש הבדל — השינוי השפיע בטעות על העימוד
+
+   אופן פעולה:
+   - מריץ את אותו פרק N פעמים (עם browser חדש כל פעם)
+   - משווה pageCount ו-summary (high/medium/low)
+   - אם יש הבדל — יש non-determinism
 
    שימוש:
      node determinism-test.js [CHAPTER_NUM] [RUNS]
      node determinism-test.js 9 5      # פרק 9, 5 ריצות
      node determinism-test.js           # ברירת מחדל: פרק 9, 3 ריצות
 
-   דרוש: שרת HTTP על פורט 8765
+   השוואת baseline (לודאי ששינויי קוד לא משפיעים):
+     # לפני השינוי — שמור baseline:
+     node determinism-test.js 9 3 > baseline.txt
+     
+     # בצע את השינוי בקוד
+     
+     # אחרי השינוי — השווה:
+     node determinism-test.js 9 3 > after.txt
+     diff baseline.txt after.txt
+
+   דרוש: שרת HTTP על פורט 8765 + טקסט בדיקה very_long_test_text.txt
    ========================================================================== */
 
 const { chromium } = require('playwright');
