@@ -52,7 +52,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Playwright
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       - name: Verify project files
@@ -75,7 +78,6 @@ jobs:
         run: |
           cd scripts
           node test-chapters-enhanced.js ${{ github.event.inputs.start_chapter || '1' }} ${{ github.event.inputs.end_chapter || '79' }} ${{ matrix.mode.name }}
-        continue-on-error: true
 
       - name: Summarize results
         if: always()
@@ -118,7 +120,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Playwright
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
       - name: Start HTTP server

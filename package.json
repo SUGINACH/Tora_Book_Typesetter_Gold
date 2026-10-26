@@ -1,0 +1,14 @@
+{
+  "name": "tora-book-typesetter-gold",
+  "version": "1.0.0",
+  "description": "מערכת עימוד תורנית — typesetting system for Torah books",
+  "private": true,
+  "scripts": {
+    "test:baseline": "cd scripts && node test-chapters-enhanced.js 1 79 baseline",
+    "test:quick": "cd scripts && node test-chapters-enhanced.js 1 1 quick",
+    "determinism": "cd scripts && node determinism-test.js 9 3"
+  },
+  "dependencies": {
+    "playwright": "^1.49.0"
+  }
+}
