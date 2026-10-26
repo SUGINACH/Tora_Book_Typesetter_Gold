@@ -4613,3 +4613,49 @@ Files Created:
 - /home/z/my-project/scripts/debug-ch67-nondeterminism.js
 - /home/z/my-project/scripts/stress-test-ch67.js
 - /home/z/my-project/Tora_Book_Typesetter_Gold/scripts/chapter-results/nondet-run{1,2,3}-summary.json
+
+---
+Task ID: 5-rebalance-after-page-height + 6-github-actions
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: המשך rebalance אחרי page-height + שיכלול ה-audit + GitHub Actions workflow.
+
+Work Log:
+- ממשתי rebalance אחרי page-height adjustment:
+  * אחרי הגדלת body-flow+wrapper, הרץ rebalance על ה-block האחרון.
+  * מודד fDiff בין right-col ו-left-col.
+  * אם |fDiff| > 2 ו-<= 150: מפעיל justifyColumnVertically על הטור הקצר.
+  * בדיקת יירוס: אם הטור המתוח חורג מהיעד ב->1.5px, מפעיל shrinkColumnVertically.
+  * קורא ל-repositionBlockNotes לתיקון הערות צד.
+- תוצאות בדיקה על פרק 9 עם max=70:
+  * לפני rebalance: 2 high (imbalance + page-overflow)
+  * אחרי rebalance: block אחרון — 0 overflow, 0 imbalance!
+  * עדיין 2 page-overflow (7px) — שארית מהגדלת wrapper.
+  * מסקנה: rebalance פתר את ה-imbalance אבל יצר overflow קטן (7px).
+- שיכללתי את ה-audit: ה-audit הקיים כבר מכסה את כל הבעיות (imbalance, containment, page-overflow, page-underfill). לא נמצאו גילויים חדשים שדורשים בדיקה נפרדת.
+- העתקתי את הסקריפטים ל-repo: test-chapters-enhanced.js, regression-test.js, summarize-chapter-results.py, baseline-check.js.
+- שיניתי נתיבים ליחסיים (__dirname + env vars) כדי שיעבדו גם ב-locale וגם ב-GitHub Actions.
+- הוספתי תמיכה במשתנה סביבה ENABLE_PAGE_HEIGHT ב-test-chapters-enhanced.js.
+- יצרתי GitHub Actions workflow: .github/workflows/regression-test.yml
+  * מופעל על push ל-V21 או ידני (workflow_dispatch).
+  * Matrix של 3 מצבים: baseline, page-height-max15, page-height-max70.
+  * שלבים: checkout, setup Node 20, install Playwright, start HTTP server, run test, summarize, upload artifacts.
+  * Artifacts נשמרים 30 ימים.
+- ה-workflow התחיל לרוץ אוטומטית אחרי ה-push (run #1, in_progress).
+
+Stage Summary:
+- rebalance אחרי page-height: מומשם ועובד. פותר imbalance אבל יוצר overflow קטן (7px).
+- ה-audit הקיים מכסה את כל הבעיות — לא נמצאו גילויים חדשים.
+- GitHub Actions workflow נוצר ורץ כעת (3 מצבי בדיקה).
+- baseline עם page-height כבוי: 0 high, 69 medium, 24 low, 0 errors — יציב.
+
+Files Modified/Created:
+- typesetter.js: rebalance אחרי page-height (lines ~4893-4926)
+- scripts/test-chapters-enhanced.js: נתיבים יחסיים + ENABLE_PAGE_HEIGHT env var
+- scripts/regression-test.js: נתיבים יחסיים
+- scripts/summarize-chapter-results.py: נתיבים יחסיים
+- scripts/baseline-check.js: הועתק ל-repo
+- .github/workflows/regression-test.yml: חדש
+- .gitignore: הוספת __pycache__/
+
+Workflow URL: https://github.com/SUGINACH/Tora_Book_Typesetter_Gold/actions/runs/40375684885
