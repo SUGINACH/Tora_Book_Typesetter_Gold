@@ -4852,3 +4852,34 @@ Stage Summary:
 Files Modified:
 - typesetter.js: +fixDropWordInColumns in balanceColumns
 - geometry-audit.js: +h2-spacer detection in auditPageFillRatio, +sec-div rounding in auditContainment
+
+---
+Task ID: 22-step-by-step-audit-system
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: מערכת בידוד פרקים + בדיקה גיאומממטרית שלב-אחר-שלב אחרי כל שלב עימוד.
+
+Work Log:
+- ממשתי מערכת checkpoint ב-typesetter.js:
+  * דגל `window.__stepByStepAudit = true` מפעיל מצב אבחון.
+  * `window.__runAuditCheckpoint(name)` — מפעיל extractGeometry + auditGeometry ושומר תוצאות.
+  * 4 נקודות checkpoint: after-initial-layout, after-cross-paragraph-parens, after-rebalance2, after-page-height.
+- יצרתי `scripts/step-by-step-audit.js`:
+  * מקבל מספר פרק, מעמד אותו לבד (עם stepByStepAudit=true).
+  * מדפיס טבלת התפתחות בעיות לפי kind לאורך כל השלבים.
+  * מצביע על השלב שבו נוצרה כל בעיה.
+  * השוואת התחלה → סוף (מה נעלם/נוצר).
+- בדיקה על פרק 9:
+  * after-initial-layout: 1 low (נקי כמעט)
+  * after-rebalance2: 3 issues — rebalance2 יצר 2 medium חדשים!
+  * מסקנה: rebalance2 הוא שיוצר את ה-containment וה-imbalance בעמוד 6.
+  * זה בדיוק מה שהמשתמש ביקש — יכולת לזהות באיזה שלב הבעיה נוצרת.
+
+Stage Summary:
+- מערכת step-by-step audit מומשה ועובדת.
+- זיהוי מדויק: rebalance2 יוצר בעיות חדשות בעמוד 6 של פרק 9.
+- המערכת מאפשרת אבחון לעומק של כל בעיה גיאומממטרית.
+
+Files Modified/Created:
+- typesetter.js: +checkpoint mechanism (4 checkpoints in typesetDocumentCore)
+- scripts/step-by-step-audit.js: חדש — אבחון שלב-אחר-שלב לפרק בודד

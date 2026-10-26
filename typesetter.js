@@ -3568,6 +3568,28 @@ function printDocument() {
 window.addEventListener('beforeprint', () => { if (settingsDirty) typesetDocumentNow(); });
 
 function typesetDocumentCore() {
+    // [חדש — step-by-step audit] מנגנון checkpoint לאבחון שלב-אחר-שלב
+    // כאשר window.__stepByStepAudit === true, ה-engine מפעיל בדיקה גיאומממטרית
+    // אחרי כל שלב עיקרי ושומר את התוצאות ב-window.__auditCheckpoints.
+    if (window.__stepByStepAudit === true) {
+        window.__auditCheckpoints = [];
+        window.__runAuditCheckpoint = function(name) {
+            if (!window.__geomAudit) return;
+            try {
+                const model = window.__geomAudit.extract();
+                const audit = window.__geomAudit.audit(model);
+                window.__auditCheckpoints.push({
+                    stage: name,
+                    summary: audit.summary,
+                    issues: audit.issues.map(i => ({
+                        kind: i.kind, severity: i.severity,
+                        pageIdx: i.pageIdx,
+                        message: (i.message || '').slice(0, 120)
+                    }))
+                });
+            } catch(e) { /* התעלם משגיאות ב-checkpoint */ }
+        };
+    }
     updateGrid();
     updateStyles();
 
@@ -4813,7 +4835,10 @@ function typesetDocumentCore() {
     // כש- ( נפתח בפסקה אחת ו- ) נסגר בפסקה אחרת, הפסקאות שביניהן צריכות גם לקבל סגנון טקסט-מוסגר.
     // הפונקציה הזו עוברת על כל הפסקאות בסדר מסמך, עוקבת אחרי עומק הסוגריים, ועוטפת פסקאות
     // שלמות ב-span של paren-text כשהן בתוך סוגריים פתוחות.
+    if (window.__stepByStepAudit) window.__runAuditCheckpoint('after-initial-layout');
     applyCrossParagraphParens(container);
+
+    if (window.__stepByStepAudit) window.__runAuditCheckpoint('after-cross-paragraph-parens');
 
     // [תיקון קריטי] אחרי applyCrossParagraphParens, עבור על כל הבלוקים בכל העמודים
     // וסגור פערים שנוצרו. applyCrossParagraphParens עוטף פסקאות שלמות ב-span עם גופן
@@ -4861,6 +4886,7 @@ function typesetDocumentCore() {
         });
     }
 
+    if (window.__stepByStepAudit) window.__runAuditCheckpoint('after-rebalance2');
     // [חדש — שלב 5] page-height adjustment — מגדיל body-flow כשיש overflow קטן
     // שלא נפתר על-ידי rebalance2. פועל רק כש-aq-page-height מופעל.
     // מגבלות:
@@ -4979,6 +5005,8 @@ function typesetDocumentCore() {
             });
         }
     }
+
+    if (window.__stepByStepAudit) window.__runAuditCheckpoint('after-page-height');
 }
 
 /* [חדש] טיפול בסוגריים שחוצות פסקאות.
