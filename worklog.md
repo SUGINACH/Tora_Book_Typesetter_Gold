@@ -4694,3 +4694,43 @@ Files Modified/Created:
 - scripts/determinism-test.js: חדש
 - .github/workflows/regression-test.yml: הוספת determinism job
 - LAYOUT_DEPENDENCY_MAP.md: סעיף 13 (13.1-13.10)
+
+---
+Task ID: 10-repo-audit + 11-testing-explained + 12-editing-recommendations-plan
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: סקירת תוצאות GitHub Actions + בדיקת קבצים אבודים + סקירת ריפו + הסבר בדיקות + תכנית המלצות עריכה.
+
+Work Log:
+- סקרתי תוצאות GitHub Actions (commit b043ef5):
+  * Determinism Test: ✅ success (ch9 × 3 יציב)
+  * Test (baseline): ✅ success (0 high)
+  * Test (page-height-max15): ✅ success (0 high)
+  * Test (page-height-max70): ❌ failure (צפוי — page-height ניסיוני עם max=70)
+- בדקתי קבצים אבודים במעבר לריפו החדש:
+  * השוויתי רשימת קבצים ב-repo הישן (IMUD_TORANI, default branch) עם החדש (V21).
+  * נמצאו 3 קבצים בישן שלא בחדש: V20.5 דוח, typesetting_system_technical_documentation.md, work_v4/.
+  * כולם לא נחוצים — הוחלפו על-ידי LAYOUT_DEPENDENCY_MAP.md, SESSION_HANDOFF.md, ועבודה חדשה.
+  * מסקנה: אין קבצים אבודים קריטיים.
+- סקרתי את הריפו הנוכחי וסיווגתי קבצים:
+  * core (16 קבצים) — חובה לשמור
+  * data (12 קבצים) — חובה לשמור
+  * docs (7 קבצים) — חובה לשמור
+  * ספריות: .github, scripts, fonts, setting_sets, Reports_Summaries_Studies — חובה לשמור
+  * ספריות למחיקה: debug/ (56MB), test/ (44MB), old_ver/ (40MB) — שאריות
+  * קבצים למחיקה: typesetter.js.bak-measure-fix, rendered-document_4.html/pdf, v18-kp-full-fix-report.md, טקסטים כפולים
+  * סה"כ ניתן למחוק: ~150MB
+- כתבתי מסמך REPO_AUDIT_AND_TESTING.md עם:
+  * סקירת ריפו מלאה (קטגוריות + המלצות מחיקה)
+  * הסבר על הבדיקות (geometry-audit, determinism, regression, GitHub Actions)
+  * תכנית המלצות עריכה למיטוב עימוד (4 סוגי המלצות + ארכיטקטורה + שלבי מימוש)
+
+Stage Summary:
+- GitHub Actions: 3/4 jobs עברו (page-height-max70 נכשל כצפוי — ניסיוני).
+- קבצים אבודים: אין קריטיים. 3 קבצים לא נחוצים שלא הועברו.
+- ריפו: 150MB שאריות שאפשר למחוק.
+- בדיקות: מוסברות ב-REPO_AUDIT_AND_TESTING.md.
+- תכנית המלצות עריכה: מתועדת עם 4 סוגי המלצות + ארכיטקטורה + שלבי מימוש.
+
+Files Created:
+- REPO_AUDIT_AND_TESTING.md — סקירת ריפו + הסבר בדיקות + תכנית המלצות עריכה
