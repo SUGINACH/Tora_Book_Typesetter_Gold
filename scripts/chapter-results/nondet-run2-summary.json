@@ -1,0 +1,1142 @@
+{
+  "label": "nondet-run2",
+  "startChapter": 1,
+  "endChapter": 79,
+  "timestamp": "2026-10-26T16:25:50.218Z",
+  "totals": {
+    "high": 0,
+    "medium": 70,
+    "low": 25,
+    "errors": 0
+  },
+  "chapters": [
+    {
+      "chapterNum": 1,
+      "title": "כותרת 2 מספר 2 - קדושת יום השבת ומצוותיה",
+      "pageCount": 16,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 2,
+      "title": "כותרת 2 מספר 3 - גדרי מעשה",
+      "pageCount": 18,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 3,
+      "title": "כותרת 2 מספר 4 - איסור עשיית מלאכה",
+      "pageCount": 18,
+      "summary": {
+        "total": 3,
+        "high": 0,
+        "medium": 1,
+        "low": 2,
+        "byKind": {
+          "sparse-line": 1,
+          "containment": 1,
+          "page-underfill": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 4,
+      "title": "כותרת 2 מספר 5 - רשויות",
+      "pageCount": 39,
+      "summary": {
+        "total": 4,
+        "high": 0,
+        "medium": 2,
+        "low": 2,
+        "byKind": {
+          "containment": 2,
+          "sparse-line": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 5,
+      "title": "כותרת 2 מספר 6 - מעשה הוצאה",
+      "pageCount": 13,
+      "summary": {
+        "total": 2,
+        "high": 0,
+        "medium": 1,
+        "low": 1,
+        "byKind": {
+          "sparse-line": 1,
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 6,
+      "title": "כותרת 2 מספר 1 - יציאות השבת (שבת ב.)",
+      "pageCount": 15,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 7,
+      "title": "כותרת 2 מספר 2 - ידו של אדם (שבת ג:)",
+      "pageCount": 10,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 8,
+      "title": "כותרת 2 מספר 3 - עקירה והנחה מע\"ג מקום ד' (ד.)",
+      "pageCount": 34,
+      "summary": {
+        "total": 5,
+        "high": 0,
+        "medium": 5,
+        "low": 0,
+        "byKind": {
+          "containment": 4,
+          "imbalance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 9,
+      "title": "כותרת 2 מספר 4 - המוציא מחנות לפלטיא (ה:)",
+      "pageCount": 19,
+      "summary": {
+        "total": 4,
+        "high": 0,
+        "medium": 4,
+        "low": 0,
+        "byKind": {
+          "containment": 2,
+          "imbalance": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 10,
+      "title": "כותרת 2 מספר 5 - העבירו דרך עליו (שבת ח:)",
+      "pageCount": 10,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 11,
+      "title": "כותרת 2 מספר 6 - העבירה דרך עליה (שבת פ.)",
+      "pageCount": 10,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "imbalance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 12,
+      "title": "כותרת 2 מספר 7 - בגדרי שיעור וצירופו (שבת צא.)",
+      "pageCount": 14,
+      "summary": {
+        "total": 3,
+        "high": 0,
+        "medium": 3,
+        "low": 0,
+        "byKind": {
+          "containment": 3
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 13,
+      "title": "כותרת 2 מספר 8 - בחלקי ואופני מעשה הוצאה (שבת צז:)",
+      "pageCount": 19,
+      "summary": {
+        "total": 2,
+        "high": 0,
+        "medium": 1,
+        "low": 1,
+        "byKind": {
+          "containment": 1,
+          "containment-rounding": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 14,
+      "title": "כותרת 2 מספר 9 - בגדר מתעסק (כריתות יט:)",
+      "pageCount": 9,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 15,
+      "title": "כותרת 2 מספר 10 - דבר שאין מתכווין",
+      "pageCount": 6,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 16,
+      "title": "כותרת 2 מספר 11 - שנים שעשאוה",
+      "pageCount": 13,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 17,
+      "title": "כותרת 2 מספר 12 - היתה לו אבן מונחת (ב\"ק כו:)",
+      "pageCount": 6,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 0,
+        "low": 1,
+        "byKind": {
+          "imbalance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 18,
+      "title": "כותרת 2 מספר 13 - סיכום",
+      "pageCount": 5,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 19,
+      "title": "כותרת 2 מספר 1 - בגדר פתח דבעינן לתיקוני מבוי",
+      "pageCount": 11,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 20,
+      "title": "כותרת 2 מספר 2 - בגדר פסול דלמעלה מעשרים אמה בנר חנוכה",
+      "pageCount": 6,
+      "summary": {
+        "total": 2,
+        "high": 0,
+        "medium": 2,
+        "low": 0,
+        "byKind": {
+          "containment": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 21,
+      "title": "כותרת 2 מספר 3 - מקצת קורה בתוך עשרים ומקצת קורה למעלה מעשרים",
+      "pageCount": 8,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 0,
+        "low": 1,
+        "byKind": {
+          "imbalance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 22,
+      "title": "כותרת 2 מספר 4 - סוגיא דרוחב מיעוט (ד:)",
+      "pageCount": 13,
+      "summary": {
+        "total": 2,
+        "high": 0,
+        "medium": 2,
+        "low": 0,
+        "byKind": {
+          "containment": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 23,
+      "title": "כותרת 2 מספר 5 - משך חקק (ה.)",
+      "pageCount": 10,
+      "summary": {
+        "total": 3,
+        "high": 0,
+        "medium": 3,
+        "low": 0,
+        "byKind": {
+          "containment": 2,
+          "imbalance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 24,
+      "title": "כותרת 2 מספר 6 - מבוי שנפרץ (ו.)",
+      "pageCount": 6,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 25,
+      "title": "כותרת 2 מספר 7 - מבוי עקום (ו.)",
+      "pageCount": 6,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "imbalance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 26,
+      "title": "כותרת 2 מספר 8 - מבוי שצידו א' ארוך (ח:)",
+      "pageCount": 6,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 27,
+      "title": "כותרת 2 מספר 9 - בין לחיים (ח:)",
+      "pageCount": 5,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 28,
+      "title": "כותרת 2 מספר 10 - בגדרי רשויות",
+      "pageCount": 36,
+      "summary": {
+        "total": 5,
+        "high": 0,
+        "medium": 3,
+        "low": 2,
+        "byKind": {
+          "containment": 4,
+          "imbalance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 29,
+      "title": "כותרת 2 מספר 11 - שם מקום",
+      "pageCount": 7,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 30,
+      "title": "כותרת 2 מספר 12 - בגדרי פרצה ומחיצה וסתימה ופתח",
+      "pageCount": 26,
+      "summary": {
+        "total": 4,
+        "high": 0,
+        "medium": 3,
+        "low": 1,
+        "byKind": {
+          "containment": 3,
+          "sparse-line": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 31,
+      "title": "כותרת 2 מספר 13 - חוד קורה ופי תקרה (ירו' עי' פ\"א ה\"א)",
+      "pageCount": 6,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 32,
+      "title": "כותרת 2 מספר 14 - בגדרי פירצה במחיצה ובמקום",
+      "pageCount": 8,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 33,
+      "title": "כותרת 2 מספר 15 - בגדרי שיעורי הוצאה",
+      "pageCount": 7,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 34,
+      "title": "כותרת 2 מספר 16 - בגדר שיעור ד' אמות (מח.)",
+      "pageCount": 7,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 35,
+      "title": "כותרת 2 מספר 17 - גג הסמוך לרשות הרבים (פד:)",
+      "pageCount": 9,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 36,
+      "title": "כותרת 2 מספר 29 - בגדר חלקי ותנאי קניית עירוב",
+      "pageCount": 12,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 37,
+      "title": "כותרת 2 מספר 30 - ספק עירוב",
+      "pageCount": 8,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 38,
+      "title": "כותרת 2 מספר 31 - אלפיים אמה",
+      "pageCount": 9,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 39,
+      "title": "כותרת 2 מספר 32 - שבו איש תחתיו אל יצא איש ממקומו",
+      "pageCount": 15,
+      "summary": {
+        "total": 3,
+        "high": 0,
+        "medium": 2,
+        "low": 1,
+        "byKind": {
+          "containment": 2,
+          "sparse-line": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 40,
+      "title": "כותרת 2 מספר 33 - תחילת היום קונה עירוב",
+      "pageCount": 4,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 41,
+      "title": "כותרת 2 מספר 34 - יוצא חוץ לתחום",
+      "pageCount": 29,
+      "summary": {
+        "total": 5,
+        "high": 0,
+        "medium": 4,
+        "low": 1,
+        "byKind": {
+          "sparse-line": 1,
+          "containment": 4
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 42,
+      "title": "כותרת 2 מספר 35 - תחומין דאורייתא או דרבנן",
+      "pageCount": 8,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 43,
+      "title": "כותרת 2 מספר 36 - לאו שבאל",
+      "pageCount": 5,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 44,
+      "title": "כותרת 2 מספר 37 - * שיטת רבי עקיבא בתחומין דאורייתא",
+      "pageCount": 4,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 45,
+      "title": "כותרת 2 מספר 38 - אלפיים אמה עגולות ומרובעות",
+      "pageCount": 5,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 46,
+      "title": "כותרת 2 מספר 39 - יצא ברשות",
+      "pageCount": 5,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 0,
+        "low": 1,
+        "byKind": {
+          "imbalance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 47,
+      "title": "כותרת 2 מספר 40 - שביתה בישן",
+      "pageCount": 4,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 48,
+      "title": "כותרת 2 מספר 41 - תקנה לי שביתה בקרפף",
+      "pageCount": 4,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 49,
+      "title": "כותרת 2 מספר 42 - עיר",
+      "pageCount": 6,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 50,
+      "title": "כותרת 2 מספר 43 - עירוב תחומין",
+      "pageCount": 5,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 51,
+      "title": "כותרת 2 מספר 44 - שם עירוב תחומין",
+      "pageCount": 5,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 52,
+      "title": "כותרת 2 מספר 45 - איסור חצרות",
+      "pageCount": 8,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 53,
+      "title": "כותרת 2 מספר 46 - תקנת עירוב",
+      "pageCount": 5,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 54,
+      "title": "כותרת 2 מספר 47 - תורת עירוב",
+      "pageCount": 5,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 55,
+      "title": "כותרת 2 מספר 48 - ביטול רשות",
+      "pageCount": 24,
+      "summary": {
+        "total": 10,
+        "high": 0,
+        "medium": 8,
+        "low": 2,
+        "byKind": {
+          "containment": 8,
+          "sparse-line": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 56,
+      "title": "כותרת 2 מספר 49 - שבת הואיל והותרה הותרה",
+      "pageCount": 21,
+      "summary": {
+        "total": 4,
+        "high": 0,
+        "medium": 3,
+        "low": 1,
+        "byKind": {
+          "containment": 3,
+          "imbalance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 57,
+      "title": "כותרת 2 מספר 50 - עיר של רבים",
+      "pageCount": 13,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 58,
+      "title": "כותרת 2 מספר 51 - כל שהותר למקצת שבת",
+      "pageCount": 4,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 59,
+      "title": "כותרת 2 מספר 52 - * גדר עיקר וטפל בשימושי חצר באורחים",
+      "pageCount": 4,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 60,
+      "title": "כותרת 2 מספר 53 - שכירות",
+      "pageCount": 7,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 61,
+      "title": "כותרת 2 מספר 54 - יש גזל בשבת",
+      "pageCount": 9,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 62,
+      "title": "כותרת 2 מספר 55 - בענין הניח ביתו והלך לשבות במקום אחר",
+      "pageCount": 11,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 63,
+      "title": "כותרת 2 מספר 1 - הערות בסוגיית הגרמה",
+      "pageCount": 21,
+      "summary": {
+        "total": 5,
+        "high": 0,
+        "medium": 3,
+        "low": 2,
+        "byKind": {
+          "containment-rounding": 2,
+          "imbalance": 2,
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 64,
+      "title": "כותרת 2 מספר 2 - גר שנתגייר כקטן שנולד",
+      "pageCount": 9,
+      "summary": {
+        "total": 3,
+        "high": 0,
+        "medium": 2,
+        "low": 1,
+        "byKind": {
+          "sparse-line": 1,
+          "containment": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 65,
+      "title": "כותרת 2 מספר 3 - א. בקראי דמצוות תפילין ודיקדוק לשונם וגדריהם",
+      "pageCount": 9,
+      "summary": {
+        "total": 3,
+        "high": 0,
+        "medium": 1,
+        "low": 2,
+        "byKind": {
+          "containment": 1,
+          "imbalance": 2
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 66,
+      "title": "כותרת 2 מספר 4 - ב. בגדר שם תפילין ובגדר כתב דפרשיות והנכתב בהם",
+      "pageCount": 7,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 67,
+      "title": "כותרת 2 מספר 5 - ג. בדיני עשייתו וגדרים הנוגעים לזה",
+      "pageCount": 12,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "imbalance": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 68,
+      "title": "כותרת 2 מספר 6 - ד. ביאור דעת רש\"י במח' ת\"ק ורשב\"ג",
+      "pageCount": 13,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 69,
+      "title": "כותרת 2 מספר 7 - ד. ביאור דעת הרמב\"ם בהנ\"ל",
+      "pageCount": 8,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 70,
+      "title": "כותרת 2 מספר 8 - ה. בגדרי מחשבת עשייה",
+      "pageCount": 8,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 71,
+      "title": "כותרת 2 מספר 9 - ו. בגדרי מחשבת עשייה בחפצי קדושה",
+      "pageCount": 11,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 72,
+      "title": "כותרת 2 מספר 10 - בעניין מי ששכח לשאול גשמים בשבת",
+      "pageCount": 14,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 1,
+        "low": 0,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 73,
+      "title": "כותרת 2 מספר 11 - בענין הזכרת שבת ור\"ח בברהמ\"ז של סע\"ש בשבת שחל להיות בער\"ח.",
+      "pageCount": 11,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 0,
+        "low": 1,
+        "byKind": {
+          "page-underfill": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 74,
+      "title": "כותרת 2 מספר 12 - בשורש גדרי חפץ קנין ובעלות",
+      "pageCount": 8,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 75,
+      "title": "כותרת 2 מספר 13 - בירור גדרי מצוות השבת אבידה",
+      "pageCount": 12,
+      "summary": {
+        "total": 2,
+        "high": 0,
+        "medium": 0,
+        "low": 2,
+        "byKind": {
+          "sparse-line": 1,
+          "containment-rounding": 1
+        }
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 76,
+      "title": "כותרת 2 מספר 14 - בגדר המחייב בדבר שבין אדם לחבירו",
+      "pageCount": 7,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 77,
+      "title": "כותרת 2 מספר 15 - בירור בגדרי אונאה",
+      "pageCount": 8,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 78,
+      "title": "כותרת 2 מספר 16 - בגדר מקח שיש בו אונאה",
+      "pageCount": 5,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    },
+    {
+      "chapterNum": 79,
+      "title": "כותרת 2 מספר 17 - ביאור חלקי דיני אונאה",
+      "pageCount": 10,
+      "summary": {
+        "total": 0,
+        "high": 0,
+        "medium": 0,
+        "low": 0,
+        "byKind": {}
+      },
+      "error": null
+    }
+  ]
+}

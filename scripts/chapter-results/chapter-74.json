@@ -5,8 +5,8 @@
   "lineCount": 49,
   "startLine": 5370,
   "endLine": 5418,
-  "label": "fix6-all",
-  "timestamp": "2026-10-26T13:49:52.872Z",
+  "label": "nondet-run3",
+  "timestamp": "2026-10-26T16:29:13.904Z",
   "pageCount": 8,
   "geomSummary": {
     "total": 0,
@@ -18,7 +18,7 @@
   "geomIssues": [],
   "geomStats": {
     "pageCount": 8,
-    "extractMs": 23.2
+    "extractMs": 22.3
   },
   "highSeverityIssues": [],
   "error": null

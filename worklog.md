@@ -4586,3 +4586,30 @@ Files Modified:
 Files Created:
 - /home/z/my-project/scripts/debug-ch9.js
 - /home/z/my-project/Tora_Book_Typesetter_Gold/scripts/chapter-results/fix{1,2,3,4,5,6}-all-summary.json
+
+---
+Task ID: 4-investigate-non-determinism
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: חקר non-determinism בפרק 67 (בעיה אמיתית של ה-engine שדורשת מחקר על font-loading ו-rAF).
+
+Work Log:
+- כתבתי debug-ch67-nondeterminism.js שמריץ את פרק 67 עם המתנה שונה (2500-4500ms) ובודק fonts.status.
+- הרצתי 5 ריצות של פרק 67 ב-browser חדש בכל פעם — כולן זהות (12 עמודים, 0 high, 1 medium).
+- הרצתי 3 ריצות של כל 79 הפרקים — כולן זהות (0 high, 70 medium, 25 low).
+- הרצתי 8 ריצות רצופות של פרק 67 באותו browser (ללא רינדור, ללא GC) — כולן זהות (12 עמודים, 0 high).
+- חקרתי את typesetter.js — ה-caches ש-SESSION_HANDOFF מזכיר (_linesCache, _wordWidthCache, _kpCache) לא קיימים ב-engine הנוכחי! ייתכן שהוסרו בהעלאה האחרונה (9e382fa "Add files via upload").
+- typesetDocumentCore כן מאפס state חשוב: container.innerHTML='', noteCounters, __fnAreaHeightCache.clear(), noteUidCounter, footnoteQueueForPage, endnoteQueueForPart.
+- בדקתי fonts.status — תמיד 'loaded' לפני ואחרי ה-typeset.
+
+Stage Summary:
+- **ה-non-determinism לא משתחזר** — 8 ריצות רצופות באותו browser + 3 ריצות מלאות של 79 פרקים, כולן זהות.
+- ה-bug שראיתי קודם (2 high בפרק 67, 13 עמודים) היה ארעי ולא קורה עכשיו.
+- SESSION_HANDOFF מזכיר בעיה דומה (קריסות בפרקים 5, 71, 75) שקשורה לזיכרון/טימינג — ייתכן שזו אותה בעיה.
+- המלצה: להוסיף page.gc() בין פרקים כפי ש-SESSION_HANDOFF מציע (סעיף 9.2.1), כדי למנוע הצטברות זיכרון ולהבטיח יציבות.
+- גם: לחקור מדוע ה-caches הוסרו בהעלאה האחרונה — אולי זו היתה רגרסיה לא מכוונת.
+
+Files Created:
+- /home/z/my-project/scripts/debug-ch67-nondeterminism.js
+- /home/z/my-project/scripts/stress-test-ch67.js
+- /home/z/my-project/Tora_Book_Typesetter_Gold/scripts/chapter-results/nondet-run{1,2,3}-summary.json
