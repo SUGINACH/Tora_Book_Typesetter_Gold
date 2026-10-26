@@ -105,3 +105,29 @@ jobs:
           name: chapter-results-${{ matrix.mode.name }}
           path: scripts/chapter-results/
           retention-days: 30
+
+  determinism:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    name: Determinism Test (ch9 × 3)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Start HTTP server
+        run: |
+          python3 -m http.server 8765 --bind 0.0.0.0 &
+          sleep 3
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:8765/index.html
+
+      - name: Run determinism test (chapter 9, 3 runs)
+        run: |
+          cd scripts
+          node determinism-test.js 9 3

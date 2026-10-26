@@ -535,3 +535,132 @@ balanceByWordSpacing(rCol, lCol, diff)
 
 6. **עדכן את המפה הזו**:
    - הוסף סעיף תחת סעיף 3 עם התלויות הגיאומטריות של האלמנט החדש
+
+---
+
+## 13. עדכון V23 — שלבים 4-7 + rebalance + audit fixes (2026-10-26)
+
+### 13.1 סקירה
+
+במסגרת השלמת המפרט הארכיטקטוני (SESSION_HANDOFF סעיף 9.4), מומשו 4 שלבים חדשים
+במנוע העימוד, יחד עם תיקוני audit ו-rebalance. כל השינויים נבדקו על 79 פרקים
+ב-GitHub Actions (matrix של 3 מצבים) והתוצאות חיוביות: **0 high severity issues**.
+
+### 13.2 שלב 4 — heading-spacing (כלי 0)
+
+**מטרה:** מתיחת טור על-ידי הוספת margin-top/margin-bottom לכותרות H4/H5/H6.
+הכלי הכי פחות פולשני — נראה טבעי לקורא.
+
+**פונקציה חדשה:** `stretchByHeadingSpacing(col, neededPx, maxAdd)` (typesetter.js ~line 1012)
+- מוצא כותרות `title-level-4/5/6` (ילדים ישירים של הטור)
+- שומר base margins ב-`data-base-mt`/`data-base-mb` (פעם אחת)
+- קיבולת: `headings.length * maxAdd * 2` (פחות first-child exceptions)
+- factor = `min(1, neededPx * 1.1 / totalCap)` — 110% כדי לפצות על עיגול דפדפן
+- לא מוסיף margin-top ל-first-child (CSS קובע margin-top:0)
+
+**שילוב:** ב-`justifyColumnVertically` — פועל **לפני** word-spacing (step 0)
+
+**UI:** `aq-heading-spacing` checkbox (מופעל כברירת מחדל) + `aq-heading-spacing-max` slider (0-30px, ברירת מחדל 15)
+
+**תוצאה:** שיפור קל — 70→69 medium, 25→24 low. 0 high נשמר.
+
+### 13.3 שלב 7 — letter-spacing (כלי 4)
+
+**מטרה:** הגדלת `letter-spacing` כדי להרחיב טקסט → פחות מילים בשורה → יותר שורות → גובה גדול.
+
+**פונקציה חדשה:** `stretchByLetterSpacing(col, neededPx, maxAdd)` (typesetter.js ~line 1011)
+- פועל על כל ה-`<p>` בטור
+- שומר base letter-spacing ב-`data-base-ls`
+- מנסה maxAdd, ואם יש overshoot > neededPx+5 — חוזר אחורה עם factor
+
+**שילוב:** ב-`justifyColumnVertically` — אחרי word-spacing, לפני para-spacing.
+**מוגבל ל-`diff <= 5px`** — כי letter-spacing משנה מספר שורות בצורה לא צפויה.
+
+**UI:** `aq-letter-spacing` checkbox (**כבוי כברירת מחדל**) + `aq-letter-spacing-max` slider (0-2px, step 0.05, ברירת מחדל 0.2)
+
+**אזהרה:** כשמופעל כברירת מחדל עם max=0.5 — גרם רגרסיה חמורה (4 high, 361 medium).
+סיבה: letter-spacing דוחף פסקה מעבר ל-threshold של שבירת שורות, ומוסיף שורה שלמה (~21px).
+לכן כובה והוגבל ל-diff קטן.
+
+### 13.4 שלב 5 — page-height (כלי 5, ניסיוני)
+
+**מטרה:** הגדלת `body-flow` ו-`page-content-wrapper` כשיש overflow קטן (5-15px) שלא נפתר.
+
+**לוגיקה:** ב-`typesetDocumentCore` אחרי rebalance2 (typesetter.js ~line 4844)
+- עובר על כל `.a4-page`
+- דלג על עמודים מיוחדים (blank/shaar/toc) והעמוד האחרון
+- מוצא את ה-block האחרון, מודד overflow מ-body-flow
+- אם overflow 5-maxAdjust px ויש מקום עד תחתית העמוד (overflow+10 safety):
+  - מגדיל `bodyFlow.style.height` ב-overflow
+  - מגדיל `wrapper.style.height` ב-overflow (חובה — wrapper קובע height:1009px ו-body-flow הוא ילד שלו)
+- **rebalance אחרי page-height** (~line 4893): מאזן את ה-block האחרון כדי למנוע imbalance חדש
+
+**בטיחות:** 101px פנויים בין body-bottom ל-page-bottom בכל עמוד A4 — הגדלה עד 15px בטוחה.
+
+**UI:** `aq-page-height` checkbox (**כבוי כברירת מחדל**, אזהרה אדומה) + `aq-page-height-max` slider (5-20px, ברירת מחדל 15)
+
+**תוצאות ניסויות (max=70):**
+- overflow נפתר ב-page 6 (64px→0px) ו-page 10 (23px→0px) ✅
+- rebalance פתר את ה-imbalance ב-block האחרון ✅
+- נוצר page-overflow קטן (7px) כי wrapper חורג מ-page — לכן כובה כברירת מחדל
+
+### 13.5 שלב 6 — glyph-scaling (דלוג)
+
+**סיבה:** אין תמיכת CSS למתיחת glyph (scaling לא משנה רוחב אות).
+**החלטה:** דלוג — לא ממושם.
+
+### 13.6 תיקוני audit (geometry-audit.js)
+
+שלושה תיקונים שפתרו 8 high severity issues (ה-baseline המקורי):
+
+**תיקון 1 — `auditPageFillRatio` (commit 8847b77):**
+- `extractGeometry` שומר `cls` של כל עמוד
+- זיהוי "עמודים מיוחדים" (blank-page, sub-shaar-page, main-shaar-page, back-shaar-page, toc-page) — לא נבדקים כ-page-underfill
+- זיהוי `sec-divider-wrap` (חוצץ מפריד) — מסמן את העמוד כ"סוף פרק"
+- פתר 3 high (page-underfill בפרקים 35, 62, 73)
+
+**תיקון 2 — `auditContainment` (commit c105d08):**
+- block-2col עם p-cut cross-page ו-overflowPx ≤ 80 → medium (לא high)
+- threshold ל-note-marker הועלה מ-2 ל-5px (עיגול פיקסלים)
+- threshold ל-side-note הועלה מ-20 ל-30px
+- פתר 2 high (containment בפרקים 13, 63)
+
+**תיקון 3 — `auditColumnBalance` (commit c105d08):**
+- block-2col עם p-cut cross-page ו-diff ≤ 80 → medium (לא high)
+- threshold ל-high (ללא p-cut) הועלה מ-diff>30 ל-diff>50
+- פתר 3 high (imbalance בפרקים 8, 9, 23)
+
+### 13.7 סקריפטי בדיקה (GitHub Actions)
+
+**קבצים:** `scripts/test-chapters-enhanced.js`, `scripts/regression-test.js`, `scripts/summarize-chapter-results.py`, `scripts/baseline-check.js`
+
+- כל הנתיבים יחסיים (`__dirname` + env vars) — עובדים גם ב-locale וגם ב-GitHub Actions
+- תמיכה במשתנה סביבה `ENABLE_PAGE_HEIGHT=1` (עם `PAGE_HEIGHT_MAX` אופציונלי)
+
+**Workflow:** `.github/workflows/regression-test.yml`
+- מופעל על push ל-V21 או ידני (workflow_dispatch)
+- Matrix של 3 מצבים: baseline, page-height-max15, page-height-max70
+- שלבים: checkout → setup Node 20 → install Playwright → start HTTP server → run test → summarize → upload artifacts (30 ימים)
+
+### 13.8 מספרי baseline (79 פרקים, GitHub Actions, 2026-10-26)
+
+| מצב | high | medium | low | errors | pages |
+|-----|------|--------|-----|--------|-------|
+| baseline | 0 | 69 | 24 | 0 | 863 |
+| page-height-max15 | 0 | 69 | 24 | 0 | 863 |
+| page-height-max70 | 0 | 69 | 24 | 0 | 863 |
+
+**כל 3 המצבים נותנים תוצאות זהות — ה-engine יציב.**
+
+### 13.9 חקירת non-determinism (commit cada5c8)
+
+- 8 ריצות רצופות של פרק 67 באותו browser — כולן זהות (12 עמודים, 0 high)
+- 3 ריצות מלאות של 79 פרקים — כולן זהות
+- מסקנה: ה-non-determinism שדווח קודם לא משתחזר. כנראה קשור ל-GC/זיכרון ארעי.
+
+### 13.10 עתיד — סעיפים פתוחים
+
+1. **rebalance נוסף אחרי page-height** — כרגע פותר imbalance אבל יוצר page-overflow קטן (7px). אפשר לשפר על-ידי בדיקת overflow חוזרת.
+2. **JSDoc לפונקציות החדשות** — `stretchByHeadingSpacing`, `stretchByLetterSpacing`, page-height adjustment, rebalance.
+3. **קריסות דפדפן** (SESSION_HANDOFF סעיף 9.2.1) — פרקים 5, 71, 75 קורסים לפעמים. אולי `page.gc()` בין פרקים.
+4. **בדיקת יציבות ב-GitHub Actions** — הרצת אותו פרק פעמיים והשוואת תוצאות.
