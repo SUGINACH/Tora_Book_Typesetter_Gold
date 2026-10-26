@@ -3,3 +3,23 @@
 __pycache__/
 *.pyc
 *.pyo
+
+# Test results (generated, not source code)
+scripts/chapter-results/chapter-*.json
+scripts/chapter-results/*-summary.json
+scripts/chapter-results/_master-summary.json
+
+# Legacy files (deleted, prevent re-adding)
+debug/
+test/
+old_ver/
+Parallel_Programming/
+typesetter.js.bak-*
+rendered-document_*.html
+rendered-document_*.pdf
+v18-kp-full-fix-report.md
+long_test_text*.txt
+long_test_sample*.txt
+mid_long_test_text.txt
+problem_chapters.txt
+no_problem_chapters.txt
