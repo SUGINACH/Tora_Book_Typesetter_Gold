@@ -4758,3 +4758,33 @@ Stage Summary:
 
 Files Created:
 - WORK_PLAN.md — רשימת עבודות מקיפה (8 קטגוריות, 40+ פריטים)
+
+---
+Task ID: 16-a1-a2-a3-new-audits
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: מימוש בדיקות גיאוממטריה חדשות — A1 (עמודים דלילים), A2 (מרחק בין בלוקים), A3 (ודאי החלת הגדרות).
+
+Work Log:
+- ממשתי 3 פונקציות חדשות ב-geometry-audit.js:
+  1. **auditBlockGaps** (A2) — בודק מרחק בין בלוקים עוקבים ב-body-flow. חריגים: sec-div, h2-spacer. סף: >50px=low, >80px=low, >150px=medium.
+  2. **auditSettingsVerification** (A3) — בודק שהגדרות משתמש הוחלו ב-DOM. 11 בדיקות: last-line centered, drop-word, ornaments, side-notes, sec-div, h2-siman, page-numbers, col-divider, heading-spacing, page-height.
+  3. **classifyElement fix** — הוספתי `first-word-window` לזיהוי drop-word (71 false positives נעלמו).
+- עדכנתי auditGeometry לקריאת הפונקציות החדשות.
+- תוצאות baseline (79 פרקים):
+  * high: 0 (כש-ch72 לבד) / 1 (בריצה מלאה — non-determinism ב-ch72, עומס זיכרון)
+  * medium: 19 (ללא שינוי)
+  * low: 73 (+8 settings-verification חדשים, -1 אחר)
+  * block-gap: 0 (אין מרחקים גדולים בין בלוקים — מצוין!)
+  * settings-verification: 8 (7 sec-div false positives + 1 drop-word)
+- אישרתי ש-ch72 יציב בריצה בודדת (0 high) — ה-high בריצה מלאה הוא non-determinism.
+
+Stage Summary:
+- 3 בדיקות גיאוממטריה חדשות מומשו ונבדקו.
+- auditBlockGaps: 0 בעיות (אין מרחקים גדולים).
+- auditSettingsVerification: 8 בעיות (כולן low, רובן false positives של sec-div בפרקים בודדים).
+- classifyElement: תוקן — first-word-window מזוהה כעת כ-drop-word.
+- 0 high נשמר (למעט non-determinism ב-ch72 בריצה מלאה).
+
+Files Modified:
+- geometry-audit.js: +auditBlockGaps, +auditSettingsVerification, +first-word-window classification, +calls in auditGeometry

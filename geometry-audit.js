@@ -90,7 +90,7 @@ function classifyElement(el) {
     if (tag === 'p') return { type: 'p', tag };
     if (cls.includes('side-note-anchor')) return { type: 'side-note', tag };
     if (cls.includes('section-divider')) return { type: 'sec-div', tag };
-    if (cls.includes('drop-word')) return { type: 'drop-word', tag };
+    if (cls.includes('drop-word') || cls.includes('first-word-window')) return { type: 'drop-word', tag };
     if (cls.includes('note-marker')) return { type: 'note-marker', tag };
     return { type: 'other', tag, cls: cls.slice(0, 60) };
 }
@@ -1001,6 +1001,312 @@ function auditPageFillRatio(model, issues) {
     });
 }
 
+/* [חדש — A2] בדיקת מרחק גדול בין בלוקים (block-gap) — ההפך מ-containment.
+   בודק מרחק בין בלוקים עוקבים ב-body-flow. מרחק גדול מצביע על:
+   - page-underfill חלקי (ה-engine לא מילא את העמוד)
+   - רווח מופרז בין בלוקים (לא נראה טבעי)
+   - עמוד דליל עם הערות שוליים (ה-fnArea תופס מקום אבל הטקסט דליל)
+   חריגים: sec-divider (מפריד מכוון), h2-spacer (רווח כותרת). */
+function auditBlockGaps(model, issues) {
+    if (!model.pages) return;
+    const BLOCK_TYPES = new Set(['block-2col', 'block-single-col', 'block-h3-span']);
+    const SKIP_TYPES = new Set(['sec-div', 'h2-spacer', 'fn-header', 'fn-rule']);
+
+    model.pages.forEach((page, idx) => {
+        // דלג על עמודים מיוחדים
+        if (page.cls && typeof page.cls === 'string' &&
+            (page.cls.includes('blank-page') || page.cls.includes('sub-shaar-page') ||
+             page.cls.includes('main-shaar-page') || page.cls.includes('back-shaar-page') ||
+             page.cls.includes('toc-page'))) return;
+
+        const wrapper = findChild(page, 'wrapper');
+        if (!wrapper) return;
+        const bodyFlow = findChild(wrapper, 'body-flow');
+        if (!bodyFlow) return;
+
+        // אסוף בלוקים ישירים של body-flow
+        const blocks = [];
+        for (const child of bodyFlow.children) {
+            if (BLOCK_TYPES.has(child.type) || SKIP_TYPES.has(child.type)) {
+                blocks.push(child);
+            }
+        }
+        if (blocks.length < 2) return;
+
+        // בדוק מרחק בין כל זוג בלוקים עוקבים
+        for (let i = 1; i < blocks.length; i++) {
+            const prev = blocks[i - 1];
+            const curr = blocks[i];
+
+            // דלג אם אחד מהם הוא sec-div או h2-spacer (מרווח מכוון)
+            if (SKIP_TYPES.has(prev.type) || SKIP_TYPES.has(curr.type)) continue;
+
+            const gap = Math.round(curr.rect.y - prev.rect.bottom);
+            if (gap > 50) {
+                let severity = 'low';
+                let note = '';
+                if (gap > 150) {
+                    severity = 'medium';
+                    note = ' (מרחק גדול מאוד בין בלוקים)';
+                } else if (gap > 80) {
+                    severity = 'low';
+                    note = ' (מרחק גדול בין בלוקים)';
+                }
+                issues.push({
+                    kind: 'block-gap',
+                    severity: severity,
+                    pageIdx: page.idx,
+                    location: `page ${page.label}`,
+                    gapPx: gap,
+                    prevType: prev.type,
+                    currType: curr.type,
+                    note: note.trim(),
+                    message: `מרחק ${gap}px בין ${prev.type} ל-${curr.type}${note}`
+                });
+            }
+        }
+    });
+}
+
+/* [חדש — A3] וידוא החלת הגדרות (settings-verification) — בדיקה גיאוממטרית
+   שהגדרות המשתמש הוחלו בפועל ב-DOM המרונדר.
+   מטרה: לייתר וידוא חזותי — אם הגדרה לא הוחלה, הבדיקה תזהה זאת.
+   בודק: last-line centered, drop-word, ornaments, side-notes, sec-div,
+   note-markers, h2-siman, page-numbers, fn-area, margin-col, col-gutter. */
+function auditSettingsVerification(model, issues) {
+    if (!model.pages || model.pages.length === 0) return;
+
+    // קרא הגדרות מה-DOM (ה-iframe מכיל hidden inputs עם ההגדרות)
+    const getSetting = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return null;
+        if (el.type === 'checkbox') return el.checked;
+        return el.value;
+    };
+
+    const bodyLastLineAlign = getSetting('body-last-line-align');
+    const dropWordMode = getSetting('drop-word-mode');
+    const h2OrnTopStyle = getSetting('h2-ornament-top-style');
+    const h2OrnBtmStyle = getSetting('h2-ornament-bottom-style');
+    const showSideNotes = getSetting('show-side-notes') !== false; // default true
+    const secDivStyle = getSetting('section-divider-style');
+    const autoSimanH2 = getSetting('h2-auto-siman');
+    const colDividerStyle = getSetting('col-divider-style');
+    const fontBody = getSetting('font-body');
+    const lineHeightBody = getSetting('line-height-body');
+    const aqHeadingSpacing = getSetting('aq-heading-spacing');
+    const aqLetterSpacing = getSetting('aq-letter-spacing');
+    const aqPageHeight = getSetting('aq-page-height');
+
+    // אסוף סטטיסטיקות מהמודל
+    let pEndCount = 0, pCutCount = 0;
+    let dropWordCount = 0;
+    let h2OrnTopCount = 0, h2OrnBtmCount = 0;
+    let sideNoteCount = 0;
+    let secDivCount = 0;
+    let h2SimanCount = 0;
+    let pageNumberCount = 0;
+    let fnAreaCount = 0;
+    let marginColCount = 0;
+    let gutterCount = 0;
+
+    function collectStats(node) {
+        switch (node.type) {
+            case 'p-end': pEndCount++; break;
+            case 'p-cut': pCutCount++; break;
+            case 'drop-word': dropWordCount++; break;
+            case 'h2-orn-top': h2OrnTopCount++; break;
+            case 'h2-orn-btm': h2OrnBtmCount++; break;
+            case 'side-note': sideNoteCount++; break;
+            case 'sec-div': secDivCount++; break;
+            case 'h2-siman': h2SimanCount++; break;
+            case 'page-number': pageNumberCount++; break;
+            case 'footnote-area': fnAreaCount++; break;
+            case 'margin-col': marginColCount++; break;
+            case 'gutter': gutterCount++; break;
+        }
+        for (const c of (node.children || [])) collectStats(c);
+    }
+    for (const page of model.pages) {
+        for (const c of page.children) collectStats(c);
+    }
+
+    const totalPages = model.pages.length;
+
+    // בדיקה 1: שורה אחרונה ממורכזת
+    // אם ההגדרה היא 'center', בדוק שיש p-end (שורות אחרונות ממורכזות)
+    if (bodyLastLineAlign === 'center' || bodyLastLineAlign === 'centered' || bodyLastLineAlign === true) {
+        if (pEndCount === 0 && pCutCount > 0) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'medium',
+                pageIdx: -1,
+                location: 'global',
+                setting: 'body-last-line-align',
+                expected: 'center',
+                actual: 'no p-end found',
+                note: ' (הגדרת שורה אחרונה ממורכזת פעילה אך לא נמצאו פסקאות p-end)',
+                message: 'הגדרת שורה אחרונה ממורכזת פעילה אך לא נמצאו פסקאות p-end — ייתכן שלא הוחלה'
+            });
+        }
+    }
+
+    // בדיקה 2: drop-word (חלון תיבה ראשונה)
+    if (dropWordMode && dropWordMode !== 'none' && dropWordMode !== '' && dropWordMode !== 'off') {
+        if (dropWordCount === 0 && (pEndCount + pCutCount) > 5) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'medium',
+                pageIdx: -1,
+                location: 'global',
+                setting: 'drop-word-mode',
+                expected: dropWordMode,
+                actual: 'no drop-word found',
+                note: ' (חלון תיבה ראשונה פעיל אך לא נמצא drop-word ב-DOM)',
+                message: `חלון תיבה ראשונה (mode=${dropWordMode}) פעיל אך לא נמצא drop-word — ייתכן שלא הוחל`
+            });
+        }
+    }
+
+    // בדיקה 3: עיטורי כותרת עליונים
+    if (h2OrnTopStyle && h2OrnTopStyle !== 'none' && h2OrnTopStyle !== '') {
+        if (h2OrnTopCount === 0) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'low',
+                pageIdx: -1,
+                location: 'global',
+                setting: 'h2-ornament-top-style',
+                expected: h2OrnTopStyle,
+                actual: 'no h2-ornament-top found',
+                note: ' (עיטור כותרת עליון פעיל אך לא נמצא ב-DOM)',
+                message: `עיטור כותרת עליון (style=${h2OrnTopStyle}) פעיל אך לא נמצא — ייתכן שלא הוחל`
+            });
+        }
+    }
+
+    // בדיקה 4: עיטורי כותרת תחתונים
+    if (h2OrnBtmStyle && h2OrnBtmStyle !== 'none' && h2OrnBtmStyle !== '') {
+        if (h2OrnBtmCount === 0) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'low',
+                pageIdx: -1,
+                location: 'global',
+                setting: 'h2-ornament-bottom-style',
+                expected: h2OrnBtmStyle,
+                actual: 'no h2-ornament-bottom found',
+                note: ' (עיטור כותרת תחתון פעיל אך לא נמצא ב-DOM)',
+                message: `עיטור כותרת תחתון (style=${h2OrnBtmStyle}) פעיל אך לא נמצא — ייתכן שלא הוחל`
+            });
+        }
+    }
+
+    // בדיקה 5: הערות צד (side-notes)
+    if (showSideNotes && marginColCount === 0) {
+        issues.push({
+            kind: 'settings-verification',
+            severity: 'low',
+            pageIdx: -1,
+            location: 'global',
+            setting: 'show-side-notes',
+            expected: 'true',
+            actual: 'no margin-col found',
+            note: ' (הערות צד פעילות אך לא נמצאו עמודות שוליים)',
+            message: 'הערות צד פעילות אך לא נמצאו margin-col — ייתכן שלא הוחל (או שאין H7 בטקסט)'
+        });
+    }
+
+    // בדיקה 6: מפריד סעיפים
+    // הערה: כשבודקים פרקים בודדים (לא מסמך מלא), ייתכן שאין sec-div
+    // כי הוא מופיע רק בסוף חלק/פרק שלם. לכן נדווח רק אם יש יותר מ-3 עמודים
+    // (מה שמצביע על מסמך מלא ולא פרק בודד).
+    if (secDivStyle && secDivStyle !== 'none' && secDivStyle !== '' && totalPages > 3) {
+        if (secDivCount === 0) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'low',
+                pageIdx: -1,
+                location: 'global',
+                setting: 'section-divider-style',
+                expected: secDivStyle,
+                actual: 'no sec-div found',
+                note: ' (מפריד סעיפים פעיל אך לא נמצא ב-DOM)',
+                message: `מפריד סעיפים (style=${secDivStyle}) פעיל אך לא נמצא — ייתכן שלא הוחל`
+            });
+        }
+    }
+
+    // בדיקה 7: סמן אוטומטי
+    if (autoSimanH2 === true || autoSimanH2 === 'true') {
+        if (h2SimanCount === 0) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'low',
+                pageIdx: -1,
+                location: 'global',
+                setting: 'h2-auto-siman',
+                expected: 'true',
+                actual: 'no h2-siman found',
+                note: ' (סמן אוטומטי פעיל אך לא נמצא h2-siman-badge)',
+                message: 'סמן אוטומטי פעיל אך לא נמצא h2-siman — ייתכן שלא הוחל'
+            });
+        }
+    }
+
+    // בדיקה 8: מספור עמודים
+    if (pageNumberCount === 0 && totalPages > 3) {
+        issues.push({
+            kind: 'settings-verification',
+            severity: 'medium',
+            pageIdx: -1,
+            location: 'global',
+            setting: 'page-num-position',
+            expected: 'page numbers on pages',
+            actual: 'no page-number found',
+            note: ' (לא נמצאו מספרי עמודים באף עמוד)',
+            message: 'לא נמצאו מספרי עמודים (page-number-footer) — ייתכן שמספור כבוי'
+        });
+    }
+
+    // בדיקה 9: קו מפריד טורים
+    if (colDividerStyle && colDividerStyle !== 'none' && colDividerStyle !== '') {
+        if (gutterCount === 0) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'low',
+                pageIdx: -1,
+                location: 'global',
+                setting: 'col-divider-style',
+                expected: colDividerStyle,
+                actual: 'no gutter found',
+                note: ' (קו מפריד טורים פעיל אך לא נמצא col-gutter-divider)',
+                message: `קו מפריד טורים (style=${colDividerStyle}) פעיל אך לא נמצא — ייתכן שלא הוחל`
+            });
+        }
+    }
+
+    // בדיקה 10: heading-spacing (שלב 4) — ודא שהופעל על כותרות
+    if (aqHeadingSpacing === true || aqHeadingSpacing === 'true') {
+        // בדוק שיש לפחות כותרת אחת עם margin-top/mb שאינו ברירת המחדל
+        let headingWithCustomMargin = 0;
+        function checkHeadingMargins(node) {
+            if (node.type === 'h4' || node.type === 'h5' || node.type === 'h6') {
+                // אם יש data-base-mt, סימן ש-heading-spacing פעל
+                // אבל אנחנו לא יכולים לבדוק data attributes מהמודל — נדלג
+            }
+            for (const c of (node.children || [])) checkHeadingMargins(c);
+        }
+        // דלוג — לא ניתן לבדוק מהמודל הגיאוממטרי
+    }
+
+    // בדיקה 11: aq-page-height — ודא שלא נוצר page-overflow חדש
+    if (aqPageHeight === true || aqPageHeight === 'true') {
+        // אם page-height מופעל, בדוק שאין page-overflow חדש
+        // זה כבר נבדק על-ידי auditPageOverflow — לא צריך בדיקה נוספת
+    }
+}
+
 /* הפעלת כל הבדיקות */
 function auditGeometry(model) {
     const issues = [];
@@ -1020,7 +1326,9 @@ function auditGeometry(model) {
         auditPageOverflow(page, issues);
         auditOrnaments(page, issues); // [חדש] בדיקת עיטורים
     }
-    auditPageFillRatio(model, issues); // [חדש] בדיקת הכלה דלילה של עמוד
+    auditPageFillRatio(model, issues); // בדיקת הכלה דלילה של עמוד (page-underfill)
+    auditBlockGaps(model, issues); // [חדש — A2] מרחק גדול בין בלוקים
+    auditSettingsVerification(model, issues); // [חדש — A3] וידוא החלת הגדרות
     // עדכן pageIdx בכל בעיה ע"י חיפוש בעץ
     issues.forEach(iss => {
         if (iss.pageIdx === -1 || iss.pageIdx === undefined) {
