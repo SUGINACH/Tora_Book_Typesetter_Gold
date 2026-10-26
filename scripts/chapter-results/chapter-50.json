@@ -1,0 +1,25 @@
+{
+  "chapterNum": 50,
+  "title": "כותרת 2 מספר 43 - עירוב תחומין",
+  "textLength": 4479,
+  "lineCount": 10,
+  "startLine": 4002,
+  "endLine": 4011,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:12.072Z",
+  "pageCount": 5,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 5,
+    "extractMs": 14.7
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

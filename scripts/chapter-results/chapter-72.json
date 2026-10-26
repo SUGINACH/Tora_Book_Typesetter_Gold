@@ -1,0 +1,75 @@
+{
+  "chapterNum": 72,
+  "title": "כותרת 2 מספר 10 - בעניין מי ששכח לשאול גשמים בשבת",
+  "textLength": 33583,
+  "lineCount": 60,
+  "startLine": 5233,
+  "endLine": 5292,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:59.210Z",
+  "pageCount": 14,
+  "geomSummary": {
+    "total": 1,
+    "high": 1,
+    "medium": 0,
+    "low": 0,
+    "byKind": {
+      "containment": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "high",
+      "pageIdx": 8,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 9167,
+        "w": 680,
+        "h": 714
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 38.09375
+      },
+      "overflowPx": 38.1,
+      "note": "(גלישה חמורה מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":38.09375} (גלישה חמורה מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 14,
+    "extractMs": 248
+  },
+  "highSeverityIssues": [
+    {
+      "kind": "containment",
+      "severity": "high",
+      "pageIdx": 8,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 9167,
+        "w": 680,
+        "h": 714
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 38.09375
+      },
+      "overflowPx": 38.1,
+      "note": "(גלישה חמורה מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":38.09375} (גלישה חמורה מ-stretchPageToBottom)"
+    }
+  ],
+  "error": null
+}

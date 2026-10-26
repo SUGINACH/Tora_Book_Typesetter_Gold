@@ -1,0 +1,25 @@
+{
+  "chapterNum": 69,
+  "title": "כותרת 2 מספר 7 - ד. ביאור דעת הרמב\"ם בהנ\"ל",
+  "textLength": 15364,
+  "lineCount": 38,
+  "startLine": 5098,
+  "endLine": 5135,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:51.612Z",
+  "pageCount": 8,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 8,
+    "extractMs": 29.9
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

@@ -1,0 +1,74 @@
+{
+  "chapterNum": 22,
+  "title": "כותרת 2 מספר 4 - סוגיא דרוחב מיעוט (ד:)",
+  "textLength": 30561,
+  "lineCount": 85,
+  "startLine": 2490,
+  "endLine": 2574,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:23.343Z",
+  "pageCount": 13,
+  "geomSummary": {
+    "total": 2,
+    "high": 0,
+    "medium": 0,
+    "low": 2,
+    "byKind": {
+      "containment": 2
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 3,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 3847,
+        "w": 680,
+        "h": 578
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.171875
+      },
+      "overflowPx": 6.2,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.171875} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 11,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 12564,
+        "w": 680,
+        "h": 921
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.234375
+      },
+      "overflowPx": 6.2,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.234375} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 13,
+    "extractMs": 42.4
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

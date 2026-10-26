@@ -1,0 +1,25 @@
+{
+  "chapterNum": 57,
+  "title": "כותרת 2 מספר 50 - עיר של רבים",
+  "textLength": 33514,
+  "lineCount": 70,
+  "startLine": 4377,
+  "endLine": 4446,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:25.482Z",
+  "pageCount": 13,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 13,
+    "extractMs": 47.1
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

@@ -1,0 +1,25 @@
+{
+  "chapterNum": 27,
+  "title": "כותרת 2 מספר 9 - בין לחיים (ח:)",
+  "textLength": 5578,
+  "lineCount": 15,
+  "startLine": 2707,
+  "endLine": 2721,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:32.621Z",
+  "pageCount": 5,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 5,
+    "extractMs": 8.7
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

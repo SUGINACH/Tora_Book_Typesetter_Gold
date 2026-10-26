@@ -1,0 +1,25 @@
+{
+  "chapterNum": 36,
+  "title": "כותרת 2 מספר 29 - בגדר חלקי ותנאי קניית עירוב",
+  "textLength": 30097,
+  "lineCount": 79,
+  "startLine": 3449,
+  "endLine": 3527,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:51.327Z",
+  "pageCount": 12,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 12,
+    "extractMs": 52.3
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

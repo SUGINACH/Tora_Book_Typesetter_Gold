@@ -1,0 +1,74 @@
+{
+  "chapterNum": 20,
+  "title": "כותרת 2 מספר 2 - בגדר פסול דלמעלה מעשרים אמה בנר חנוכה",
+  "textLength": 8952,
+  "lineCount": 36,
+  "startLine": 2413,
+  "endLine": 2448,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:18.023Z",
+  "pageCount": 6,
+  "geomSummary": {
+    "total": 2,
+    "high": 0,
+    "medium": 0,
+    "low": 2,
+    "byKind": {
+      "containment": 2
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 3,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 3847,
+        "w": 680,
+        "h": 574
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 1.734375
+      },
+      "overflowPx": 1.7,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.734375} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 4,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 5053,
+        "w": 680,
+        "h": 501
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 2.21875
+      },
+      "overflowPx": 2.2,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":2.21875} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 6,
+    "extractMs": 19.8
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

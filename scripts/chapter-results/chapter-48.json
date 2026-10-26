@@ -1,0 +1,25 @@
+{
+  "chapterNum": 48,
+  "title": "כותרת 2 מספר 41 - תקנה לי שביתה בקרפף",
+  "textLength": 2167,
+  "lineCount": 8,
+  "startLine": 3969,
+  "endLine": 3976,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:10.724Z",
+  "pageCount": 4,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 4,
+    "extractMs": 3.5
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

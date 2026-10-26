@@ -1,0 +1,99 @@
+{
+  "chapterNum": 13,
+  "title": "כותרת 2 מספר 8 - בחלקי ואופני מעשה הוצאה (שבת צז:)",
+  "textLength": 49662,
+  "lineCount": 170,
+  "startLine": 1955,
+  "endLine": 2124,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:05.941Z",
+  "pageCount": 19,
+  "geomSummary": {
+    "total": 2,
+    "high": 1,
+    "medium": 0,
+    "low": 1,
+    "byKind": {
+      "containment": 1,
+      "containment-rounding": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "high",
+      "pageIdx": 14,
+      "location": "page > wrapper > body-flow > block-2col > margin-col",
+      "childType": "side-note",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 16823,
+        "w": 51,
+        "h": 76
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 23.15625
+      },
+      "overflowPx": 23.2,
+      "note": "(הערת צד גולשת משטח המרזב)",
+      "message": "תיבת side-note בולטת מ-margin-col: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":23.15625} (הערת צד גולשת משטח המרזב)"
+    },
+    {
+      "kind": "containment-rounding",
+      "severity": "low",
+      "pageIdx": 16,
+      "location": "page > wrapper > body-flow > block-2col > column > p-end(\"הדברא. ולא אמר ר\"ש ד\")",
+      "childType": "note-marker",
+      "childText": "",
+      "childRect": {
+        "x": 638,
+        "y": 18226,
+        "w": 6,
+        "h": 14
+      },
+      "overflow": {
+        "left": 0,
+        "top": 1.328125,
+        "right": 0,
+        "bottom": 0
+      },
+      "overflowPx": 1.3,
+      "note": "(עיגול פיקסלים של סמן הערה)",
+      "message": "תיבת note-marker בולטת מ-p-end: {\"left\":0,\"top\":1.328125,\"right\":0,\"bottom\":0} (עיגול פיקסלים של סמן הערה)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 19,
+    "extractMs": 86.5
+  },
+  "highSeverityIssues": [
+    {
+      "kind": "containment",
+      "severity": "high",
+      "pageIdx": 14,
+      "location": "page > wrapper > body-flow > block-2col > margin-col",
+      "childType": "side-note",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 16823,
+        "w": 51,
+        "h": 76
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 23.15625
+      },
+      "overflowPx": 23.2,
+      "note": "(הערת צד גולשת משטח המרזב)",
+      "message": "תיבת side-note בולטת מ-margin-col: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":23.15625} (הערת צד גולשת משטח המרזב)"
+    }
+  ],
+  "error": null
+}

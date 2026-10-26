@@ -1,0 +1,51 @@
+{
+  "chapterNum": 71,
+  "title": "כותרת 2 מספר 9 - ו. בגדרי מחשבת עשייה בחפצי קדושה",
+  "textLength": 23563,
+  "lineCount": 58,
+  "startLine": 5175,
+  "endLine": 5232,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:58.330Z",
+  "pageCount": 11,
+  "geomSummary": {
+    "total": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 1,
+    "byKind": {
+      "containment": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 7,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 8165,
+        "w": 680,
+        "h": 790
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 5.96875
+      },
+      "overflowPx": 6,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":5.96875} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 11,
+    "extractMs": 55.3
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

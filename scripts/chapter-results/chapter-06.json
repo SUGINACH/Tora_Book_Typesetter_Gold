@@ -1,0 +1,25 @@
+{
+  "chapterNum": 6,
+  "title": "כותרת 2 מספר 1 - יציאות השבת (שבת ב.)",
+  "textLength": 35972,
+  "lineCount": 120,
+  "startLine": 1016,
+  "endLine": 1135,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:00:38.304Z",
+  "pageCount": 15,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 15,
+    "extractMs": 56.8
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

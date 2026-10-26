@@ -1,0 +1,25 @@
+{
+  "chapterNum": 31,
+  "title": "כותרת 2 מספר 13 - חוד קורה ופי תקרה (ירו' עי' פ\"א ה\"א)",
+  "textLength": 8443,
+  "lineCount": 32,
+  "startLine": 3242,
+  "endLine": 3273,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:43.030Z",
+  "pageCount": 6,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 6,
+    "extractMs": 17.4
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

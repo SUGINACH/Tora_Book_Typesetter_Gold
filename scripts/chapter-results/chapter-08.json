@@ -1,0 +1,120 @@
+{
+  "chapterNum": 8,
+  "title": "כותרת 2 מספר 3 - עקירה והנחה מע\"ג מקום ד' (ד.)",
+  "textLength": 105929,
+  "lineCount": 312,
+  "startLine": 1220,
+  "endLine": 1531,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:00:41.042Z",
+  "pageCount": 34,
+  "geomSummary": {
+    "total": 4,
+    "high": 0,
+    "medium": 0,
+    "low": 4,
+    "byKind": {
+      "containment": 4
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 12,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 14506,
+        "w": 680,
+        "h": 109
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 3.3125
+      },
+      "overflowPx": 3.3,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":3.3125} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 14,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 16516,
+        "w": 680,
+        "h": 364
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 2.984375
+      },
+      "overflowPx": 3,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":2.984375} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 26,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 29552,
+        "w": 680,
+        "h": 921
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.234375
+      },
+      "overflowPx": 6.2,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.234375} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 30,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 34670,
+        "w": 680,
+        "h": 329
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 1.75
+      },
+      "overflowPx": 1.8,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.75} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 34,
+    "extractMs": 283.2
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

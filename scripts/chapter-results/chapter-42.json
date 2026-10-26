@@ -1,0 +1,51 @@
+{
+  "chapterNum": 42,
+  "title": "כותרת 2 מספר 35 - תחומין דאורייתא או דרבנן",
+  "textLength": 15351,
+  "lineCount": 25,
+  "startLine": 3908,
+  "endLine": 3932,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:01.997Z",
+  "pageCount": 8,
+  "geomSummary": {
+    "total": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 1,
+    "byKind": {
+      "containment": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 3,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 3847,
+        "w": 680,
+        "h": 580
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 7.765625
+      },
+      "overflowPx": 7.8,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":7.765625} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 8,
+    "extractMs": 26.1
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

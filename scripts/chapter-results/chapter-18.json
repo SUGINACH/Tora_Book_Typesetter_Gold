@@ -1,0 +1,25 @@
+{
+  "chapterNum": 18,
+  "title": "כותרת 2 מספר 13 - סיכום",
+  "textLength": 1835,
+  "lineCount": 12,
+  "startLine": 2331,
+  "endLine": 2342,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:16.441Z",
+  "pageCount": 5,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 5,
+    "extractMs": 3.5
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

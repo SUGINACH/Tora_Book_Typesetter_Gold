@@ -1,0 +1,143 @@
+{
+  "chapterNum": 28,
+  "title": "כותרת 2 מספר 10 - בגדרי רשויות",
+  "textLength": 109874,
+  "lineCount": 275,
+  "startLine": 2722,
+  "endLine": 2996,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:33.351Z",
+  "pageCount": 36,
+  "geomSummary": {
+    "total": 5,
+    "high": 0,
+    "medium": 0,
+    "low": 5,
+    "byKind": {
+      "containment": 4,
+      "imbalance": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 10,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 11432,
+        "w": 680,
+        "h": 918
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 3.234375
+      },
+      "overflowPx": 3.2,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":3.234375} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 11,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 12674,
+        "w": 680,
+        "h": 812
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.390625
+      },
+      "overflowPx": 6.4,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.390625} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "imbalance",
+      "severity": "low",
+      "pageIdx": 11,
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 71,
+      "leftH": 65,
+      "diff": 6,
+      "rightRect": {
+        "x": 404,
+        "y": 12564,
+        "w": 269,
+        "h": 71
+      },
+      "leftRect": {
+        "x": 121,
+        "y": 12564,
+        "w": 269,
+        "h": 65
+      },
+      "message": "אי-איזון טורים: ימין=71px שמאל=65px פער=6px"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 20,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 23062,
+        "w": 680,
+        "h": 616
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.40625
+      },
+      "overflowPx": 6.4,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.40625} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 29,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 33059,
+        "w": 680,
+        "h": 812
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.046875
+      },
+      "overflowPx": 6,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.046875} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 36,
+    "extractMs": 173.7
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

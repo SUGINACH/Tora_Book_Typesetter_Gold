@@ -1,0 +1,51 @@
+{
+  "chapterNum": 52,
+  "title": "כותרת 2 מספר 45 - איסור חצרות",
+  "textLength": 15808,
+  "lineCount": 55,
+  "startLine": 4022,
+  "endLine": 4076,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:16.775Z",
+  "pageCount": 8,
+  "geomSummary": {
+    "total": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 1,
+    "byKind": {
+      "containment": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 5,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 6286,
+        "w": 680,
+        "h": 401
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 2.6875
+      },
+      "overflowPx": 2.7,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":2.6875} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 8,
+    "extractMs": 73.7
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

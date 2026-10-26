@@ -1,0 +1,25 @@
+{
+  "chapterNum": 7,
+  "title": "כותרת 2 מספר 2 - ידו של אדם (שבת ג:)",
+  "textLength": 19191,
+  "lineCount": 84,
+  "startLine": 1136,
+  "endLine": 1219,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:00:39.386Z",
+  "pageCount": 10,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 10,
+    "extractMs": 31.6
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

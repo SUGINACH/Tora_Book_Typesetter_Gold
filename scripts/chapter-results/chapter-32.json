@@ -1,0 +1,25 @@
+{
+  "chapterNum": 32,
+  "title": "כותרת 2 מספר 14 - בגדרי פירצה במחיצה ובמקום",
+  "textLength": 15276,
+  "lineCount": 54,
+  "startLine": 3274,
+  "endLine": 3327,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:43.694Z",
+  "pageCount": 8,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 8,
+    "extractMs": 24.1
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

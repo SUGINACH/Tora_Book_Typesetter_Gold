@@ -1,0 +1,50 @@
+{
+  "chapterNum": 17,
+  "title": "כותרת 2 מספר 12 - היתה לו אבן מונחת (ב\"ק כו:)",
+  "textLength": 6027,
+  "lineCount": 21,
+  "startLine": 2310,
+  "endLine": 2330,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:15.707Z",
+  "pageCount": 6,
+  "geomSummary": {
+    "total": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 1,
+    "byKind": {
+      "imbalance": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "imbalance",
+      "severity": "low",
+      "pageIdx": 5,
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 71,
+      "leftH": 65,
+      "diff": 6,
+      "rightRect": {
+        "x": 404,
+        "y": 5769,
+        "w": 269,
+        "h": 71
+      },
+      "leftRect": {
+        "x": 121,
+        "y": 5769,
+        "w": 269,
+        "h": 65
+      },
+      "message": "אי-איזון טורים: ימין=71px שמאל=65px פער=6px"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 6,
+    "extractMs": 18.7
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

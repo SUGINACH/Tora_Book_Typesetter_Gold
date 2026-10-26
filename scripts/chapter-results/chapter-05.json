@@ -1,0 +1,68 @@
+{
+  "chapterNum": 5,
+  "title": "כותרת 2 מספר 6 - מעשה הוצאה",
+  "textLength": 25094,
+  "lineCount": 95,
+  "startLine": 921,
+  "endLine": 1015,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:00:30.884Z",
+  "pageCount": 13,
+  "geomSummary": {
+    "total": 2,
+    "high": 0,
+    "medium": 0,
+    "low": 2,
+    "byKind": {
+      "sparse-line": 1,
+      "containment": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "sparse-line",
+      "severity": "low",
+      "pageIdx": 3,
+      "location": "page > wrapper > body-flow > block-2col > column > p-cut(\"ובגמרא נקראת הוצאה מ\")",
+      "lastW": 29,
+      "firstW": 59,
+      "pText": "ובגמרא נקראת הוצאה מרה\"י לרה\"ר הוצאה, וה",
+      "childRect": {
+        "x": 644,
+        "y": 4388,
+        "w": 29,
+        "h": 21
+      },
+      "message": "שורה דלילה בסוף p-cut: רוחב אחרון=29px ראשון=59px"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 6,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 6902,
+        "w": 680,
+        "h": 919
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 3.796875
+      },
+      "overflowPx": 3.8,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":3.796875} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 13,
+    "extractMs": 37.5
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

@@ -1,0 +1,51 @@
+{
+  "chapterNum": 61,
+  "title": "כותרת 2 מספר 54 - יש גזל בשבת",
+  "textLength": 18749,
+  "lineCount": 68,
+  "startLine": 4504,
+  "endLine": 4571,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:33.341Z",
+  "pageCount": 9,
+  "geomSummary": {
+    "total": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 1,
+    "byKind": {
+      "containment": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 5,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 5769,
+        "w": 680,
+        "h": 922
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.859375
+      },
+      "overflowPx": 6.9,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.859375} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 9,
+    "extractMs": 32.1
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

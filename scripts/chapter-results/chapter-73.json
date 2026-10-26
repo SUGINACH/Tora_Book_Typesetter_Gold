@@ -1,0 +1,40 @@
+{
+  "chapterNum": 73,
+  "title": "כותרת 2 מספר 11 - בענין הזכרת שבת ור\"ח בברהמ\"ז של סע\"ש בשבת שחל להיות בער\"ח.",
+  "textLength": 21421,
+  "lineCount": 77,
+  "startLine": 5293,
+  "endLine": 5369,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:03:01.076Z",
+  "pageCount": 11,
+  "geomSummary": {
+    "total": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 1,
+    "byKind": {
+      "page-underfill": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "page-underfill",
+      "severity": "low",
+      "pageIdx": 8,
+      "location": "page ז",
+      "fillRatio": 81,
+      "availableH": 915,
+      "usedH": 743,
+      "wastedPx": 172,
+      "note": "(פער קל — פחות מ-85% מילוי)",
+      "message": "עמוד דליל: 81% מילוי (172px ריקים מתוך 915px) (פער קל — פחות מ-85% מילוי)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 11,
+    "extractMs": 45.6
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

@@ -1,0 +1,50 @@
+{
+  "chapterNum": 21,
+  "title": "כותרת 2 מספר 3 - מקצת קורה בתוך עשרים ומקצת קורה למעלה מעשרים",
+  "textLength": 12803,
+  "lineCount": 41,
+  "startLine": 2449,
+  "endLine": 2489,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:22.591Z",
+  "pageCount": 8,
+  "geomSummary": {
+    "total": 1,
+    "high": 0,
+    "medium": 0,
+    "low": 1,
+    "byKind": {
+      "imbalance": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "imbalance",
+      "severity": "low",
+      "pageIdx": 7,
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 71,
+      "leftH": 65,
+      "diff": 6,
+      "rightRect": {
+        "x": 404,
+        "y": 8034,
+        "w": 269,
+        "h": 71
+      },
+      "leftRect": {
+        "x": 121,
+        "y": 8034,
+        "w": 269,
+        "h": 65
+      },
+      "message": "אי-איזון טורים: ימין=71px שמאל=65px פער=6px"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 8,
+    "extractMs": 24.8
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

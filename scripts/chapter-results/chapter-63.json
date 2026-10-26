@@ -1,0 +1,167 @@
+{
+  "chapterNum": 63,
+  "title": "כותרת 2 מספר 1 - הערות בסוגיית הגרמה",
+  "textLength": 63630,
+  "lineCount": 198,
+  "startLine": 4624,
+  "endLine": 4821,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:35.261Z",
+  "pageCount": 21,
+  "geomSummary": {
+    "total": 5,
+    "high": 1,
+    "medium": 2,
+    "low": 2,
+    "byKind": {
+      "containment-rounding": 1,
+      "imbalance": 2,
+      "containment": 2
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment-rounding",
+      "severity": "low",
+      "pageIdx": 3,
+      "location": "page > wrapper > body-flow > block-2col > column > p-cut(\"ועוד יש לבאר מה שלא \")",
+      "childType": "note-marker",
+      "childText": "",
+      "childRect": {
+        "x": 121,
+        "y": 4042,
+        "w": 6,
+        "h": 14
+      },
+      "overflow": {
+        "left": 0,
+        "top": 1.328125,
+        "right": 0,
+        "bottom": 0
+      },
+      "overflowPx": 1.3,
+      "note": "(עיגול פיקסלים של סמן הערה)",
+      "message": "תיבת note-marker בולטת מ-p-cut: {\"left\":0,\"top\":1.328125,\"right\":0,\"bottom\":0} (עיגול פיקסלים של סמן הערה)"
+    },
+    {
+      "kind": "imbalance",
+      "severity": "medium",
+      "pageIdx": 10,
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 756,
+      "leftH": 740,
+      "diff": 16,
+      "rightRect": {
+        "x": 404,
+        "y": 11432,
+        "w": 269,
+        "h": 756
+      },
+      "leftRect": {
+        "x": 121,
+        "y": 11432,
+        "w": 269,
+        "h": 740
+      },
+      "message": "אי-איזון טורים: ימין=756px שמאל=740px פער=16px"
+    },
+    {
+      "kind": "imbalance",
+      "severity": "medium",
+      "pageIdx": 12,
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 114,
+      "leftH": 94,
+      "diff": 20,
+      "rightRect": {
+        "x": 404,
+        "y": 14442,
+        "w": 269,
+        "h": 114
+      },
+      "leftRect": {
+        "x": 121,
+        "y": 14442,
+        "w": 269,
+        "h": 94
+      },
+      "message": "אי-איזון טורים: ימין=114px שמאל=94px פער=20px"
+    },
+    {
+      "kind": "containment",
+      "severity": "high",
+      "pageIdx": 17,
+      "location": "page > wrapper > body-flow > block-2col > column > p-end(\"אבל אחר העיון נראהא \")",
+      "childType": "note-marker",
+      "childText": "",
+      "childRect": {
+        "x": 254,
+        "y": 19357,
+        "w": 6,
+        "h": 14
+      },
+      "overflow": {
+        "left": 0,
+        "top": 2.328125,
+        "right": 0,
+        "bottom": 0
+      },
+      "overflowPx": 2.3,
+      "note": "",
+      "message": "תיבת note-marker בולטת מ-p-end: {\"left\":0,\"top\":2.328125,\"right\":0,\"bottom\":0}"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 19,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 21624,
+        "w": 680,
+        "h": 918
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 2.859375
+      },
+      "overflowPx": 2.9,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":2.859375} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 21,
+    "extractMs": 125.6
+  },
+  "highSeverityIssues": [
+    {
+      "kind": "containment",
+      "severity": "high",
+      "pageIdx": 17,
+      "location": "page > wrapper > body-flow > block-2col > column > p-end(\"אבל אחר העיון נראהא \")",
+      "childType": "note-marker",
+      "childText": "",
+      "childRect": {
+        "x": 254,
+        "y": 19357,
+        "w": 6,
+        "h": 14
+      },
+      "overflow": {
+        "left": 0,
+        "top": 2.328125,
+        "right": 0,
+        "bottom": 0
+      },
+      "overflowPx": 2.3,
+      "note": "",
+      "message": "תיבת note-marker בולטת מ-p-end: {\"left\":0,\"top\":2.328125,\"right\":0,\"bottom\":0}"
+    }
+  ],
+  "error": null
+}

@@ -1,0 +1,68 @@
+{
+  "chapterNum": 75,
+  "title": "כותרת 2 מספר 13 - בירור גדרי מצוות השבת אבידה",
+  "textLength": 33007,
+  "lineCount": 70,
+  "startLine": 5419,
+  "endLine": 5488,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:03:03.893Z",
+  "pageCount": 12,
+  "geomSummary": {
+    "total": 2,
+    "high": 0,
+    "medium": 0,
+    "low": 2,
+    "byKind": {
+      "sparse-line": 1,
+      "containment-rounding": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "sparse-line",
+      "severity": "low",
+      "pageIdx": 6,
+      "location": "page > wrapper > body-flow > block-2col > column > p-cut(\"דילמא אע\"פ שבעצם חסר\")",
+      "lastW": 90,
+      "firstW": 269,
+      "pText": "דילמא אע\"פ שבעצם חסרון שליטה כזה היה צרי",
+      "childRect": {
+        "x": 583,
+        "y": 6988,
+        "w": 90,
+        "h": 21
+      },
+      "message": "שורה דלילה בסוף p-cut: רוחב אחרון=90px ראשון=269px"
+    },
+    {
+      "kind": "containment-rounding",
+      "severity": "low",
+      "pageIdx": 7,
+      "location": "page > wrapper > body-flow > block-2col > column > p-end(\"לעצמו ואם לקחה יהיה \")",
+      "childType": "note-marker",
+      "childText": "",
+      "childRect": {
+        "x": 455,
+        "y": 8033,
+        "w": 6,
+        "h": 14
+      },
+      "overflow": {
+        "left": 0,
+        "top": 1.328125,
+        "right": 0,
+        "bottom": 0
+      },
+      "overflowPx": 1.3,
+      "note": "(עיגול פיקסלים של סמן הערה)",
+      "message": "תיבת note-marker בולטת מ-p-end: {\"left\":0,\"top\":1.328125,\"right\":0,\"bottom\":0} (עיגול פיקסלים של סמן הערה)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 12,
+    "extractMs": 133.6
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

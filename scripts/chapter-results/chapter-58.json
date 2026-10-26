@@ -1,0 +1,25 @@
+{
+  "chapterNum": 58,
+  "title": "כותרת 2 מספר 51 - כל שהותר למקצת שבת",
+  "textLength": 2361,
+  "lineCount": 10,
+  "startLine": 4447,
+  "endLine": 4456,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:27.847Z",
+  "pageCount": 4,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 4,
+    "extractMs": 4.5
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

@@ -1,0 +1,245 @@
+{
+  "chapterNum": 55,
+  "title": "כותרת 2 מספר 48 - ביטול רשות",
+  "textLength": 71921,
+  "lineCount": 163,
+  "startLine": 4105,
+  "endLine": 4267,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:19.034Z",
+  "pageCount": 24,
+  "geomSummary": {
+    "total": 10,
+    "high": 0,
+    "medium": 0,
+    "low": 10,
+    "byKind": {
+      "containment": 8,
+      "sparse-line": 2
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 4,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 4637,
+        "w": 680,
+        "h": 921
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 5.796875
+      },
+      "overflowPx": 5.8,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":5.796875} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "sparse-line",
+      "severity": "low",
+      "pageIdx": 4,
+      "location": "page > wrapper > body-flow > block-2col > column > p-cut(\"וכמו שביארנו במק\"א ה\")",
+      "lastW": 15,
+      "firstW": 36,
+      "pText": "וכמו שביארנו במק\"א ההבדל העיקרי בין שימו",
+      "childRect": {
+        "x": 375,
+        "y": 5529,
+        "w": 15,
+        "h": 21
+      },
+      "message": "שורה דלילה בסוף p-cut: רוחב אחרון=15px ראשון=36px"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 6,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 7362,
+        "w": 680,
+        "h": 461
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 5.53125
+      },
+      "overflowPx": 5.5,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":5.53125} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 10,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 11470,
+        "w": 680,
+        "h": 881
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 3.921875
+      },
+      "overflowPx": 3.9,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":3.921875} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 11,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 12564,
+        "w": 680,
+        "h": 921
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.234375
+      },
+      "overflowPx": 6.2,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.234375} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "sparse-line",
+      "severity": "low",
+      "pageIdx": 11,
+      "location": "page > wrapper > body-flow > block-2col > column > p-cut(\"וביאור דברי רש\"י שוד\")",
+      "lastW": 24,
+      "firstW": 52,
+      "pText": "וביאור דברי רש\"י שודאי אין גדר שלו, היינ",
+      "childRect": {
+        "x": 366,
+        "y": 13460,
+        "w": 24,
+        "h": 17
+      },
+      "message": "שורה דלילה בסוף p-cut: רוחב אחרון=24px ראשון=52px"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 14,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 15962,
+        "w": 680,
+        "h": 921
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.234375
+      },
+      "overflowPx": 6.2,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.234375} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 20,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 22757,
+        "w": 680,
+        "h": 922
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.859375
+      },
+      "overflowPx": 6.9,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.859375} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 21,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 23999,
+        "w": 680,
+        "h": 809
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 2.734375
+      },
+      "overflowPx": 2.7,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":2.734375} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 22,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 25022,
+        "w": 680,
+        "h": 921
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 6.234375
+      },
+      "overflowPx": 6.2,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":6.234375} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 24,
+    "extractMs": 164.1
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

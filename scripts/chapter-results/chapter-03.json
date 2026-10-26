@@ -1,0 +1,81 @@
+{
+  "chapterNum": 3,
+  "title": "כותרת 2 מספר 4 - איסור עשיית מלאכה",
+  "textLength": 49501,
+  "lineCount": 155,
+  "startLine": 313,
+  "endLine": 467,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:00:20.443Z",
+  "pageCount": 18,
+  "geomSummary": {
+    "total": 3,
+    "high": 0,
+    "medium": 0,
+    "low": 3,
+    "byKind": {
+      "sparse-line": 1,
+      "containment": 1,
+      "page-underfill": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "sparse-line",
+      "severity": "low",
+      "pageIdx": 4,
+      "location": "page > wrapper > body-flow > block-2col > column > p-cut(\"אלא במה שעל ידו נחשב\")",
+      "lastW": 30,
+      "firstW": 269,
+      "pText": "אלא במה שעל ידו נחשב העושה עושה את המלאכ",
+      "childRect": {
+        "x": 643,
+        "y": 4704,
+        "w": 30,
+        "h": 17
+      },
+      "message": "שורה דלילה בסוף p-cut: רוחב אחרון=30px ראשון=269px"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 16,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 18227,
+        "w": 680,
+        "h": 846
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 1.75
+      },
+      "overflowPx": 1.8,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.75} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "page-underfill",
+      "severity": "low",
+      "pageIdx": 13,
+      "location": "page יב",
+      "fillRatio": 88,
+      "availableH": 824,
+      "usedH": 721,
+      "wastedPx": 102,
+      "note": "(פער קל — פחות מ-85% מילוי)",
+      "message": "עמוד דליל: 88% מילוי (102px ריקים מתוך 824px) (פער קל — פחות מ-85% מילוי)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 18,
+    "extractMs": 85
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

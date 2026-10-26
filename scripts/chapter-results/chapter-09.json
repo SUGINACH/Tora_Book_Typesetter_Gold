@@ -1,0 +1,143 @@
+{
+  "chapterNum": 9,
+  "title": "כותרת 2 מספר 4 - המוציא מחנות לפלטיא (ה:)",
+  "textLength": 51054,
+  "lineCount": 162,
+  "startLine": 1532,
+  "endLine": 1693,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:00:49.767Z",
+  "pageCount": 19,
+  "geomSummary": {
+    "total": 3,
+    "high": 2,
+    "medium": 0,
+    "low": 1,
+    "byKind": {
+      "containment": 2,
+      "imbalance": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "high",
+      "pageIdx": 5,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 6162,
+        "w": 680,
+        "h": 586
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 63.625
+      },
+      "overflowPx": 63.6,
+      "note": "(גלישה חמורה מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":63.625} (גלישה חמורה מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "imbalance",
+      "severity": "high",
+      "pageIdx": 5,
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 355,
+      "leftH": 289,
+      "diff": 66,
+      "rightRect": {
+        "x": 404,
+        "y": 5769,
+        "w": 269,
+        "h": 355
+      },
+      "leftRect": {
+        "x": 121,
+        "y": 5769,
+        "w": 269,
+        "h": 289
+      },
+      "message": "אי-איזון טורים: ימין=355px שמאל=289px פער=66px"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 9,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 10875,
+        "w": 680,
+        "h": 341
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 1.203125
+      },
+      "overflowPx": 1.2,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.203125} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 19,
+    "extractMs": 75.1
+  },
+  "highSeverityIssues": [
+    {
+      "kind": "containment",
+      "severity": "high",
+      "pageIdx": 5,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 6162,
+        "w": 680,
+        "h": 586
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 63.625
+      },
+      "overflowPx": 63.6,
+      "note": "(גלישה חמורה מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":63.625} (גלישה חמורה מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "imbalance",
+      "severity": "high",
+      "pageIdx": 5,
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 355,
+      "leftH": 289,
+      "diff": 66,
+      "rightRect": {
+        "x": 404,
+        "y": 5769,
+        "w": 269,
+        "h": 355
+      },
+      "leftRect": {
+        "x": 121,
+        "y": 5769,
+        "w": 269,
+        "h": 289
+      },
+      "message": "אי-איזון טורים: ימין=355px שמאל=289px פער=66px"
+    }
+  ],
+  "error": null
+}

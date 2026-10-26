@@ -279,6 +279,10 @@ function extractGeometry() {
             idx: pIdx,
             label: (pgEl.querySelector('.page-number-footer')?.textContent?.trim() || String(pIdx + 1)),
             rect: pgRect,
+            // [תיקון 0-setup-V21-gold] שמירת class של העמוד עצמו כדי ש- auditPageFillRatio
+            // יוכל לזהות עמודים מיוחדים (blank-page, sub-shaar-page, main-shaar-page,
+            // back-shaar-page, toc-page) שאינם עמודי תוכן רגילים של פרק.
+            cls: (typeof pgEl.className === 'string') ? pgEl.className : '',
             children: [],
             issues: []
         };
@@ -846,12 +850,51 @@ function auditPageFillRatio(model, issues) {
         }
     });
 
-    // מצא את כל העמודים שמסיימים פרק (העמוד הבא מתחיל פרק חדש, או שזה העמוד האחרון)
+    // [תיקון 0-setup-V21-gold] זהה "עמודים מיוחדים" שאינם עמודי תוכן רגילים של פרק:
+    // - blank-page         — עמוד ריק שנוצר כדי לאפשר לחלק חדש להתחיל בעמוד ימני
+    // - sub-shaar-page     — שער משני לחלק חדש
+    // - main-shaar-page    — שער ראשי (כותרת הספר)
+    // - back-shaar-page    — שער אחורי (כל הזכויות שמורות וכו')
+    // - toc-page           — תוכן עניינים
+    // עמודים אלה אינם נבדקים כ-page-underfill וגם העמוד שלפניהם נחשב כ"סוף פרק/חלק"
+    const specialPageIdxs = new Set();
+    model.pages.forEach((page, idx) => {
+        if (!page.cls || typeof page.cls !== 'string') return;
+        if (page.cls.includes('blank-page') ||
+            page.cls.includes('sub-shaar-page') ||
+            page.cls.includes('main-shaar-page') ||
+            page.cls.includes('back-shaar-page') ||
+            page.cls.includes('toc-page')) {
+            specialPageIdxs.add(idx);
+            // העמוד המיוחד עצמו נחשב גם כ"תחילת פרק" (כדי שלא ייבדק כ-underfill)
+            // וגם כ"סוף פרק" (כדי שהעמוד שלפניו לא ייבדק)
+            chapterStartPageIdxs.add(idx);
+        }
+    });
+
+    // [תיקון 0-setup-V21-gold] זהה עמודים שמכילים sec-div (חוצץ מפריד בין חלקים/פרקים).
+    // עמוד שמסתיים ב-sec-div הוא "סוף פרק/חלק" — גם אם העמוד הבא אינו מתחיל פרק חדש
+    // (למשל: עמוד 6 בפרק 35 מכיל block-2col + sec-divider-wrap, ואחריו יש עמודים 7-8
+    // שהם blank-page/sub-shaar-page לפני תחילת החלק הבא).
+    function hasSecDiv(node) {
+        if (node.type === 'sec-div') return true;
+        return node.children.some(hasSecDiv);
+    }
+
+    // מצא את כל העמודים שמסיימים פרק (העמוד הבא מתחיל פרק חדש, או שזה העמוד האחרון,
+    // או שהעמוד הבא הוא "עמוד מיוחד" כמו blank-page/sub-shaar-page, או שהעמוד עצמו מכיל sec-div)
     const chapterEndPageIdxs = new Set();
     model.pages.forEach((page, idx) => {
         if (idx === model.pages.length - 1) {
             chapterEndPageIdxs.add(idx);
         } else if (chapterStartPageIdxs.has(idx + 1)) {
+            chapterEndPageIdxs.add(idx);
+        } else if (specialPageIdxs.has(idx + 1)) {
+            // העמוד הבא הוא מיוחד (blank-page/sub-shaar-page/...) — הנוכחי הוא סוף פרק/חלק
+            chapterEndPageIdxs.add(idx);
+        }
+        // גם אם העמוד עצמו מכיל sec-div, הוא סוף פרק
+        if (page.children.some(c => hasSecDiv(c))) {
             chapterEndPageIdxs.add(idx);
         }
     });

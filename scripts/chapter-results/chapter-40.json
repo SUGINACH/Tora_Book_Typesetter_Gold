@@ -1,0 +1,25 @@
+{
+  "chapterNum": 40,
+  "title": "כותרת 2 מספר 33 - תחילת היום קונה עירוב",
+  "textLength": 920,
+  "lineCount": 4,
+  "startLine": 3701,
+  "endLine": 3704,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:56.085Z",
+  "pageCount": 4,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 4,
+    "extractMs": 1.6
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

@@ -1,0 +1,91 @@
+{
+  "chapterNum": 64,
+  "title": "כותרת 2 מספר 2 - גר שנתגייר כקטן שנולד",
+  "textLength": 18053,
+  "lineCount": 57,
+  "startLine": 4822,
+  "endLine": 4878,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:39.325Z",
+  "pageCount": 9,
+  "geomSummary": {
+    "total": 3,
+    "high": 0,
+    "medium": 0,
+    "low": 3,
+    "byKind": {
+      "sparse-line": 1,
+      "containment": 2
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "sparse-line",
+      "severity": "low",
+      "pageIdx": 3,
+      "location": "page > wrapper > body-flow > block-2col > column > p-cut(\"ואכן כך פרש\"י (דלא כ\")",
+      "lastW": 16,
+      "firstW": 35,
+      "pText": "ואכן כך פרש\"י (דלא כתוס') ביבמות (צח. ד\"",
+      "childRect": {
+        "x": 616,
+        "y": 4391,
+        "w": 16,
+        "h": 17
+      },
+      "message": "שורה דלילה בסוף p-cut: רוחב אחרון=16px ראשון=35px"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 4,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 5025,
+        "w": 680,
+        "h": 528
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 1.34375
+      },
+      "overflowPx": 1.3,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.34375} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 5,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 6486,
+        "w": 680,
+        "h": 206
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 8.265625
+      },
+      "overflowPx": 8.3,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":8.265625} (גלישה טבעית מ-stretchPageToBottom)"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 9,
+    "extractMs": 33.5
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

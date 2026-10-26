@@ -1,0 +1,120 @@
+{
+  "chapterNum": 56,
+  "title": "כותרת 2 מספר 49 - שבת הואיל והותרה הותרה",
+  "textLength": 60798,
+  "lineCount": 109,
+  "startLine": 4268,
+  "endLine": 4376,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:24.069Z",
+  "pageCount": 21,
+  "geomSummary": {
+    "total": 4,
+    "high": 0,
+    "medium": 1,
+    "low": 3,
+    "byKind": {
+      "containment": 3,
+      "imbalance": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 3,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 3847,
+        "w": 680,
+        "h": 575
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 3.171875
+      },
+      "overflowPx": 3.2,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":3.171875} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "medium",
+      "pageIdx": 9,
+      "location": "page > wrapper > body-flow > block-2col > margin-col",
+      "childType": "side-note",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 11144,
+        "w": 51,
+        "h": 66
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 10.1875
+      },
+      "overflowPx": 10.2,
+      "note": "(הערת צד גולשת משטח המרזב)",
+      "message": "תיבת side-note בולטת מ-margin-col: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":10.1875} (הערת צד גולשת משטח המרזב)"
+    },
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 15,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 17204,
+        "w": 680,
+        "h": 807
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 1.46875
+      },
+      "overflowPx": 1.5,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":1.46875} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "imbalance",
+      "severity": "low",
+      "pageIdx": 15,
+      "location": "page > wrapper > body-flow > block-2col",
+      "rightH": 71,
+      "leftH": 65,
+      "diff": 6,
+      "rightRect": {
+        "x": 404,
+        "y": 17094,
+        "w": 269,
+        "h": 71
+      },
+      "leftRect": {
+        "x": 121,
+        "y": 17094,
+        "w": 269,
+        "h": 65
+      },
+      "message": "אי-איזון טורים: ימין=71px שמאל=65px פער=6px"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 21,
+    "extractMs": 91.4
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

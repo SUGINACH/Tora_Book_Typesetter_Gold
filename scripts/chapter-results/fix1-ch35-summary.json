@@ -1,0 +1,29 @@
+{
+  "label": "fix1-ch35",
+  "startChapter": 35,
+  "endChapter": 35,
+  "timestamp": "2026-10-26T12:59:53.816Z",
+  "totals": {
+    "high": 0,
+    "medium": 0,
+    "low": 1,
+    "errors": 0
+  },
+  "chapters": [
+    {
+      "chapterNum": 35,
+      "title": "כותרת 2 מספר 17 - גג הסמוך לרשות הרבים (פד:)",
+      "pageCount": 9,
+      "summary": {
+        "total": 1,
+        "high": 0,
+        "medium": 0,
+        "low": 1,
+        "byKind": {
+          "containment": 1
+        }
+      },
+      "error": null
+    }
+  ]
+}

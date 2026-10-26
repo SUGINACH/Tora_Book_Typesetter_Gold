@@ -1,0 +1,25 @@
+{
+  "chapterNum": 15,
+  "title": "כותרת 2 מספר 10 - דבר שאין מתכווין",
+  "textLength": 7287,
+  "lineCount": 25,
+  "startLine": 2177,
+  "endLine": 2201,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:10.483Z",
+  "pageCount": 6,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 6,
+    "extractMs": 20.1
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

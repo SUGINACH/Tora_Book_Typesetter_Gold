@@ -1,0 +1,91 @@
+{
+  "chapterNum": 39,
+  "title": "כותרת 2 מספר 32 - שבו איש תחתיו אל יצא איש ממקומו",
+  "textLength": 41660,
+  "lineCount": 79,
+  "startLine": 3622,
+  "endLine": 3700,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:01:54.384Z",
+  "pageCount": 15,
+  "geomSummary": {
+    "total": 3,
+    "high": 0,
+    "medium": 1,
+    "low": 2,
+    "byKind": {
+      "containment": 2,
+      "sparse-line": 1
+    }
+  },
+  "geomIssues": [
+    {
+      "kind": "containment",
+      "severity": "low",
+      "pageIdx": 3,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 3847,
+        "w": 680,
+        "h": 577
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 4.703125
+      },
+      "overflowPx": 4.7,
+      "note": "(גלישה טבעית מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":4.703125} (גלישה טבעית מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "containment",
+      "severity": "medium",
+      "pageIdx": 4,
+      "location": "page > wrapper > body-flow",
+      "childType": "block-2col",
+      "childText": "",
+      "childRect": {
+        "x": 57,
+        "y": 4637,
+        "w": 680,
+        "h": 933
+      },
+      "overflow": {
+        "left": 0,
+        "top": 0,
+        "right": 0,
+        "bottom": 17.859375
+      },
+      "overflowPx": 17.9,
+      "note": "(גלישה מ-stretchPageToBottom)",
+      "message": "תיבת block-2col בולטת מ-body-flow: {\"left\":0,\"top\":0,\"right\":0,\"bottom\":17.859375} (גלישה מ-stretchPageToBottom)"
+    },
+    {
+      "kind": "sparse-line",
+      "severity": "low",
+      "pageIdx": 9,
+      "location": "page > wrapper > body-flow > block-2col > column > p-cut(\"בביתו הוא נושא לגבי \")",
+      "lastW": 24,
+      "firstW": 269,
+      "pText": "בביתו הוא נושא לגבי מה שקונה כאן ולא כאן",
+      "childRect": {
+        "x": 649,
+        "y": 10515,
+        "w": 24,
+        "h": 17
+      },
+      "message": "שורה דלילה בסוף p-cut: רוחב אחרון=24px ראשון=269px"
+    }
+  ],
+  "geomStats": {
+    "pageCount": 15,
+    "extractMs": 62.7
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

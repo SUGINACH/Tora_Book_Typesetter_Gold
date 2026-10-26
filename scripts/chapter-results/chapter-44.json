@@ -1,0 +1,25 @@
+{
+  "chapterNum": 44,
+  "title": "כותרת 2 מספר 37 - * שיטת רבי עקיבא בתחומין דאורייתא",
+  "textLength": 1234,
+  "lineCount": 4,
+  "startLine": 3945,
+  "endLine": 3948,
+  "label": "fix1-all",
+  "timestamp": "2026-10-26T13:02:04.454Z",
+  "pageCount": 4,
+  "geomSummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byKind": {}
+  },
+  "geomIssues": [],
+  "geomStats": {
+    "pageCount": 4,
+    "extractMs": 3.5
+  },
+  "highSeverityIssues": [],
+  "error": null
+}

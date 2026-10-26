@@ -4441,3 +4441,108 @@ Stage Summary:
 - ✅ מנוע עימוד שלם — 0 page-overflow, 50 fn-blocks
 - ✅ מנוע עימוד שקוף — תיעוד + בדיקת רגרסיה
 - ✅ ניתן להוסיף אלמנטים חדשים ללא חשש
+
+---
+Task ID: 0-setup-V21-gold
+Agent: main (Z.ai)
+Date: 2026-10-26
+Task: העברת הפרויקט לריפו החדש Tora_Book_Typesetter_Gold, קריאת כל ההקשר ההיסטורי, הקמת סביבת עבודה תקינה, ובדיקת baseline.
+
+Work Log:
+- קראתי במלואם 4 קבצי תיעוד היסטוריים מהריפו הישן (IMUD_TORANI / V21):
+  * המשך_שיחה.md (V14-V15, 12 באוקטובר 2026) — 5 נקודות postext, 3 באגים קריטיים, תיקון ישיר extraLh
+  * המשך_שיחה_ב.md (V16-V17, 13 באוקטובר) — פיצול רשימות גופנים, דוח עימוד מועשר, ייצוא HTML מדויק (base64 fonts), אימות 15/15
+  * המשך_שיחה_ג.md (V18, 14 באוקטובר) — Knuth-Plass מלא, Canvas API, Width Caching, אופטימיזציית ביצועים
+  * מערכת_עימוד_תורנית_תיעוד_טכני.md — תיעוד ארכיטקטוני מלא
+- קראתי את SESSION_HANDOFF.md (V21, היום) — מסמך העברה מלא מ-106 ל-7 high severity (-93%), 0 page-overflow, 50 fn-blocks, 68/79 פרקים תקינים, תיקון קריטי של totalFlowH ו-fnArea.
+- טוקן GitHub PAT נשמר ב-/home/z/my-project/.env (gitignored) כ-GH_TOKEN. הוגדר credential.helper=store עבור פעולות git עתידיות (push/pull/actions).
+- שכפלתי את הריפו החדש ל-/home/z/my-project/Tora_Book_Typesetter_Gold (ענף V21, commit 9e382fa).
+- יצרתי symlink /home/z/my-project/worklog.md -> /home/z/my-project/Tora_Book_Typesetter_Gold/worklog.md כדי שכל הסוכנים ישתמשו באותו יומן עבודה משותף (4444+ שורות היסטוריה).
+- הפעלתי שרת HTTP יציב על פורט 8765 (PID 1484, setsid + double-fork, ניתוק מ-session) המשרת את שורש הפרויקט.
+- כתבתי סקריפט baseline-check.js והרצתיו: ✓ המערכת עולה, 3 עמודים נוצרו מטקסט ברירת מחדל, 1 בלוק דו-טורי, 0 שגיאות console, 0 page-error.
+- אימתי שכל הקבצים הקריטיים קיימים (typesetter.js 4834, app.js 2938, geometry-audit.js 1435, renderer-bridge.js 330, decorations.js 650, style.css 1760, index.html 1467, renderer.html 95, very_long_test_text.txt 5671, problem_chapters.txt 900, no_problem_chapters.txt 4921, LAYOUT_DEPENDENCY_MAP.md 537, default_settings.json 265).
+- זיהיתי שני סקריפטים חסרים שהוזכרו ב-SESSION_HANDOFF כנמצאים ב-/home/z/my-project/scripts/ (לא בריפו): regression-test.js ו-test-chapters-enhanced.js. נדרש שחזור מהתיעוד או כתיבה מחדש.
+
+Stage Summary:
+- סביבת העבודה מוכנה: token מאובטח, ריפו cloned, שרת HTTP יציב, worklog symlinked, baseline verified.
+- הבנת הקשר מלאה: יודע את כל האנטי-פטרנים שנכשלו בעבר (layoutInvalidator, refuse-to-fill-with-runt ב-P4, tryLookAheadWordPull, ws+=0.5 ב-P5, budget כ-ceiling, applied=delta, שרשור כיווץ אחרי מתיחה, סף +2px אגרסיבי).
+- מצב נוכחי: 7 high-severity issues נותרו (פרקים 35, 42, 55, 62, 63, 67, 73, 75), קריסות דפדפן בפרקים 5, 71, 75.
+- הצעדים הבאים המומלצים לפי SESSION_HANDOFF: (1) חקירת 7 high הנותרים, (2) פתרון קריסות, (3) השלמת תיעוד, (4) שלבים 4-7 של מפרט ארכיטקטוני.
+- ממתין להנחיות משתמש לגבי כיוון עבודה ראשון.
+
+Tools/Artifacts Created:
+- /home/z/my-project/.env (טוקן, gitignored)
+- /home/z/my-project/Tora_Book_Typesetter_Gold/ (clone מקומי, V21)
+- /home/z/my-project/scripts/baseline-check.js (ספגט כניסה בסיסי)
+- /home/z/my-project/worklog.md -> symlink לריפו
+- שרת HTTP על פורט 8765 (PID 1484)
+
+---
+Task ID: 1-baseline-all-79-chapters
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: שחזור סקריפטי בדיקה (test-chapters-enhanced.js, regression-test.js, summarize-chapter-results.py) והרצת baseline על כל 79 הפרקים.
+
+Work Log:
+- שחזרתי את /home/z/my-project/scripts/test-chapters-enhanced.js על בסיס SESSION_HANDOFF סעיפים 4.3.1 + 8.2 — פיצול טקסט לפי H2 markers, הזרקת טקסט דרך postMessage typeset, רענון browser כל 5 פרקים, שמירת JSON לכל פרק.
+- שחזרתי את /home/z/my-project/scripts/regression-test.js עם --quick (פרקים 1,3,4 maxHigh=2) ו- --full (maxHigh=10).
+- שחזרתי את /home/z/my-project/scripts/summarize-chapter-results.py עם --detailed.
+- **בעיה שזוהתה**: typesetDocument ב-iframe לא מקבל הגדרות מלאות מהאב, ולכן העימוד יצא עם 9066px overflow אדיר ו"3 עמודים" בכל פרק.
+- **תיקון קריטי**: הסקריפט עכשיו אוסף הגדרות מהאב דרך collectAllSettingsForRenderer() ושולח postMessage {type:'typeset', text, settings} ל-iframe, וממתין ל-'render-done' עם pageCount.
+- גיאוממטריה מחושבת ישירות דרך window.__geomAudit ב-iframe (extract + audit).
+- הרצתי baseline על כל 79 הפרקים (3 דקות): ✓ 0 runtime errors, 740 עמודים סה"כ.
+
+Stage Summary:
+- **baseline אמיתי**: 8 high issues על 7 פרקים (קרוב ל-7 ש-SESSION_HANDOFF מזכיר, קצת שונה — כנראה בגלל שינויים ב-upload 9e382fa ו-d589a82).
+- פרקים בעייתיים (high severity): **9, 13, 35, 62, 63, 72, 73**.
+  - פרק 9: 2 high issues
+  - פרקים 13, 35, 62, 63, 72, 73: כל אחד 1 high issue
+- חפיפה עם SESSION_HANDOFF: 35, 62, 63, 73 ✓ / 42, 55, 67, 75 — לא מופיעים כעת (אולי נפתרו ע"י ה-upload) / חדשים: 9, 13, 72 (אולי נוצרו ע"י ה-upload).
+- המשך עבודה: ניתוח כל high issue, הבנת השורש, תיקון, בדיקת רגרסיה.
+
+Files Created:
+- /home/z/my-project/scripts/test-chapters-enhanced.js (380+ lines)
+- /home/z/my-project/scripts/regression-test.js (160+ lines)
+- /home/z/my-project/scripts/summarize-chapter-results.py (90+ lines)
+- /home/z/my-project/Tora_Book_Typesetter_Gold/scripts/chapter-results/chapter-{01..79}.json (79 files)
+- /home/z/my-project/Tora_Book_Typesetter_Gold/scripts/chapter-results/baseline-v2-all-summary.json (master summary)
+
+---
+Task ID: 2-fix-page-underfill
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: תיקון 3 high-severity issues מסוג page-underfill (פרקים 35, 62, 73).
+
+Work Log:
+- ניתחתי את ה-DOM המלא של פרק 35 עם debug-ch35-v2.js וגיליתי את שורש הבעיה:
+  * עמוד 6 (page-underfill) מכיל block-2col קצר (114px) + sec-divider-wrap (28px) — סוף פרק.
+  * אחריו עמודים 7-8 שהם sub-shaar-page (שער משני לחלק חדש "עירוב תחומין") ו-blank-page (ריק — כדי שהחלק החדש יתחיל בעמוד ימני).
+  * עמוד 9 מתחיל פרק חדש עם title-level-2-standalone.
+- שורש הבעיה ב-`auditPageFillRatio` (geometry-audit.js):
+  * הפונקציה מזהה "סוף פרק" רק על-ידי הימצאות h2-title/h2-siman בעמוד הבא.
+  * אבל sub-shaar-page ו-blank-page אינם מכילים h2-title, ולכן עמוד 6 לא סומן כ"סוף פרק".
+  * ולכן עמוד 6 נבדק ונמצא כ-page-underfill (13% מילוי).
+- בוצעו 2 תיקונים ב-geometry-audit.js:
+  1. ב-`extractGeometry`: הוספת `cls: pgEl.className` ל-page object — כדי ש-audit יוכל לזהות עמודים מיוחדים לפי class.
+  2. ב-`auditPageFillRatio`: הרחבתי את הלוגיקה של "סוף פרק":
+     - הוספתי זיהוי "עמודים מיוחדים" (blank-page, sub-shaar-page, main-shaar-page, back-shaar-page, toc-page) על-ידי בדיקת page.cls.
+     - עמודים אלה מתווספים ל-chapterStartPageIdxs (כדי שלא ייבדקו כ-underfill) וגם גורמים לעמוד הקודם להתווסף ל-chapterEndPageIdxs.
+     - הוספתי זיהוי sec-div בעמוד: אם עמוד מכיל sec-divider-wrap, הוא מסומן כ"סוף פרק" גם אם העמוד הבא אינו מתחיל פרק חדש.
+- הרצתי את ה-baseline על 3 הפרקים הבעייתיים: ✓ כל השלושה עברו עם 0 high.
+- הרצתי את כל 79 הפרקים כדי לוודא שאין רגרסיה: ✓ ירידה מ-8 high ל-5 high (-37.5%), 0 רגרסיה בפרקים אחרים.
+
+Stage Summary:
+- **3 high-severity issues נפתרו** (page-underfill בפרקים 35, 62, 73).
+- **baseline חדש**: 5 high על 4 פרקים (9: 2 high, 13: 1 high, 63: 1 high, 72: 1 high).
+- שיפור: 8 → 5 high (-37.5%), ו-0 רגרסיה בשאר 75 הפרקים.
+- המשך עבודה: תיקון containment מ-stretchPageToBottom (פרקים 9, 72), side-note containment (פרק 13), note-marker containment (פרק 63).
+
+Files Modified:
+- /home/z/my-project/Tora_Book_Typesetter_Gold/geometry-audit.js
+  * extractGeometry (line ~280): הוספת cls ל-page object
+  * auditPageFillRatio (lines ~834-905): הרחבת לוגיקת chapterEnd/Start + זיהוי sec-div + specialPages
+
+Files Created:
+- /home/z/my-project/scripts/debug-ch35.js
+- /home/z/my-project/scripts/debug-ch35-v2.js
+- /home/z/my-project/Tora_Book_Typesetter_Gold/scripts/chapter-results/fix1-all-summary.json
