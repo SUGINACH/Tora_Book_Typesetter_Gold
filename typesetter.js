@@ -1764,6 +1764,23 @@ function repositionBlockNotes(block, boundaryHeight) {
    - חלק פסקה שממשיך לעמוד הבא נשאר p-cut, וסימון הערת סיום מוצמד לסוף הפסקה האמיתי.
    ========================================================================== */
 function balanceColumns(block, colWidth, styleObj, snapshot, availableHeight = Infinity) {
+
+    // [תיקון 1] תקן first-word-window — רק הפסקה הראשונה בכל טור צריכה לקבל window (float:right).
+    // פסקאות נוספות שקיבלו first-word-window יגרמו להידלדלות הטור וחריגה מטווח העמוד.
+    // פתרון: אחרי balanceColumns, סרוק כל טור והפוך first-word-window נוספים ל-first-word-inline.
+    function fixDropWordInColumns(blockEl) {
+        const cols = blockEl.querySelectorAll('.right-col, .left-col, .single-wide-col');
+        cols.forEach(col => {
+            const windows = col.querySelectorAll('.first-word-window');
+            // שמור את הראשון, הפוך את השאר ל-inline
+            for (let i = 1; i < windows.length; i++) {
+                windows[i].classList.remove('first-word-window');
+                windows[i].classList.add('first-word-inline');
+            }
+        });
+    }
+    // הפעל את התיקון בסוף balanceColumns (לפני ה-return)
+    const _originalReturn = { rH: 0, lH: 0, fits: true }; // placeholder
     if (snapshot) {
         footnoteQueueForPage.length = snapshot.footnoteQueueLen;
         endnoteQueueForPart.length = snapshot.endnoteQueueLen;
@@ -2022,6 +2039,9 @@ function balanceColumns(block, colWidth, styleObj, snapshot, availableHeight = I
     }
 
     finalizeNotePositions(finalNotes, Math.max(rCol.scrollHeight, lCol.scrollHeight));
+    // [תיקון 1] תקן first-word-window — רק הפסקה הראשונה בכל טור צריכה לקבל window.
+    fixDropWordInColumns(block);
+
     return { rH: rCol.scrollHeight, lH: lCol.scrollHeight, fits: Math.max(rCol.scrollHeight, lCol.scrollHeight) <= availableHeight };
 }
 

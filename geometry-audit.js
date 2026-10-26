@@ -378,6 +378,11 @@ function auditContainment(node, issues) {
                 severity = 'low';
                 kind = 'containment-rounding';
                 note = ' (עיגול פיקסלים של סמן הערה)';
+            } else if (child.type === 'sec-div' && overflowPx <= 5) {
+                // [תיקון] sec-div עם overflow קטן = עיגול פיקסלים
+                severity = 'low';
+                kind = 'containment-rounding';
+                note = ' (עיגול פיקסלים של מפריד סעיפים)';
             } else if (isSideNote) {
                 severity = overflowPx > 30 ? 'high' : (overflowPx > 10 ? 'medium' : 'low');
                 note = ' (הערת צד גולשת משטח המרזב)';
@@ -870,7 +875,12 @@ function auditPageFillRatio(model, issues) {
     const chapterStartPageIdxs = new Set();
     model.pages.forEach((page, idx) => {
         function hasH2(node) {
-            if (node.type === 'h2-title' || node.type === 'h2-siman') return true;
+            // [תיקון 5] גם h2-spacer, h2-orn-top/btm, h2-title-orn-* מעידים על תחילת פרק
+            if (node.type === 'h2-title' || node.type === 'h2-siman' ||
+                node.type === 'h2-spacer' || node.type === 'h2-orn-top' ||
+                node.type === 'h2-orn-btm' || node.type === 'h2-title-orn-top' ||
+                node.type === 'h2-title-orn-btm' || node.type === 'h2-title-side' ||
+                node.type === 'h2-title-orn-r' || node.type === 'h2-title-orn-l') return true;
             return node.children.some(hasH2);
         }
         if (page.children.some(c => hasH2(c))) {

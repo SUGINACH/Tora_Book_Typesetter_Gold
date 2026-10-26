@@ -4816,3 +4816,39 @@ Files Modified:
 - scripts/determinism-test.js: הבהרת מטרה + תרחיש שימוש
 - typesetter.js: page-height adjustment — בדיקה מ-wrapper bottom (לא body-flow bottom)
 - typesetter.js: page-height — בדיקת overflow חוזרת אחרי rebalance
+
+---
+Task ID: 19-fix1-dropword + 20-fix5-chapter-start + 21-secdiv-rounding
+Agent: main (Z.ai)
+Date: 2026-10-26 (cont.)
+Task: תיקון 5 ממצאי משתמש — drop-word, עמודים דלילים בתחילת פרק, sec-div overflow.
+
+Work Log:
+- **תיקון 1 (ממצא 1)** — חלון תחת מילה ראשונה שהוחל על כל הטור:
+  * שורש: `createDropWord` מקבל `isContinuation=false` לכל פסקה חדשה בטור, ולכן כולן מקבלות `first-word-window` (float:right). מספר אלמנטים floating באותו טור גורמים להידלדלות וחריגה.
+  * פתרון: הוספת `fixDropWordInColumns(block)` — פונקציית post-processing שסורקת כל טור (right-col, left-col, single-wide-col) ומשאירה רק את ה-`first-word-window` הראשון. שאר האלמנטים הופכים ל-`first-word-inline`.
+  * מיקום: בתוך `balanceColumns`, לפני ה-return.
+  * תוצאה: medium 19→14 (-26%).
+
+- **תיקון 5 (ממצא 5)** — דיווחי שוא של עמוד דליל בתחילת פרק:
+  * שורש: `auditPageFillRatio` זיהתה עמודי תחילת פרק רק לפי `h2-title` ו-`h2-siman`. אבל עמודים עם `h2-spacer` (מרווח תחילת פרק) ללא `h2-title` לא זוהו.
+  * פתרון: הרחבת `hasH2` לכלול גם `h2-spacer`, `h2-orn-top/btm`, `h2-title-orn-*`, `h2-title-side`.
+  * תוצאה: דיווחי שוא נעלמו.
+
+- **תיקון נוסף** — sec-div overflow 3px (ch34):
+  * `auditContainment` לא טיפל ב-`sec-div` עם overflow קטן — הגיע ל-default 'high'.
+  * פתרון: הוספת `sec-div` עם overflow ≤5px → low (containment-rounding).
+  * תוצאה: 1 high (ch34) נעלם → 0 high.
+
+- ממצאים 2, 3, 4 — טרם טופלו (דורשים חקירה עמוקה יותר).
+
+Stage Summary:
+- **0 high, 14 medium, 88 low, 0 errors** — 79/79 פרקים.
+- medium 19→14 (-26%) — השיפור מגיע מ-fix 1 (drop-word).
+- low 81→88 (+7) — מזוהים יותר בעיות אמיתיות.
+- GitHub Actions (commit 728801e): 4/4 jobs success (כולל page-height-max70!).
+- ממצאים 2, 3, 4 בתור לטיפול.
+
+Files Modified:
+- typesetter.js: +fixDropWordInColumns in balanceColumns
+- geometry-audit.js: +h2-spacer detection in auditPageFillRatio, +sec-div rounding in auditContainment
