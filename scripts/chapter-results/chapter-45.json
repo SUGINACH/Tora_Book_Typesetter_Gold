@@ -5,8 +5,8 @@
   "lineCount": 6,
   "startLine": 3949,
   "endLine": 3954,
-  "label": "heading-spacing-v1",
-  "timestamp": "2026-10-26T16:54:08.122Z",
+  "label": "letter-spacing-v2",
+  "timestamp": "2026-10-26T17:05:34.478Z",
   "pageCount": 5,
   "geomSummary": {
     "total": 1,
@@ -44,7 +44,7 @@
   ],
   "geomStats": {
     "pageCount": 5,
-    "extractMs": 5
+    "extractMs": 6.5
   },
   "highSeverityIssues": [],
   "error": null

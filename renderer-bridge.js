@@ -12,7 +12,7 @@
 
     // רשימת כל מזהי ההגדרות שהמנוע קורא (133)
     const SETTING_IDS = [
-        'active-theme-select','aq-enabled','aq-heading-spacing','aq-heading-spacing-max','aq-line-height','aq-line-height-max','aq-para-spacing',
+        'active-theme-select','aq-enabled','aq-heading-spacing','aq-heading-spacing-max','aq-letter-spacing','aq-letter-spacing-max','aq-line-height','aq-line-height-max','aq-para-spacing',
         'aq-para-spacing-max','aq-shared-load','aq-word-spacing','aq-word-spacing-max',
         'aq-word-spacing-max-diff','aq-word-spacing-min','aq-word-spacing-threshold',
         'auto-dh','avoid-orphans','avoid-widows','back-shaar-count-numbering',

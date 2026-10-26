@@ -1002,6 +1002,53 @@ function applyWordSpacing(col, factor) {
    - [תיקון רגרסיה] בודק אחרי כל פקטור אם עברנו את היעד, ואם כן — חוזר לפקטור הקודם.
      ללא תיקון זה, הפונקציה הייתה מכווצת יותר מדי וגורמת לאי-איזון.
    - [תיקון נוסף] הסף revert הועלה מ-+2px ל-+10px כדי לאפשר כיווץ יעיל יותר מבלי לגרום לרגרסיה. */
+/* [חדש — שלב 7] מרחיב טור על-ידי הגדלת letter-spacing של פסקאות.
+   הגדלת letter-spacing גורמת לטקסט להיות רחב יותר → פחות מילים בשורה →
+   יותר שורות → גובה גדול יותר. השפעה זניחה אבל שקופה לקורא.
+   - מחזיר את כמות הפיקסלים שנוספה בפועל
+   - maxAdd קובע את התוספת המקסימלית ל-letter-spacing — ברירת מחדל 0.5px
+   - עובד על כל הפסקאות (P) בטור */
+function stretchByLetterSpacing(col, neededPx, maxAdd) {
+    if (!(neededPx > 0)) return 0;
+    if (maxAdd === undefined) {
+        maxAdd = parseFloat(document.getElementById('aq-letter-spacing-max')?.value) || 0.5;
+    }
+    if (!(maxAdd > 0)) return 0;
+
+    const paras = Array.from(col.children).filter(c => c.tagName === 'P');
+    if (paras.length === 0) return 0;
+
+    // שמור base letter-spacing ב-data attribute (פעם אחת)
+    paras.forEach(p => {
+        if (!p.hasAttribute('data-base-ls')) {
+            const cs = getComputedStyle(p);
+            p.setAttribute('data-base-ls', String(parseFloat(cs.letterSpacing) || 0));
+        }
+    });
+
+    const before = col.scrollHeight;
+
+    // נסה את התוספת המקסימלית
+    paras.forEach(p => {
+        const baseLs = parseFloat(p.getAttribute('data-base-ls')) || 0;
+        p.style.letterSpacing = (baseLs + maxAdd) + 'px';
+    });
+
+    let added = col.scrollHeight - before;
+
+    // אם יש overshoot משמעותי, חזור אחורה על-ידי הקטנת ה-factor
+    if (added > neededPx + 5 && added > 0) {
+        const factor = Math.max(0, neededPx / added);
+        paras.forEach(p => {
+            const baseLs = parseFloat(p.getAttribute('data-base-ls')) || 0;
+            p.style.letterSpacing = (baseLs + maxAdd * factor) + 'px';
+        });
+        added = col.scrollHeight - before;
+    }
+
+    return added;
+}
+
 /* [חדש — שלב 4] מרחיב טור על-ידי הוספת margin-top/margin-bottom לכותרות
    (title-level-4/5/6). זהו הכלי הכי פחות פולשני — רק מוסיף ריווח סביב
    כותרות, שנראה טבעי לקורא. הריווח נשמר ב-data-base-mt/mb כדי לאפשר
@@ -1458,6 +1505,7 @@ function justifyColumnVertically(col, targetHeight, styleObj, maxStretch = 60, l
     const aqParaSpacing = document.getElementById('aq-para-spacing')?.checked ?? true;
     const aqLineHeight = document.getElementById('aq-line-height')?.checked ?? true;
     const aqHeadingSpacing = document.getElementById('aq-heading-spacing')?.checked ?? true;
+    const aqLetterSpacing = document.getElementById('aq-letter-spacing')?.checked ?? true;
     const aqParaMax = parseInt(document.getElementById('aq-para-spacing-max')?.value) || 9;
     const aqLhMax = parseInt(document.getElementById('aq-line-height-max')?.value) || 3;
 
@@ -1483,6 +1531,17 @@ function justifyColumnVertically(col, targetHeight, styleObj, maxStretch = 60, l
     //    word-spacing פועל בקפיצות גדולות (15-30px) וגורם ל-overshoot כשצריך רק כמה פיקסלים.
     if (useWordSpacing && aqEnabled && aqWordSpacing && diff > 15) {
         stretchByWordSpacing(col, diff);
+        diff = targetHeight - col.scrollHeight;
+        if (!(diff > 0.5)) return col.scrollHeight;
+    }
+
+    // 2. [חדש — שלב 7] רווח אותיות דינמי — הגדלת letter-spacing
+    //    גורמת לטקסט להיות רחב יותר → פחות מילים בשורה → יותר שורות → גובה גדול.
+    //    השפעה זניחה אבל שקופה לקורא. מכובד על-ידי aq-enabled ו-aq-letter-spacing.
+    //    [תיקון רגרסיה] דלג כש-diff גדול (>5px) — letter-spacing לא יעיל למתיחה גדולה
+    //    ויכול לגרום ל-overshoot משמעותי (משנה מספר שורות בצורה לא צפויה).
+    if (aqEnabled && aqLetterSpacing && diff <= 5) {
+        stretchByLetterSpacing(col, diff);
         diff = targetHeight - col.scrollHeight;
         if (!(diff > 0.5)) return col.scrollHeight;
     }
