@@ -724,6 +724,17 @@
                 <span class="btn-toggle-box"><span class="check-icon">✓</span>הפעל חלוקת עומס בין טורים</span>
               </label>
 
+              <div class="panel-sub-header" style="margin-top:8px;">כלי 5: גובה דף דינמי (ניסיוני — מסוכן)</div>
+              <div style="font-size:7.2pt; color:#dc2626; margin-bottom:6px;">⚠ מגדיל body-flow+wrapper כשיש overflow 5-15px. בטוח ל-overflow קטן (יש 101px פנויים), אבל עלול ליצור imbalance/page-overflow ב-overflow גדול. כבוי כברירת מחדל. אל תגדיל max מעל 15!</div>
+              <label class="btn-toggle full-width">
+                <input type="checkbox" id="aq-page-height" onchange="typesetDocument()">
+                <span class="btn-toggle-box"><span class="check-icon">✓</span>הפעל גובה דף דינמי</span>
+              </label>
+              <div class="inline-cfg-row" style="margin-top:4px;">
+                <label>מקסימום תוספת (px):</label>
+                <input type="number" id="aq-page-height-max" value="15" step="1" min="5" max="20" class="size-input" onchange="typesetDocument()">
+              </div>
+
             </div>
           </div>
 

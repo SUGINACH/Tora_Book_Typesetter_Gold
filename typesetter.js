@@ -4840,6 +4840,60 @@ function typesetDocumentCore() {
             repositionBlockNotes(blk, Math.max(rC.scrollHeight, lC.scrollHeight));
         });
     }
+
+    // [חדש — שלב 5] page-height adjustment — מגדיל body-flow כשיש overflow קטן
+    // שלא נפתר על-ידי rebalance2. פועל רק כש-aq-page-height מופעל.
+    // מגבלות:
+    // - רק overflow 5-maxAdjust px (ברירת מחדל 15px)
+    // - רק בעמודים רגילים (לא shaar/blank/toc)
+    // - לא בעמוד האחרון
+    // - רק אם יש מספיק מקום עד תחתית העמוד הפיזי (overflow + 10px safety)
+    // בטוח כי יש 101px פנויים בין body-bottom ל-page-bottom בכל עמוד A4.
+    {
+        const aqPageHeight = document.getElementById('aq-page-height')?.checked ?? false;
+        if (aqPageHeight) {
+            const maxAdjust = parseInt(document.getElementById('aq-page-height-max')?.value) || 15;
+            const allPages = container.querySelectorAll('.a4-page');
+            allPages.forEach((page, idx) => {
+                const cls = page.className;
+                if (cls.includes('blank-page') || cls.includes('sub-shaar-page') ||
+                    cls.includes('main-shaar-page') || cls.includes('back-shaar-page') ||
+                    cls.includes('toc-page')) return;
+                if (idx === allPages.length - 1) return;
+
+                const bodyFlow = page.querySelector('.page-body-flow');
+                if (!bodyFlow) return;
+
+                const blocks = Array.from(bodyFlow.children).filter(c =>
+                    c.classList.contains('block-2col') ||
+                    c.classList.contains('block-h3-span') ||
+                    c.classList.contains('block-single-col')
+                );
+                if (blocks.length === 0) return;
+                const lastBlock = blocks[blocks.length - 1];
+                const bodyRect = bodyFlow.getBoundingClientRect();
+                const blockRect = lastBlock.getBoundingClientRect();
+                const overflow = Math.round(blockRect.bottom - bodyRect.bottom);
+
+                if (overflow >= 5 && overflow <= maxAdjust) {
+                    const pageRect = page.getBoundingClientRect();
+                    const availToPageBottom = Math.round(pageRect.bottom - bodyRect.bottom);
+                    if (availToPageBottom >= overflow + 10) {
+                        // הגדל את body-flow וגם את wrapper (page-content-wrapper) כי
+                        // wrapper קובע height: 1009px ו-body-flow הוא ילד שלו — בלי להגדיל
+                        // את wrapper, body-flow לא יכול לגדול מעבר ל-1009px.
+                        const wrapper = page.querySelector('.page-content-wrapper');
+                        const currentBodyH = bodyFlow.clientHeight;
+                        bodyFlow.style.height = (currentBodyH + overflow) + 'px';
+                        if (wrapper) {
+                            const currentWrapH = wrapper.clientHeight;
+                            wrapper.style.height = (currentWrapH + overflow) + 'px';
+                        }
+                    }
+                }
+            });
+        }
+    }
 }
 
 /* [חדש] טיפול בסוגריים שחוצות פסקאות.
