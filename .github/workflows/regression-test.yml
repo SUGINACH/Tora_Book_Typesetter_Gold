@@ -1,0 +1,107 @@
+name: Regression Test
+
+# תיאור: מריץ בדיקות רגרסיה על מערכת העימוד התורנית.
+# מופעל אוטומטית על push ל-V21, או ידנית דרך workflow_dispatch.
+#
+# הבדיקות:
+# 1. baseline — עם הגדרות ברירת מחדל (page-height כבוי)
+# 2. page-height-max15 — page-height מופעל עם max=15 (ברירת מחדל)
+# 3. page-height-max70 — page-height מופעל עם max=70 (ניסיוני, לבדיקת overflow גדול)
+#
+# תוצאות נשמרות כ-artifacts לכל מצב.
+
+on:
+  push:
+    branches: [V21]
+  workflow_dispatch:
+    inputs:
+      start_chapter:
+        description: 'פרק התחלתי (1-based, ברירת מחדל 1)'
+        required: false
+        default: '1'
+      end_chapter:
+        description: 'פרק סופי (כולל, ברירת מחדל 79)'
+        required: false
+        default: '79'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        mode:
+          - name: baseline
+            env: {}
+          - name: page-height-max15
+            env:
+              ENABLE_PAGE_HEIGHT: '1'
+              PAGE_HEIGHT_MAX: '15'
+          - name: page-height-max70
+            env:
+              ENABLE_PAGE_HEIGHT: '1'
+              PAGE_HEIGHT_MAX: '70'
+
+    name: Test (${{ matrix.mode.name }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify project files
+        run: |
+          echo "=== Project root ==="
+          ls -la very_long_test_text.txt index.html typesetter.js renderer.html 2>&1 | head -10
+          echo "=== Scripts ==="
+          ls -la scripts/test-chapters-enhanced.js scripts/summarize-chapter-results.py 2>&1 | head -10
+          echo "=== Test text size ==="
+          wc -c very_long_test_text.txt
+
+      - name: Start HTTP server
+        run: |
+          python3 -m http.server 8765 --bind 0.0.0.0 &
+          sleep 3
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:8765/index.html
+
+      - name: Run regression test
+        env: ${{ matrix.mode.env }}
+        run: |
+          cd scripts
+          node test-chapters-enhanced.js ${{ github.event.inputs.start_chapter || '1' }} ${{ github.event.inputs.end_chapter || '79' }} ${{ matrix.mode.name }}
+        continue-on-error: true
+
+      - name: Summarize results
+        if: always()
+        run: |
+          cd scripts
+          python3 summarize-chapter-results.py --detailed || true
+
+      - name: Print summary
+        if: always()
+        run: |
+          echo "=== Summary for ${{ matrix.mode.name }} ==="
+          cat scripts/chapter-results/*-summary.json 2>/dev/null | python3 -c "
+          import json, sys, glob
+          files = sorted(glob.glob('scripts/chapter-results/*-summary.json'))
+          for f in files:
+            try:
+              with open(f) as fp:
+                s = json.load(fp)
+              print(f'{s.get(\"label\", \"?\")}: totals={s.get(\"totals\", {})}')
+            except: pass
+          " || true
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chapter-results-${{ matrix.mode.name }}
+          path: scripts/chapter-results/
+          retention-days: 30

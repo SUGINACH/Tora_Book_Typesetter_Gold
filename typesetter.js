@@ -4889,6 +4889,41 @@ function typesetDocumentCore() {
                             const currentWrapH = wrapper.clientHeight;
                             wrapper.style.height = (currentWrapH + overflow) + 'px';
                         }
+
+                        // [תיקון — rebalance אחרי page-height]
+                        // אחרי הגדלת body-flow, ה-block האחרון (שהיה חורג) עכשיו בתוך body-flow,
+                        // אבל הוא לא מאוזן עם הטור השני (כי ה-engine כבר סיים את העימוד).
+                        // הרץ rebalance על ה-block הזה כדי לאזן את הטורים.
+                        const rC = lastBlock.querySelector('.right-col');
+                        const lC = lastBlock.querySelector('.left-col');
+                        if (rC && lC) {
+                            const styleObj = {
+                                fontFamily: document.getElementById('font-body')?.value || 'Frank Ruhl Libre, serif',
+                                fontSize: (parseFloat(document.getElementById('size-body')?.value) || 12) + 'pt',
+                                lineHeight: document.getElementById('line-height-body')?.value || '1.45'
+                            };
+                            const rH = rC.scrollHeight;
+                            const lH = lC.scrollHeight;
+                            const fDiff = rH - lH;
+                            if (Math.abs(fDiff) > 2 && Math.abs(fDiff) <= 150) {
+                                if (fDiff > 0) {
+                                    // rC ארוך — מתח את lC
+                                    justifyColumnVertically(lC, rH, styleObj, 150, null);
+                                    if (lC.scrollHeight > rH + 1.5) {
+                                        shrinkColumnVertically(lC, rH, styleObj, 150);
+                                    }
+                                } else {
+                                    // lC ארוך — מתח את rC
+                                    justifyColumnVertically(rC, lH, styleObj, 150, null);
+                                    if (rC.scrollHeight > lH + 1.5) {
+                                        shrinkColumnVertically(rC, lH, styleObj, 150);
+                                    }
+                                }
+                                if (typeof repositionBlockNotes === 'function') {
+                                    repositionBlockNotes(lastBlock, Math.max(rC.scrollHeight, lC.scrollHeight));
+                                }
+                            }
+                        }
                     }
                 }
             });

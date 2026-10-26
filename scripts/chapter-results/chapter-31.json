@@ -5,8 +5,8 @@
   "lineCount": 32,
   "startLine": 3242,
   "endLine": 3273,
-  "label": "page-height-v2-final",
-  "timestamp": "2026-10-26T17:43:36.421Z",
+  "label": "page-height-rebalance-v1",
+  "timestamp": "2026-10-26T18:06:23.609Z",
   "pageCount": 6,
   "geomSummary": {
     "total": 0,
@@ -18,7 +18,7 @@
   "geomIssues": [],
   "geomStats": {
     "pageCount": 6,
-    "extractMs": 18.7
+    "extractMs": 19.9
   },
   "highSeverityIssues": [],
   "error": null
