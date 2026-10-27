@@ -160,51 +160,55 @@ function auditH7ToSideNote(model, sourceText, issues) {
     const parsed = parseSourceText(sourceText);
     if (parsed.h7Texts.length === 0) return;
 
-    // אסוף טקסט מ-side-note-anchor ב-DOM
-    const domSideNoteTexts = [];
+    // [תיקון 2026-10-28 — הערת משתמש — גישה חדשה לפי עמוד]
+    // הגישה הישנה: חיפשה טקסט H7 בכל ה-DOM גלובלית → false positive כשהטקסט
+    // מופיע גם בגוף כציטוט גמרא. גם דיווחה גלובלית (pageIdx=-1) וה-PDF צילם עמוד ראשון.
+    //
+    // הגישה החדשה: לכל עמוד, לכל פסקה עם data-side-note, בדוק שה-side-note-anchor
+    // עם data-for-token התואם נמצא באותו עמוד. אם לא — דווח על העמוד הספציפי.
+    //
+    // יתרונות:
+    // 1. דיווח ספציפי לעמוד (לא גלובלי) — ה-PDF יצלם את העמוד הנכון.
+    // 2. אין false positive מציטוטי גמרא בגוף הטקסט.
+    // 3. בדיקה מדויקת קישור פסקה→הערת צד דרך token ID.
     for (const page of model.pages) {
         const el = window.__geomAudit?.findDom?.(page);
         if (!el) continue;
-        const sideNotes = el.querySelectorAll('.side-note-anchor');
-        for (const sn of sideNotes) {
-            const text = normalizeText(sn.textContent || '');
-            if (text) domSideNoteTexts.push(text);
-        }
-    }
 
-    // [תיקון 2026-10-28 — הערת משתמש]
-    // הגישה הנכונה: בדוק שטקסט ה-H7 קיים באחת מהערות הצד.
-    // אם הוא קיים ב-side-note — ההמרה הצליחה, ואין בעיה (גם אם הוא מופיע בגוף כציטוט גמרא).
-    // רק אם הוא לא נמצא בשום side-note — זו בעיה.
-    // הבדיקה הישנה חיפשה H7 בגוף הטקסט כ-<p> — אבל טקסט כותרת צד יכול להופיע בגוף
-    // כציטוט גמרא או הפניה, וזה לא אומר שההמרה נכשלה.
-    let missingCount = 0;
-    const missing = [];
-    for (const h7text of parsed.h7Texts) {
-        const normalized = normalizeText(h7text);
-        // חפש חלק מהטקסט ב-side-notes (עשוי להיות מקוצר)
-        const found = domSideNoteTexts.some(sn => {
-            // בדוק התאמה חלקית — לפחות 10 תווים ראשונים
-            const prefix = normalized.slice(0, Math.min(10, normalized.length));
-            return sn.includes(prefix);
-        });
-        if (!found) {
-            missingCount++;
-            missing.push(normalized.slice(0, 40));
-        }
-    }
+        // מצא את כל הפסקאות עם data-side-note בעמוד זה
+        const psWithSideNote = el.querySelectorAll('p[data-side-note]');
+        if (psWithSideNote.length === 0) continue;
 
-    if (missingCount > 0) {
-        issues.push({
-            kind: 'h7-conversion',
-            severity: 'high',
-            pageIdx: -1, location: 'global',
-            expected: `${parsed.h7Texts.length} H7 headings`,
-            found: `${parsed.h7Texts.length - missingCount} in side-notes`,
-            missing: missing.slice(0, 5),
-            missingCount,
-            message: `${missingCount} מתוך ${parsed.h7Texts.length} כותרות H7 לא נמצאו בהערות צד — ייתכן שהמרת H7→side-note נכשלה`
+        // מצא את כל ה-side-note-anchor בעמוד זה, עם ה-token IDs שלהם
+        const sideNoteTokens = new Set();
+        el.querySelectorAll('.side-note-anchor').forEach(sn => {
+            const tid = sn.getAttribute('data-for-token');
+            if (tid) sideNoteTokens.add(tid);
         });
+
+        // לכל פסקה עם data-side-note, בדוק שה-side-note-anchor שלה נמצא באותו עמוד
+        for (const p of psWithSideNote) {
+            const tokenId = p.getAttribute('data-token-id');
+            const sideNoteText = p.getAttribute('data-side-note') || '';
+            if (!tokenId) continue;
+
+            if (!sideNoteTokens.has(tokenId)) {
+                // ה-side-note-anchor לא נמצא בעמוד זה — בעיה!
+                const bc = document.getElementById('book-container');
+                const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
+                const pRect = p.getBoundingClientRect();
+                issues.push({
+                    kind: 'h7-conversion',
+                    severity: 'high',
+                    pageIdx: page.idx,
+                    location: `page ${page.label}`,
+                    tokenId: tokenId,
+                    sideNoteText: sideNoteText.slice(0, 60),
+                    childRect: { x: Math.round(pRect.left - bcRect.left), y: Math.round(pRect.top - bcRect.top), w: Math.round(pRect.width), h: Math.round(pRect.height) },
+                    message: `כותרת צד "${sideNoteText.slice(0, 40)}" (token ${tokenId}) לא נמצאה בעמוד ${page.label} — המרת H7→side-note נכשלה בעמוד זה`
+                });
+            }
+        }
     }
 }
 
