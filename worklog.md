@@ -5111,3 +5111,44 @@ Files Modified/Created:
 - README.md: שכתוב מלא (10 סעיפים, 460+ שורות)
 - geometry-audit.js: auditPageFillRatio threshold fix (fillRatio >= 0.85 → skip)
 - scripts/debug-side-notes-overflow.js: NEW — בודק overflow לאזור הערות שוליים
+
+---
+Task ID: ppc-and-b1-b4-status
+Agent: main agent
+Task: המשך כהמלצה 1 ו-3 — הוספת --per-page-checkpoints flag, ובדיקת B1-B4.
+
+Work Log:
+
+ממצא 1 — --per-page-checkpoints flag (המלצה 1):
+- מטרה: לאפשר אבחון מדויק של בעיות שנוצרות בתוך הלולאה הראשית. לפני זה, כל בעיה שנוצרה ב-loop הראשי סווגה כ-created-at-first-checkpoint (בלתי אינפורמטיבי).
+- typesetter.js: הוספתי קריאת checkpoint בסוף ה-while body הראשי (אחרי stretchPageToBottom + tryReclaimOrphanTail + post-block rebalance), עם שם 'page-N' כאשר N הוא מספר העמוד.
+- הקריאה gated ע"י window.__stepByStepAuditPerPage (נפרד מ-__stepByStepAudit כדי לא לפגוע בביצועים כברירת מחדל).
+- scripts/step-by-step-audit.js: הוספתי CLI flag --per-page-checkpoints / --ppc שמפעיל את הדגל ב-iframe.
+- תיעוד ב-Method.md: סעיף 6.2 (CLI flags) + סעיף חדש "שימוש ב---per-page-checkpoints" עם דוגמה.
+
+תיקון סיווג סיבתיות:
+- לפני: אם בעיה הופיעה ב-checkpoint הראשון ונעלמה אחר-כך, הסיווג היה 'created-at-first-checkpoint' (מטעה — הבעיה תוקנה!).
+- אחרי: הסיווג מזהה נכונה 'fixed-by-stage: <stage>' כשהבעיה נעלמת אחרי הופעה ראשונה.
+- לוגיקה: העברתי את בדיקת "disappeared later" לפני ה-fallback של 'created-at-first-checkpoint'.
+- אימות: ch9 settings-verification מסווג עכשיו 'fixed-by-stage: page-17' (נוצרה ב-page-2, תוקנה ב-page-17).
+
+ממצא 3 — B1-B4 מ-WORK_PLAN (המלצה 3):
+- B1 (P2.5 לכל הכותרות): ✅ כבר מומש — stretchByHeadingSpacing (שלב 4) פועל על H4/H5/H6 כבר כעת. עדכנתי את WORK_PLAN.
+- B2 (rebalance אחרי KP): לא מומש — דורש _kpCache (לא קיים). מסומן כפתוח.
+- B3 (clubpenalties לכותרות): לא מומש — דורש Knuth-Plass מלא. מסומן כפתוח.
+- B4 (fixWidowContinuation): ✅ לא רלוונטי — הפונקציה לא קיימת בקוד הנוכחי. המנגנון המקביל הוא tryReclaimOrphanTail. 0 בעיות widow-orphan ב-baseline הנוכחי (79 פרקים). עדכנתי את WORK_PLAN.
+- B5 (page-height overflow 7px): ✅ כבר מומש קודם.
+
+commit: f537eff (pushed to origin/V21)
+
+Stage Summary:
+- --per-page-checkpoints flag מאפשר אבחון מדויק של מתי נוצרת כל בעיה בלולאה הראשית.
+- תיקון סיווג סיבתיות: בעיה שנעלמת אחרי הופעה ראשונה מסווגת כעת 'fixed-by-stage' במקום 'created-at-first-checkpoint'.
+- B1+B4 כבר מומשו/לא רלוונטיים — עדכנתי את WORK_PLAN.
+- B2+B3 דורשים Knuth-Plass מלא — מסומנים כפתוחים.
+
+Files Modified:
+- typesetter.js: per-page checkpoint call (gated by __stepByStepAuditPerPage)
+- scripts/step-by-step-audit.js: --ppc flag + causality classification fix
+- step-by-step-audit-Method.md: --ppc documentation + example
+- WORK_PLAN.md: B1 marked as ✅ implemented, B4 marked as ✅ N/A
