@@ -112,7 +112,9 @@ jobs:
             if (byKindMatch) {
               const lines = byKindMatch[1].trim().split('\\n');
               for (const line of lines) {
-                const m = line.match(/\\s+(\\S+): (\\d+)/);
+                // \\s* (zero or more) — same fix as test-triggers-runner.yml so the first
+                // line (which has its leading whitespace stripped by trim()) is also matched.
+                const m = line.match(/\\s*(\\S+): (\\d+)/);
                 if (m) byKind[m[1]] = parseInt(m[2], 10);
               }
             }
