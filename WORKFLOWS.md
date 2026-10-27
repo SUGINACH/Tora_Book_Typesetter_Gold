@@ -1,11 +1,11 @@
 # GitHub Actions Workflows
 
 > תאריך: 2026-10-27
-> סטטוס: 5 workflows פעילים
+> סטטוס: 6 workflows פעילים
 
 ## סקירה כללית
 
-מערכת ה-CI/CD מכילה 5 workflows המאפשרים הרצת פעולות ארוכות וכבדות ברקע, עם התראה אוטומטית בסיום.
+מערכת ה-CI/CD מכילה 6 workflows המאפשרים הרצת פעולות ארוכות וכבדות ברקע, עם התראה אוטומטית בסיום.
 
 | Workflow | תיאור | טריגר | זמן ריצה |
 |----------|-------|-------|----------|
@@ -14,6 +14,7 @@
 | `full-baseline-audit.yml` | baseline מלא על כל 79 פרקים עם causality | manual only | ~30-60min |
 | `test-triggers-runner.yml` | הרצת קבצי trigger לאימות זיהוי בעיות | push (paths) / manual | ~15min |
 | `issue-investigation.yml` | חקירה עמוקה של בעיה ספציפית עם המלצות | manual only | ~10-20min |
+| `issues-screenshot-pdf.yml` | יצירת PDF עם צילומי מסך של עמודים עם בעיות | manual only | ~10-90min |
 
 ---
 
@@ -177,3 +178,51 @@ GitHub Actions שולח התראה אוטומטית לאימייל / GitHub Noti
 | 7. בדיקת הצלחה | `Issue Investigation` (שוב, על אותו chapter) |
 | 8. השלכות | `Full Baseline Audit` (על כל 79 פרקים) |
 | 9. הצלחה חלקית | `Issue Investigation` עם `--verbose` על הבעיה שנשארה |
+
+---
+
+## 6. Issues Screenshot PDF (`issues-screenshot-pdf.yml`)
+
+**מטרה:** יצירת PDF עם צילומי מסך של עמודים שדווחו עליהם בעיות. ה-PDF כולל:
+- **עמוד שער** עם סטטיסטיקות (מספר פרקים נסרקו, HIGH/MEDIUM/LOW counts, סוגי בעיות בדוח)
+- **מפריד פרק** עבור כל פרק (כולל מספר העמודים עם בעיות)
+- **בלוק בעיה** לכל בעיה עם:
+  - **כותרת:** שם עברי, חומרה (HIGH/MEDIUM/LOW), סוג (kind), מספר פרק, מספר עמוד
+  - **סיבה:** הסבר על מקור הבעיה
+  - **צילום מסך מלא של העמוד**
+  - **הודעת ה-audit** המלאה
+  - **מיקום הבעיה** (childRect: x, y, w, h)
+
+**טריגר:** ידני בלבד
+- inputs:
+  - `start_chapter` (1-79, default 1)
+  - `end_chapter` (1-79, default 79)
+  - `kind_filter` (ריק = כל הסוגים, או רשימה מופרדת בפסיקים: "footnote-overflow,imbalance")
+  - `push_to_branch` (true/false — האם להוסיף commit עם ה-PDF ל-V21)
+
+**מתי להשתמש:**
+- לסקירה ויזואלית של הבעיות שה-audit מדווח
+- לאימות דיוק הגדרת הבעיות (האם האזור המסומן אכן בעייתי?)
+- לאימות דיווח ה-audit (האם הבעיה המדווחת אמיתית?)
+- להצגה למשתמש/לקוח
+
+**שם הקובץ:** כולל את סוגי הבעיות שצולמו + timestamp
+- דוגמה: `issues-candidate-vs-final-2026-10-27T13-01-42.pdf`
+- דוגמה: `issues-footnote-overflow+imbalance-2026-10-27T14-30-00.pdf`
+
+**Artifacts:**
+- `issues-pdf-{filename}` — ה-PDF + לוג
+- retention: 90 days
+
+**אופציונלי:** אם `push_to_branch=true`, ה-PDF נשמר גם ב-`issue-reports-archive/` ב-repo עצמו (commit אוטומטי).
+
+**הערה חשובה:** הסקריפט מרענן browser כל 5 פרקים כדי למנוע דליפות זיכרון. עבור 79 פרקים מלאים, הריצה לוקחת ~30-90 דקות.
+
+**שימוש למטרת אימות דיווח (כפי שהמשתמש ביקש):**
+1. הפעל את ה-workflow עם ברירת מחדל (כל 79 הפרקים, כל הסוגים)
+2. הורד את ה-PDF מ-artifacts
+3. עבור על כל צילום מסך וודא:
+   - שהבעיה המדווחת אכן נראית לעין בעמוד
+   - שהסיבה המצוינת תואמת את מה שנראה
+   - שהחומרה מתאימה לחומרת הבעיה הנראית
+4. אם נמצאו false positives — דווח עליהם כדי לעדכן את הספים (כלל 5 ב-WORKING_RULES.md)
