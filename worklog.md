@@ -5152,3 +5152,62 @@ Files Modified:
 - scripts/step-by-step-audit.js: --ppc flag + causality classification fix
 - step-by-step-audit-Method.md: --ppc documentation + example
 - WORK_PLAN.md: B1 marked as ✅ implemented, B4 marked as ✅ N/A
+
+---
+Task ID: work-plan-accurate-status
+Agent: main agent
+Task: הגש שוב את רשימת העבודה, אל תסיר את מה שלא תוקן במלואו.
+
+Work Log:
+- עברתי על WORK_PLAN.md ועדכנתי כל פריט עם סמל סטטוס מדויק:
+  * ✅ DONE — מומש במלואו, נבדק, עובד
+  * ⚠️ PARTIAL — מומש חלקית, נשארו מקרי קצה
+  * ❌ OPEN — לא מומש, דורש עבודה
+  * 🚫 N/A — לא רלוונטי
+
+- שינויים עיקריים בסטטוס (מ-✅ ל-⚠️ PARTIAL):
+  * B1 (P2.5 for headings): כעת ⚠️ PARTIAL — stretchByHeadingSpacing פועל אבל 15 בעיות imbalance נותרו
+  * B4 (fixWidowContinuation): כעת ⚠️ PARTIAL — tryReclaimOrphanTail עובד אבל מוגבל ל-1-2 שורות בלבד
+  * A3 (settings-verification): כעת ⚠️ PARTIAL — 11/15 בדיקות מומשו
+  * C4 (regression tests): כעת ⚠️ PARTIAL — ספירות קיימות אבל אין השוואת baseline
+  * D1 (JSDoc): כעת ⚠️ PARTIAL — comment blocks אבל לא JSDoc פורמלי
+
+- הוספתי טבלת ממצאים (F1-F5) בראש המסמך עם סטטוס מפורש:
+  * F1: ✅ DONE (drop-word per column)
+  * F2: ⚠️ PARTIAL (9/11 תוקנו, 2 נשארו — דורש Knuth-Plass B6)
+  * F3: ✅ DONE (0 מופעים)
+  * F4: ⚠️ PARTIAL (תיקון סף, 1 מקרה אמיתי נשאר — ch73 page 9, 81% fill)
+  * F5: ✅ DONE (hasH2 מורחב)
+
+- הוספתי סעיף I (step-by-step אבחון) עם 8 פריטים שכולם ✅ DONE (חדש ב-V21):
+  I1 checkpoints גלובליים, I2 delta tracking, I3 causality classification,
+  I4 issue patterns, I5 CLI flags, I6 per-page checkpoints, I7 issueData
+  preservation, I8 findProblemNode ל-sparse-line/widow-orphan
+
+- הוספתי D5 (Method.md) ו-D6 (README) — שניהם ✅ DONE
+
+- עדכנתי מדדים נוכחיים: high 0/medium 5/low 16 (total 21, ירידה מ-102)
+
+- הוספתי טבלת סיכום לפי קטגוריה:
+  * A: 2 DONE, 1 PARTIAL, 0 OPEN (3 items)
+  * B: 1 DONE, 2 PARTIAL, 8 OPEN (11 items)
+  * C: 3 DONE, 1 PARTIAL, 1 OPEN (5 items)
+  * D: 3 DONE, 1 PARTIAL, 2 OPEN (6 items)
+  * E: 0 DONE, 0 PARTIAL, 3 OPEN (3 items)
+  * F: 0 DONE, 0 PARTIAL, 5 OPEN (5 items)
+  * G: 0 DONE, 0 PARTIAL, 5 OPEN (5 items)
+  * H: 0 DONE, 0 PARTIAL, 2 OPEN (2 items)
+  * I: 8 DONE, 0 PARTIAL, 0 OPEN (8 items — all new in V21)
+  סה"כ: 17 DONE (35%), 6 PARTIAL (12%), 26 OPEN (53%) מתוך 49 items
+  ממצאים: 3 DONE (60%), 2 PARTIAL (40%) מתוך 5 items
+
+- commit: 1764e6d (pushed to origin/V21)
+
+Stage Summary:
+- WORK_PLAN.md כעת משקף מצב אמיתי עם סמלי ✅/⚠️/❌/🚫.
+- פריטים חלקיים (B1, B4, A3, C4, D1, F2, F4) נשארו ברשימה כ-PARTIAL — לא הוסרו.
+- סעיף I (step-by-step אבחון) נוסף — כל 8 הפריטים DONE.
+- טבלת סיכום מאפשרת הערכה מהירה של מצב הפרויקט.
+
+Files Modified:
+- WORK_PLAN.md: +206 lines, -79 lines, total 392 lines (was 265)
