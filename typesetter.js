@@ -1127,6 +1127,16 @@ function compressByWordSpacing(col, neededPx) {
         applyWordSpacing(col, f);
         const after = col.scrollHeight;
         const freed = before - after;
+        // [תיקון — B1 רגרסיה] אם freed < 0 (התרחבות במקום כיווץ) — חזור מיד לפקטור הקודם.
+        // זה קורה כשהקטנת word-spacing גורמת למילה נוספת להיכנס לשורה, מה שמשנה את
+        // ה-wrapping ומגדיל את מספר השורות. ללא תיקון זה, compressByWordSpacing יכול
+        // להגדיל את הטור ב-60+px במקום לכווץ אותו — וזו הסיבה ל-imbalance הגדול.
+        if (freed < -1) {
+            // התרחבות משמעותית — חזור לפקטור הקודם
+            applyWordSpacing(col, lastGoodFactor);
+            totalFreed = lastGoodHeight - col.scrollHeight;
+            return totalFreed;
+        }
         if (freed > neededPx + 10) {
             // כיווצנו יותר מדי — חזור לפקטור הקודם
             applyWordSpacing(col, lastGoodFactor);
@@ -1886,6 +1896,13 @@ function balanceColumns(block, colWidth, styleObj, snapshot, availableHeight = I
         }
     }
     if (cands.length === 0) {
+        // [חדש — שקיפות סיבתית] תעד מצב 'skipped' כשאין מועמדים חוקיים (למשל פסקה בודדת)
+        try {
+            block.setAttribute('data-layout-balance-status', 'skipped');
+            block.setAttribute('data-layout-balance-cand-count', '0');
+            block.setAttribute('data-layout-balance-items-count', String(items.length));
+            block.setAttribute('data-layout-balance-skip-reason', 'no-legal-candidates');
+        } catch (_) {}
         finalizeNotePositions([], 0);
         return;
     }
@@ -3756,7 +3773,9 @@ function typesetDocumentCore() {
                 if (depth > maxDepth) return;
                 // [חדש] העשרת role/tokenId וכו'
                 try { window.__geomAudit.enrichNode(node); } catch(_) {}
-                elements.push({
+                // [חדש — שקיפות סיבתית] הוסף dataAttrs לרשימת השדות שנשמרים.
+                // זה חושף את data-layout-* attributes שמתעדים החלטות engine.
+                const el = {
                     type: node.type,
                     role: node.role || node.type,
                     cls: (node.cls || '').slice(0, 60),
@@ -3767,7 +3786,11 @@ function typesetDocumentCore() {
                         bottom: Math.round(node.rect.bottom || (node.rect.y + node.rect.h))
                     } : null,
                     text: (node.text || '').slice(0, 50),
-                });
+                };
+                if (node.dataAttrs && Object.keys(node.dataAttrs).length > 0) {
+                    el.dataAttrs = node.dataAttrs;
+                }
+                elements.push(el);
                 for (const c of (node.children || [])) walk(c, depth + 1);
             }
             for (const c of (page.children || [])) walk(c, 0);
@@ -3839,6 +3862,32 @@ function typesetDocumentCore() {
                 const pageMetricsByPage = {};
                 for (const p of model.pages) {
                     pageMetricsByPage[p.idx] = window.__geomAudit.getPageMetrics(p);
+                }
+                // [חדש — שקיפות סיבתית] אסוף data-layout-* attributes לכל block-2col בכל עמוד.
+                // זה חושף את החלטות ה-engine גם לבלוקים שלא דווחו כבעיה.
+                const blockAttrsByPage = {};
+                for (const p of model.pages) {
+                    const pEl = window.__geomAudit.findDom(p);
+                    if (!pEl) continue;
+                    const blocks = pEl.querySelectorAll('.block-2col');
+                    const blockAttrs = [];
+                    for (const blk of blocks) {
+                        const rC = blk.querySelector('.right-col');
+                        const lC = blk.querySelector('.left-col');
+                        const attrs = {};
+                        for (const a of Array.from(blk.attributes)) {
+                            if (a.name.startsWith('data-layout-')) {
+                                attrs[a.name] = a.value;
+                            }
+                        }
+                        blockAttrs.push({
+                            rH: rC ? Math.round(rC.scrollHeight) : null,
+                            lH: lC ? Math.round(lC.scrollHeight) : null,
+                            diff: (rC && lC) ? Math.round(rC.scrollHeight - lC.scrollHeight) : null,
+                            attrs
+                        });
+                    }
+                    if (blockAttrs.length > 0) blockAttrsByPage[p.idx] = blockAttrs;
                 }
                 // [חדש — דיוק] אסוף signatures לכל עמוד, וחשב delta מול ה-checkpoint הקודם
                 const sigsByPage = {};
@@ -3954,6 +4003,8 @@ function typesetDocumentCore() {
                     summary: audit.summary,
                     pageMetricsByPage: pageMetricsByPage,
                     deltasByPage: deltasByPage,
+                    // [חדש — שקיפות סיבתית] תיעוד data-layout-* attributes לכל block-2col
+                    blockAttrsByPage: blockAttrsByPage,
                     issues: enrichedIssues
                 });
             } catch(e) { /* התעלם משגיאות ב-checkpoint */ }
@@ -5242,8 +5293,10 @@ function typesetDocumentCore() {
                 // טור ימין גבוה יותר — מותחים את שמאל להגיע אליו
                 justifyColumnVertically(lC, rH, styleObj, 150, null);
                 // בדיקת יירוס: אם שמאל הירבר ונהיה גבוה מימין — מכווצים חזרה
+                // [תיקון — B1 רגרסיה] רק כשהפער משמעותי (> 5px). אחרת, shrinkColumnVertically
+                // יכול לגרום להתרחבות הטור עקב שינוי wrapping, מה שיוצר imbalance גדול.
                 const lHafter = lC.scrollHeight;
-                if (lHafter > rH + 1.5) {
+                if (lHafter > rH + 5) {
                     shrinkColumnVertically(lC, rH, styleObj, 150);
                 }
                 // [חדש — B1 תיקון] אם שמאל לא הצליח להגיע לימין (פער נותר > 5px),
@@ -5267,8 +5320,10 @@ function typesetDocumentCore() {
                 // טור שמאל גבוה יותר — מותחים את ימין להגיע אליו
                 justifyColumnVertically(rC, lH, styleObj, 150, null);
                 // בדיקת יירוס: אם ימין הירבר ונהיה גבוה משמאל — מכווצים חזרה
+                // [תיקון — B1 רגרסיה] רק כשהפער משמעותי (> 5px). אחרת, shrinkColumnVertically
+                // יכול לגרום להתרחבות הטור עקב שינוי wrapping, מה שיוצר imbalance גדול.
                 const rHafter = rC.scrollHeight;
-                if (rHafter > lH + 1.5) {
+                if (rHafter > lH + 5) {
                     shrinkColumnVertically(rC, lH, styleObj, 150);
                 }
                 // [חדש — B1 תיקון] אם ימין לא הצליח להגיע לשמאל (פער נותר > 5px),
