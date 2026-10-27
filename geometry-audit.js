@@ -455,7 +455,10 @@ function auditColumnBalance(node, issues) {
                 })(node);
                 let severity;
                 if (hasPCut && diff <= 80) {
-                    severity = diff > 50 ? 'medium' : (diff > 10 ? 'medium' : 'low');
+                    // [תיקון — B1] עם p-cut cross-page, imbalance עד 80px הוא medium (לא high).
+                    // אבל רק כש-diff > 50. diff בין 10-50 הוא low (תקין יחסית למקרה עם p-cut).
+                    // קודם: diff > 10 היה מדווח כ-medium — זה גרם ל-21 medium issues מיותרים.
+                    severity = diff > 50 ? 'medium' : 'low';
                 } else {
                     severity = diff > 50 ? 'high' : (diff > 20 ? 'medium' : 'low');
                 }
