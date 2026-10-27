@@ -172,7 +172,12 @@ function auditH7ToSideNote(model, sourceText, issues) {
         }
     }
 
-    // בדוק שכל H7 מהמקור מופיע ב-side-notes
+    // [תיקון 2026-10-28 — הערת משתמש]
+    // הגישה הנכונה: בדוק שטקסט ה-H7 קיים באחת מהערות הצד.
+    // אם הוא קיים ב-side-note — ההמרה הצליחה, ואין בעיה (גם אם הוא מופיע בגוף כציטוט גמרא).
+    // רק אם הוא לא נמצא בשום side-note — זו בעיה.
+    // הבדיקה הישנה חיפשה H7 בגוף הטקסט כ-<p> — אבל טקסט כותרת צד יכול להופיע בגוף
+    // כציטוט גמרא או הפניה, וזה לא אומר שההמרה נכשלה.
     let missingCount = 0;
     const missing = [];
     for (const h7text of parsed.h7Texts) {
@@ -189,35 +194,6 @@ function auditH7ToSideNote(model, sourceText, issues) {
         }
     }
 
-    // בדוק ש-H7 לא מופיע כ-<p> בגוף הטקסט
-    // [תיקון false-positive] השוואת 20 תווים ראשונים גרמה לתוצאות שווא כשציטוט גמרא הכיל
-    // את אותן מילים כמו כותרת H7. כעת משווים את הטקסט המלא של ה-H7 (או לפחות 30 תווים).
-    let inBodyCount = 0;
-    const h7InBodyDetails = [];
-    for (const page of model.pages) {
-        const el = window.__geomAudit?.findDom?.(page);
-        if (!el) continue;
-        const ps = el.querySelectorAll('.main-column p, .single-wide-col p');
-        for (const p of ps) {
-            const pText = normalizeText(p.textContent || '');
-            for (const h7text of parsed.h7Texts) {
-                const normalized = normalizeText(h7text);
-                // השתמש בלפחות 30 תווים להשוואה (או את כל הטקסט אם קצר יותר)
-                const minLen = Math.min(30, normalized.length);
-                const searchStr = normalized.slice(0, minLen);
-                if (pText.includes(searchStr)) {
-                    inBodyCount++;
-                    h7InBodyDetails.push({
-                        h7text: normalized.slice(0, 60),
-                        pageIdx: page.idx,
-                        pPreview: pText.slice(0, 80)
-                    });
-                    break;
-                }
-            }
-        }
-    }
-
     if (missingCount > 0) {
         issues.push({
             kind: 'h7-conversion',
@@ -228,16 +204,6 @@ function auditH7ToSideNote(model, sourceText, issues) {
             missing: missing.slice(0, 5),
             missingCount,
             message: `${missingCount} מתוך ${parsed.h7Texts.length} כותרות H7 לא נמצאו בהערות צד — ייתכן שהמרת H7→side-note נכשלה`
-        });
-    }
-    if (inBodyCount > 0) {
-        issues.push({
-            kind: 'h7-conversion',
-            severity: 'high',
-            pageIdx: -1, location: 'global',
-            inBodyCount,
-            h7InBodyDetails: h7InBodyDetails.slice(0, 5),
-            message: `${inBodyCount} כותרות H7 נמצאו בגוף הטקסט (כ-p) במקום בהערות צד — המרת H7→side-note נכשלה. דוגמה: "${h7InBodyDetails[0]?.h7text || ''}"`
         });
     }
 }
