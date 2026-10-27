@@ -126,24 +126,24 @@ jobs:
         run: |
           echo "=== Trigger Summary ==="
           cat trigger-summary/trigger-summary.json | python3 -c "
-            import json, sys
-            data = json.load(sys.stdin)
-            print(f'Total triggers: {len(data[\"triggers\"])}')
+          import json, sys
+          data = json.load(sys.stdin)
+          print(f'Total triggers: {len(data[\"triggers\"])}')
+          print()
+          for t in data['triggers']:
+            print(f'--- {t[\"name\"]} ---')
+            print(f'  Expected kinds: {t[\"expectedKinds\"]}')
+            print(f'  Detected kinds: {list(t[\"byKind\"].keys())}')
+            print(f'  Summary: {t[\"summary\"]}')
+            # Check if expected kinds were detected
+            expected_set = set(t['expectedKinds'])
+            detected_set = set(t['byKind'].keys())
+            missing = expected_set - detected_set
+            if missing:
+              print(f'  ⚠️  MISSING expected: {missing}')
+            else:
+              print(f'  ✓ All expected kinds detected')
             print()
-            for t in data['triggers']:
-              print(f'--- {t[\"name\"]} ---')
-              print(f'  Expected kinds: {t[\"expectedKinds\"]}')
-              print(f'  Detected kinds: {list(t[\"byKind\"].keys())}')
-              print(f'  Summary: {t[\"summary\"]}')
-              # Check if expected kinds were detected
-              expected_set = set(t['expectedKinds'])
-              detected_set = set(t['byKind'].keys())
-              missing = expected_set - detected_set
-              if missing:
-                print(f'  ⚠️  MISSING expected: {missing}')
-              else:
-                print(f'  ✓ All expected kinds detected')
-              print()
           "
 
       - name: Upload trigger results
