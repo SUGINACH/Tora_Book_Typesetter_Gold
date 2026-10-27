@@ -5455,3 +5455,47 @@ Stage Summary:
 - ה-audit מזהה כעת נכון בין התנהגות טבעית של ה-engine (שאינה בעיה) לבין בעיות אמיתיות.
 - כל הספים מכוונים כך שגלישות עיגול פיקסלים, p-cut cross-page overflow טבעי, ואי-איזון קטן אינם מדווחים.
 - בעיות אמיתיות (overflow > 42px, imbalance > 30px, side-note > 15px, page < 80%) עדיין ידווחו.
+
+---
+Task ID: audit-expansion-and-text-integrity
+Agent: main agent
+Task: המשך כהמלצה — פריטי 1+2+3 מ-AUDIT_EXPANSION_PLAN.
+
+Work Log:
+
+פריט 1 — 8 בדיקות גיאומממטריות חדשות (audit-expansion.js):
+1. auditHeadingEscort — כותרת + <2 שורות אחריה (B3/clubpenalties)
+2. auditPrivateUseCharacters — U+E000-F8FF (ריבועים)
+3. auditFontNotLoaded — document.fonts.check() לטעינת גופן
+4. auditMultipleBlocksPerPage — 2+ block-2col בעמוד
+5. auditFootnoteOverflow — note-lines חורגות מ-footnote-area
+6. auditCandidateVsFinalHeight — data-layout-* מול scrollHeight בפועל
+7. auditTofu — Canvas API לזיהוי תווים לא בגופן
+8. auditNoteMarkerLineBreak — סמן הערה בסוף שורה
+
+תיקון באג קריטי: הפונקציות נקראו בלי window.__geomAudit. prefix → ReferenceError → נבלע ע"י try/catch → 0 checkpoints. תוקן.
+
+commit bc5f1d5
+
+פריט 2+3 — בדיקות שלמות טקסט והמרות (audit-text-integrity.js):
+1. auditTextCompleteness — השוואת מילים מקור מול DOM (multiset, נורמליזציה ניקוד/טעמים)
+2. auditH7ToSideNote — וידוא שכותרות H7 הומרו ל-side-note-anchor (לא בגוף)
+3. auditBracketToFootnote — וידוא ש-[...] הומרו ל-note-line (לא בגוף)
+
+שילוב: window.__auditSourceText מועבר ע"י step-by-step-audit.js ל-iframe.
+commit bd94bfd
+
+תוצאות ב-ch9:
+- text-completeness: 1 low — 2 מילים חסרות (edge case)
+- h7-conversion: 1 high — 1 כותרת H7 בגוף במקום ב-side-notes (בעיה אמיתית!)
+- bracket-conversion: 0 — כל הסוגריים הומרו נכון
+- multiple-blocks: 9 medium (5 pages with 2 block-2col)
+- footnote-overflow: 2 (1 high 77px + 1 medium 28px)
+- candidate-vs-final: 13 medium (פערים בין מועמד לסופי)
+- סה"כ: 26 issues (2 high, 16 medium, 8 low)
+
+Stage Summary:
+- 11 בדיקות חדשות מומשו (8 גיאומממטריות + 3 שלמות טקסט)
+- הבדיקות מזהות בעיות אמיתיות שלא זוהו קודם
+- במיוחד: h7-conversion (high) — כותרת H7 בגוף במקום ב-side-notes
+- bracket-conversion: 0 issues — המרת []→footnote עובדת נכון
