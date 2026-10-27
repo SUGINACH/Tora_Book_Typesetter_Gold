@@ -391,11 +391,9 @@ function auditEmptyColumn(model, issues) {
         const page = model.pages[pageIdx];
         // [נקודה ממשתמש 2026-10-28] דלג על עמודי שער — אינם עמודי תוכן רגילים
         if (isSpecialPage(page)) continue;
-        // [תיקון 2026-10-28 — 1_Defining_Layout_Issues.md סעיף 9.5]
-        // טור ריק בסוף פרק — תקין! אי אפשר למלא טור בלי תוכן.
-        // בדוק אם זה העמוד האחרון של הפרק (העמוד הבא הוא שער/blank או שאין עמוד הבא).
-        const isLastInChapter = (pageIdx === model.pages.length - 1) ||
-            (pageIdx + 1 < model.pages.length && isSpecialPage(model.pages[pageIdx + 1]));
+        // [תיקון 2026-10-28 — הערת משתמש] הדילוג על סוף פרק אינו נכון עבו� empty-column!
+        // הדילוג על "סוף פרק" נכון רק עבור page-underfill (עמוד דליל), לא עבור empty-column (טור ריק).
+        // טור ריק הוא תמיד בעיה — גם בסוף פרק. ה-engine צריך לפצל את התוכן בין שני הטורים.
         const el = window.__geomAudit?.findDom?.(page);
         if (!el) continue;
         const blocks = el.querySelectorAll('.block-2col');
@@ -412,8 +410,8 @@ function auditEmptyColumn(model, issues) {
             // דלג על בלוקים ריקים לחלוטין (אין תוכן בכלל — לא נקראת balanceColumns)
             if (rChildren === 0 && lChildren === 0) return;
 
-            // [תיקון 2026-10-28] דלג על טור ריק בסוף פרק (תקין לפי סעיף 9.5)
-            if (isLastInChapter && (rChildren === 0 || lChildren === 0)) return;
+            // [הוסר 2026-10-28 — הערת משתמש] אל תדלג על טור ריק בסוף פרק!
+            // טור ריק הוא תמיד בעיה. הדילוג נכון רק ל-page-underfill, לא ל-empty-column.
 
             const bc = document.getElementById('book-container');
             const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
