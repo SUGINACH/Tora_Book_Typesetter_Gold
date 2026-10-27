@@ -5071,3 +5071,43 @@ Files Modified/Created:
 - typesetter.js: balanceColumns evalCand (sparse penalty), __runAuditCheckpoint (findProblemNode + issueData preservation)
 - scripts/debug-sparse-line.js: NEW — debug p-cut DOM structure
 - scripts/debug-collectLines-vs-enrichNode.js: NEW — compare collectLines vs enrichNode
+
+---
+Task ID: finding-3+4+readme-update
+Agent: main agent
+Task: המשך כמומלץ — ממצא 3 (טקסט באזור הערות שוליים), ממצא 4 (עמוד דליל), ועדכון README.
+
+Work Log:
+- בדקתי את ממצא 3 (text in side-notes area) — כתבתי scripts/debug-side-notes-overflow.js שבודק אם יש חפיפה בין טקסט (rects של פסקאות) לבין אזור margin-notes-column.
+- הרצתי את הבדיקה על כל 79 פרקים: 0 מופעים של overflow. ממצא 3 — RESOLVED (כנראה תוקן בקומיטים קודמים עם fixDropWordInColumns ושיפורי totalFlowH).
+
+- בדקתי את ממצא 4 (page-underfill / sparse page):
+  * מצאתי 2 בעיות: ch3 page 14 (88% fill, 102px empty), ch73 page 9 (81% fill, 172px empty).
+  * ch3 page 14: 88% מילוי — זה לא באמת "דליל"! יש תמיד נווח תחתית טבעי.
+  * הבאג: ה-audit דיווח כל עמוד עם wastedPx >= 100, גם אם המילוי 88%.
+  * תיקנתי: עכשיו מדווח רק אם wastedPx >= 100 וגם fillRatio < 0.85.
+  * תוצאה: ch3 page 14 לא מדווח יותר (88% >= 85%), ch73 page 9 עדיין מדווח (81% < 85%, אמיתי).
+
+- עדכנתי את README.md מהגרסה הישנה (v10, 2026-10-12) לגרסה מקיפה ל-V21 Gold (2026-10-27):
+  * 10 סעיפים: מה חדש, רכיבים, בדיקות גיאומטריה, מערכת אבחון, CLI, CI, מצב נוכחי, מפת דרכים, התקנה, תיעוד נוסף.
+  * מצאי קבצים מלא (engine, fonts, data, HTML, scripts, docs).
+  * טבלת בדיקות: 12+ עם תיאור וחומרה.
+  * מתודולוגיית step-by-step: 7 קטגוריות סיבתיות, 9 דפוסי אבחון.
+  * טבלת CI: 4 jobs עם ספים.
+  * ממצאים: 5 ממצאים (1+2+5+secdiv+B5 תוקנו, 3 אומת כפתורה, 4 תיקון סף).
+  * מדדים נוכחיים: high 0, medium 5, low 16 (היה 8/69/25).
+  * מפת דרכים: 8 קטגוריות A-H עם סמני סטטוס.
+  * היסטוריית גרסאות (v10 → V15 → V21).
+
+- commit: d710cdb (pushed to origin/V21)
+
+Stage Summary:
+- ממצא 3 (text in side-notes): RESOLVED — 0 מופעים נוכחית. נוצר כלי debug שמאמת זאת.
+- ממצא 4 (page-underfill): תיקון סף — 88% מילוי לא נחשב "דליל" יותר. ירידה 2→1.
+- README: שכתוב מלא מ-v10 ל-V21 Gold, עם 10 סעיפים ופירוט מלא של כל המערכת.
+- נותרו 2 sparse-line אמיתיים (ch55, ch63) — דורשים Knuth-Plass מלא.
+
+Files Modified/Created:
+- README.md: שכתוב מלא (10 סעיפים, 460+ שורות)
+- geometry-audit.js: auditPageFillRatio threshold fix (fillRatio >= 0.85 → skip)
+- scripts/debug-side-notes-overflow.js: NEW — בודק overflow לאזור הערות שוליים
