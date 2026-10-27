@@ -5499,3 +5499,62 @@ Stage Summary:
 - הבדיקות מזהות בעיות אמיתיות שלא זוהו קודם
 - במיוחד: h7-conversion (high) — כותרת H7 בגוף במקום ב-side-notes
 - bracket-conversion: 0 issues — המרת []→footnote עובדת נכון
+
+---
+Task ID: working-rules-ui-1-to-4
+Agent: main agent
+Task: יישום כללי עבודה 1–4 ב-UI: שמות עבריים, הבהוב אזור, דרופדאון צ'קליסט לסינון, מיון טבלת דיווחים.
+
+Work Log:
+
+כלל 1 — שמות עבריים:
+- האובייקט `GEOM_KIND_NAMES` הגלובלי ב-`app.js` (line 2668) כבר היה קיים מ-session קודם עם 30 סוגי בעיות.
+- תוקן באג: בכל השימושים הפנימיים היה קריאה ל-`kindNames` (לא מוגדר) במקום `GEOM_KIND_NAMES`. תוקן ל-`GEOM_KIND_NAMES` ב-`renderGeomResults` וב-`renderGeomBreakdown`.
+
+כלל 2 — הבהוב אזור הבעיה:
+- הוסף `childRect` לכל הבעיות החדשות ב-`audit-expansion.js`:
+  - auditHeadingEscort: kid.rect → childRect (3 חלופות חומרה)
+  - auditOrphanH3Block: block.rect → childRect
+  - auditFootnoteOverflow: fnArea.rect → childRect
+  - auditPrivateUseCharacters: node.rect → childRect
+  - auditCandidateVsFinalHeight: blk.getBoundingClientRect() (relative to book-container) → childRect
+  - auditTofu: firstP.getBoundingClientRect() → childRect
+  - auditNoteMarkerLineBreak: marker rect → childRect
+- בעיות גלובליות (text-completeness, h7-conversion, bracket-conversion, font-not-loaded): pageIdx=-1, ישלחו `geom-highlight` postMessage ל-iframe. אם יש rect יודגש, אחרת רק יוצג הודעה.
+- `scrollToIssuePage(pageIdx, issueIdx)` שוכתב: מטפל ב-3 מקרים:
+  1. יש rect → geom-scroll-to-page (גלילה + הבהוב)
+  2. pageIdx>=0 ללא rect → גלילה בלבד
+  3. בעיה גלובלית → geom-highlight בלבד
+
+כלל 3 — דרופדאון צ'קליסט לסינון:
+- נוספה `renderGeomKindFilter(issues)` המציירת `<details>` collapsible עם:
+  - כותרת מציגה "סינון לפי סוג (N בעיות, M סוגים, מוצגים K סוגים)"
+  - כפתורי "סמן הכל" (ירוק) ו-"בטל הכל" (אפור)
+  - grid 2 עמודות של צ'קבוקסים, כל אחד עם שם עברי + ספירה
+- הסטייט `window.__geomFilter.enabledKinds`:
+  - `null` = הכל מסומן (ברירת מחדל)
+  - `Set` = רק סוגים שב-Set מוצגים
+  - `Set` ריק = כלום לא מוצג (הודעת "🔒 כל סוגי הבעיות מסוננים")
+- `__toggleGeomKind(kind, checked)`: טוגל סוג בודד; אם במצב null, עובר ל-Set מלא קודם.
+- `__toggleAllGeomKinds(true/false)`: true → null (הכל), false → Set ריק.
+
+כלל 4 — מיון טבלת דיווחים:
+- נוספה `sortGeomIssues(issues, key, dir)`:
+  - מפתח 'page': מיון מספרי, עם שובר שוויון לפי שם סוג (Hebrew)
+  - מפתח 'type': `localeCompare` עם שפה 'he'
+  - מפתח 'severity': sevOrder {high:3, medium:2, low:1}, asc=low→high, desc=high→low
+- `sortIndicator(key)`: מחזיר ' ↑' / ' ↓' / ''
+- הכותרת הפעילה מודגשת בצבע `#1e40af` (כחול)
+- `__setGeomSort(key)`: לחיצה על כותרת — אם אותו מפתח, החלף כיוון; אחרת, החלף מפתח ואפס ל-asc.
+- ברירת מחדל: `page asc`
+- נבדק ע"י `scripts/test-sort-filter.js` — 8 טסטים, כולם עוברים.
+
+אימות תקינות:
+- `node -c` syntax check: audit-expansion.js OK, app.js OK, audit-text-integrity.js OK, geometry-audit.js OK.
+- Unit-test sort/filter: 8/8 עוברים.
+
+Stage Summary:
+- כל 4 הכללים מיושמים במלואם ב-`app.js` + `audit-expansion.js`.
+- `WORKING_RULES.md` עודכן עם הסברי יישום מפורטים לכל כלל.
+- scripts/test-sort-filter.js נוסף כבדיקת unit-test עבור המיון והסינון.
+- ה-UI כעת תומך ב: שמות עבריים ל-30 סוגי בעיות, הבהוב אזור הבעיה לכל סוג (כולל החדשים), דרופדאון צ'קליסט לסינון, מיון לפי page/type/severity עם חץ ↑/↓.

@@ -1,0 +1,227 @@
+name: Full Baseline Audit
+
+# תיאור: בדיקה גיאוממטרית מלאה על כל 79 הפרקים — יוצר baseline ראשוני
+# של כל הבעיות הנוכחיות. מופעל ידנית בלבד (כי איטי).
+#
+# תוצאות:
+#   - קובץ JSON לכל פרק (artifact)
+#   - סיכום מצטבר (artifact: full-baseline-summary.json)
+#   - לוג מלא של כל הפרקים
+#
+# שימוש:
+#   - הפעל ידנית דרך Actions → Full Baseline Audit → Run workflow
+#   - הגדר את טווח הפרקים ב-inputs (default 1-79)
+#   - המתן ~30-60 דקות (תלוי בטווח)
+#   - הורד artifacts לקבלת JSON מלא לכל פרק
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_chapter:
+        description: 'פרק התחלתי (1-79, ברירת מחדל 1)'
+        required: false
+        default: '1'
+        type: string
+      end_chapter:
+        description: 'פרק סופי (כולל, ברירת מחדל 79)'
+        required: false
+        default: '79'
+        type: string
+      concurrency:
+        description: 'מספר פרקים במקביל (1-5, ברירת מחדל 3)'
+        required: false
+        default: '3'
+        type: string
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    name: Prepare matrix
+    outputs:
+      matrix: ${{ steps.gen-matrix.outputs.matrix }}
+    steps:
+      - id: gen-matrix
+        run: |
+          START=${{ github.event.inputs.start_chapter || '1' }}
+          END=${{ github.event.inputs.end_chapter || '79' }}
+          CHAPTERS=$(seq $START $END | jq -R . | jq -sc .)
+          echo "matrix=$CHAPTERS" >> $GITHUB_OUTPUT
+          echo "Chapters: $CHAPTERS"
+
+  audit:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    name: Ch ${{ matrix.chapter }}
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ github.event.inputs.concurrency || '3' }}
+      matrix:
+        chapter: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start HTTP server
+        run: |
+          python3 -m http.server 8765 --bind 0.0.0.0 &
+          sleep 3
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:8765/index.html
+
+      - name: Run step-by-step audit (summary only)
+        env:
+          CHAPTER: ${{ matrix.chapter }}
+        run: |
+          cd scripts
+          node step-by-step-audit.js $CHAPTER --summary-only --causality --json ../audit-ch$CHAPTER.json 2>&1 | tee ../audit-ch$CHAPTER.log
+          echo "=== JSON file ==="
+          ls -la ../audit-ch$CHAPTER.json 2>/dev/null || echo "JSON not created"
+          echo "=== Log file ==="
+          wc -l ../audit-ch$CHAPTER.log
+
+      - name: Extract per-chapter summary
+        if: always()
+        env:
+          CHAPTER: ${{ matrix.chapter }}
+        run: |
+          mkdir -p summaries
+          if [ -f "audit-ch$CHAPTER.json" ]; then
+            node -e "
+              const data = require('./audit-ch$CHAPTER.json');
+              const summary = {
+                chapter: $CHAPTER,
+                checkpoints: (data.checkpoints || []).map(cp => ({
+                  stage: cp.stage,
+                  pageCount: cp.pageCount,
+                  issueCount: (cp.issues || []).length
+                })),
+                finalIssues: (data.issues || []).length,
+                byKind: {},
+                bySeverity: { high: 0, medium: 0, low: 0 }
+              };
+              (data.issues || []).forEach(i => {
+                summary.byKind[i.kind] = (summary.byKind[i.kind] || 0) + 1;
+                if (summary.bySeverity[i.severity] !== undefined) summary.bySeverity[i.severity]++;
+              });
+              require('fs').writeFileSync('summaries/ch' + $CHAPTER + '-summary.json', JSON.stringify(summary, null, 2));
+              console.log(JSON.stringify(summary, null, 2));
+            "
+          else
+            echo "No JSON file, marking as failed"
+            echo "{\"chapter\": $CHAPTER, \"error\": \"no-json\"}" > summaries/ch$CHAPTER-summary.json
+          fi
+
+      - name: Upload per-chapter results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-ch${{ matrix.chapter }}
+          path: |
+            audit-ch${{ matrix.chapter }}.json
+            audit-ch${{ matrix.chapter }}.log
+            summaries/ch${{ matrix.chapter }}-summary.json
+          retention-days: 60
+
+  aggregate:
+    needs: audit
+    runs-on: ubuntu-latest
+    name: Aggregate Summary
+    if: always()
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Download all chapter summaries
+        uses: actions/download-artifact@v4
+        with:
+          pattern: audit-ch-*
+          merge-multiple: true
+          path: all-results
+
+      - name: Build full baseline summary
+        run: |
+          mkdir -p baseline-summary
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const dir = 'all-results';
+            const summaries = [];
+            if (fs.existsSync(dir)) {
+              for (const f of fs.readdirSync(dir)) {
+                if (f.endsWith('-summary.json')) {
+                  try {
+                    const s = JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'));
+                    summaries.push(s);
+                  } catch(e) {}
+                }
+              }
+            }
+            summaries.sort((a, b) => (a.chapter || 0) - (b.chapter || 0));
+            // Aggregate
+            const agg = {
+              totalChapters: summaries.length,
+              chaptersWithIssues: summaries.filter(s => s.finalIssues > 0).length,
+              totalIssues: summaries.reduce((a, s) => a + (s.finalIssues || 0), 0),
+              byKind: {},
+              bySeverity: { high: 0, medium: 0, low: 0 },
+              byChapter: summaries
+            };
+            for (const s of summaries) {
+              for (const [k, v] of Object.entries(s.byKind || {})) {
+                agg.byKind[k] = (agg.byKind[k] || 0) + v;
+              }
+              if (s.bySeverity) {
+                agg.bySeverity.high += s.bySeverity.high || 0;
+                agg.bySeverity.medium += s.bySeverity.medium || 0;
+                agg.bySeverity.low += s.bySeverity.low || 0;
+              }
+            }
+            fs.writeFileSync('baseline-summary/full-baseline-summary.json', JSON.stringify(agg, null, 2));
+            console.log(JSON.stringify({
+              totalChapters: agg.totalChapters,
+              chaptersWithIssues: agg.chaptersWithIssues,
+              totalIssues: agg.totalIssues,
+              bySeverity: agg.bySeverity,
+              topKinds: Object.entries(agg.byKind).sort((a,b) => b[1]-a[1]).slice(0, 10)
+            }, null, 2));
+          "
+
+      - name: Print final summary
+        run: |
+          echo "=== Full Baseline Summary ==="
+          cat baseline-summary/full-baseline-summary.json | python3 -c "
+            import json, sys
+            data = json.load(sys.stdin)
+            print(f'Total chapters: {data[\"totalChapters\"]}')
+            print(f'Chapters with issues: {data[\"chaptersWithIssues\"]}')
+            print(f'Total issues: {data[\"totalIssues\"]}')
+            print(f'Severity: high={data[\"bySeverity\"][\"high\"]} medium={data[\"bySeverity\"][\"medium\"]} low={data[\"bySeverity\"][\"low\"]}')
+            print(f'\\nTop issue kinds:')
+            for k, v in sorted(data.get('byKind', {}).items(), key=lambda x: -x[1])[:10]:
+              print(f'  {k}: {v}')
+            print(f'\\nChapters with most issues:')
+            ch_sorted = sorted(data.get('byChapter', []), key=lambda x: -(x.get('finalIssues', 0) or 0))
+            for ch in ch_sorted[:10]:
+              print(f'  ch{ch[\"chapter\"]}: {ch.get(\"finalIssues\", 0)} issues')
+          "
+
+      - name: Upload baseline summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-baseline-summary
+          path: baseline-summary/full-baseline-summary.json
+          retention-days: 90

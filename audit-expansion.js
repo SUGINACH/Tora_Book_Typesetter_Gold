@@ -31,6 +31,7 @@ function auditHeadingEscort(node, issues) {
                     pageIdx: getPageIdxSafe(kid),
                     location: describePathSafe(kid),
                     headingLevel: kid.type,
+                    childRect: kid.rect ? { x: Math.round(kid.rect.x), y: Math.round(kid.rect.y), w: Math.round(kid.rect.w), h: Math.round(kid.rect.h) } : null,
                     message: `כותרת ${kid.type} בסוף טור ללא טקסט אחריה — הכותרת "נשארה לבד"`
                 });
             } else if (nextLines <= 1) {
@@ -42,6 +43,7 @@ function auditHeadingEscort(node, issues) {
                     location: describePathSafe(kid),
                     headingLevel: kid.type,
                     nextLines: nextLines,
+                    childRect: kid.rect ? { x: Math.round(kid.rect.x), y: Math.round(kid.rect.y), w: Math.round(kid.rect.w), h: Math.round(kid.rect.h) } : null,
                     message: `כותרת ${kid.type} עם ${nextLines} שורות בלבד אחריה — מומלץ ≥2 שורות (clubpenalties)`
                 });
             } else if (nextLines === 2) {
@@ -53,6 +55,7 @@ function auditHeadingEscort(node, issues) {
                     location: describePathSafe(kid),
                     headingLevel: kid.type,
                     nextLines: nextLines,
+                    childRect: kid.rect ? { x: Math.round(kid.rect.x), y: Math.round(kid.rect.y), w: Math.round(kid.rect.w), h: Math.round(kid.rect.h) } : null,
                     message: `כותרת ${kid.type} עם 2 שורות אחריה — בגבול (clubpenalties)`
                 });
             }
@@ -99,6 +102,7 @@ function auditOrphanH3Block(page, issues) {
                 location: `page ${page.label}`,
                 blockType: block.type,
                 headingTypes,
+                childRect: block.rect ? { x: Math.round(block.rect.x), y: Math.round(block.rect.y), w: Math.round(block.rect.w), h: Math.round(block.rect.h) } : null,
                 message: `בלוק ${block.type} בעמוד ${page.label} מכיל רק כותרת (${headingTypes.join(', ')}) ללא טקסט גוף — כותרת אלמנה`
             });
         }
@@ -139,6 +143,7 @@ function auditFootnoteOverflow(page, issues) {
             totalNoteH: Math.round(totalNoteH),
             fnAreaH: Math.round(fnAreaH),
             overflow: Math.round(overflow),
+            childRect: fnArea.rect ? { x: Math.round(fnArea.rect.x), y: Math.round(fnArea.rect.y), w: Math.round(fnArea.rect.w), h: Math.round(fnArea.rect.h) } : null,
             message: `הערות שוליים חורגות מאזור ההערות: ${Math.round(overflow)}px (${noteLineCount} שורות, גובה ${Math.round(totalNoteH)}px באזור ${Math.round(fnAreaH)}px)`
         });
     }
@@ -162,6 +167,7 @@ function auditPrivateUseCharacters(node, issues) {
             location: describePathSafe(node),
             chars: puaChars.slice(0, 5),
             count: puaChars.length,
+            childRect: node.rect ? { x: Math.round(node.rect.x), y: Math.round(node.rect.y), w: Math.round(node.rect.w), h: Math.round(node.rect.h) } : null,
             message: `נמצאו ${puaChars.length} תווי Private Use Area (U+E000-F8FF) — עלולים להיות מוצגים כריבועים`
         });
     }
@@ -229,6 +235,10 @@ function auditCandidateVsFinalHeight(model, issues) {
             const maxDiff = Math.max(diffR, diffL);
 
             if (maxDiff > 5) {
+                // חשב rect בקואורדינטות book-container (כדי ש-highlightIssue יעבוד)
+                const bc = document.getElementById('book-container');
+                const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
+                const blkRect = blk.getBoundingClientRect();
                 issues.push({
                     kind: 'candidate-vs-final',
                     severity: maxDiff > 20 ? 'medium' : 'low',
@@ -236,6 +246,7 @@ function auditCandidateVsFinalHeight(model, issues) {
                     location: `page ${page.label} block ${bi + 1}`,
                     recordedRH, recordedLH, actualRH, actualLH,
                     diffR: Math.round(diffR), diffL: Math.round(diffL),
+                    childRect: { x: Math.round(blkRect.left - bcRect.left), y: Math.round(blkRect.top - bcRect.top), w: Math.round(blkRect.width), h: Math.round(blkRect.height) },
                     message: `פער בין גובה מועמד לסופי: R=${recordedRH}→${actualRH} (Δ${Math.round(diffR)}), L=${recordedLH}→${actualLH} (Δ${Math.round(diffL)})`
                 });
             }
@@ -280,6 +291,9 @@ function auditTofu(model, issues) {
                 if (w > 0 && Math.abs(w - tofuW) < 0.5) suspectCount++;
             }
             if (suspectCount > 5) {
+                const bc = document.getElementById('book-container');
+                const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
+                const pRect = firstP.getBoundingClientRect();
                 issues.push({
                     kind: 'tofu',
                     severity: 'high',
@@ -287,6 +301,7 @@ function auditTofu(model, issues) {
                     location: 'global',
                     suspectCount,
                     fontFamily: fontStr,
+                    childRect: { x: Math.round(pRect.left - bcRect.left), y: Math.round(pRect.top - bcRect.top), w: Math.round(pRect.width), h: Math.round(pRect.height) },
                     message: `אפשרות לטופו: ${suspectCount} מתוך 100 תווים בעלי רוחב זהה לריבוע (□) — ייתכן שהגופן (${fontStr}) לא תומך בתווים אלו`
                 });
             }
@@ -324,11 +339,14 @@ function auditNoteMarkerLineBreak(node, issues) {
                 // ה-marker בסוף שורה — בדוק אם יש שורה אחריו
                 const nextLine = rects.find(rr => rr.top > r.bottom - 1);
                 if (nextLine) {
+                    const bc = document.getElementById('book-container');
+                    const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
                     issues.push({
                         kind: 'note-marker-line-break',
                         severity: 'low',
                         pageIdx: getPageIdxSafe(node),
                         location: describePathSafe(node),
+                    childRect: { x: Math.round(r.left - bcRect.left), y: Math.round(r.top - bcRect.top), w: Math.round(r.width), h: Math.round(r.height) },
                         message: `סמן הערה בסוף שורה — נראה כאילו הסמן "נשאר לבד"`
                     });
                 }

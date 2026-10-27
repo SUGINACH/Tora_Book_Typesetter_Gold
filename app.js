@@ -2682,16 +2682,118 @@ const GEOM_KIND_NAMES = {
     'h7-conversion': 'המרת H7 לכותרת צד', 'bracket-conversion': 'המרת סוגריים להערות',
     'note-marker-line-break': 'סמן הערה בסוף שורה',
 };
-/* [כלל עבודה 3+4] מצב סינון ומיון גלובלי */
+/* [כלל עבודה 3+4] מצב סינון ומיון גלובלי — enabledKinds הוא Set או null (null = הכל מסומן) */
 window.__geomFilter = window.__geomFilter || { enabledKinds: null, sortKey: 'page', sortDir: 'asc' };
 window.__lastGeomResult = null;
+window.__lastGeomIssues = []; // issues אחרי סינון+מיון, כוללים childRect להבהוב
+
+/* [כלל עבודה 3] בונה את רשימת ה-dropdown צ'קליסט לסינון סוגי בעיות.
+   מקבל את ספירת הסוגים (byKind) ומצייר צ'קבוקסים עם שמות עבריים (כלל 1).
+   ברירת מחדל: הכל מסומן (enabledKinds === null). */
+function renderGeomKindFilter(issues) {
+    // ספור סוגים מתוך רשימת ה-issues
+    const byKind = {};
+    for (const iss of issues) {
+        const k = iss.kind || 'unknown';
+        byKind[k] = (byKind[k] || 0) + 1;
+    }
+    const kinds = Object.keys(byKind).sort((a, b) => byKind[b] - byKind[a]);
+    const allSet = window.__geomFilter.enabledKinds === null;
+    let html = '<details style="margin:4px 0;background:#f8fafc;border:1px solid #cbd5e1;border-radius:4px;font-size:8pt;">'
+        + '<summary style="cursor:pointer;padding:4px 6px;background:#e2e8f0;font-weight:bold;border-radius:4px 4px 0 0;">'
+        + `סינון לפי סוג (${issues.length} בעיות, ${kinds.length} סוגים`
+        + (allSet ? '' : `, מוצגים ${window.__geomFilter.enabledKinds.size} סוגים`)
+        + ')</summary>'
+        + '<div style="padding:4px 6px;display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid #e2e8f0;">'
+        + '<button type="button" onclick="window.__toggleAllGeomKinds(true)" style="padding:2px 8px;font-size:7pt;cursor:pointer;background:#10b981;color:#fff;border:none;border-radius:3px;">סמן הכל</button>'
+        + '<button type="button" onclick="window.__toggleAllGeomKinds(false)" style="padding:2px 8px;font-size:7pt;cursor:pointer;background:#64748b;color:#fff;border:none;border-radius:3px;">בטל הכל</button>'
+        + '</div>'
+        + '<div style="padding:4px 6px;display:grid;grid-template-columns:1fr 1fr;gap:2px;max-height:280px;overflow-y:auto;">';
+    for (const k of kinds) {
+        const isOn = allSet || window.__geomFilter.enabledKinds.has(k);
+        const heName = GEOM_KIND_NAMES[k] || k;
+        const checkedAttr = isOn ? 'checked' : '';
+        const onchange = `onchange="window.__toggleGeomKind('${k}', this.checked)"`;
+        html += `<label style="display:flex;align-items:center;gap:4px;padding:2px;border-radius:3px;cursor:pointer;font-size:7pt;${isOn ? '' : 'color:#94a3b8;'}">`
+            + `<input type="checkbox" ${checkedAttr} ${onchange} style="margin:0;cursor:pointer;">`
+            + `<span style="flex:1;">${heName}</span>`
+            + `<span style="color:#64748b;font-size:6pt;">${byKind[k]}</span>`
+            + `</label>`;
+    }
+    html += '</div></details>';
+    return html;
+}
+
+/* [כלל עבודה 4] מיון issues — page/type/severity, asc/desc */
+function sortGeomIssues(issues, key, dir) {
+    const factor = dir === 'asc' ? 1 : -1;
+    const sevOrder = { high: 3, medium: 2, low: 1 };
+    const sorted = issues.slice().sort((a, b) => {
+        let av, bv;
+        switch (key) {
+            case 'type':
+                av = GEOM_KIND_NAMES[a.kind] || a.kind || '';
+                bv = GEOM_KIND_NAMES[b.kind] || b.kind || '';
+                return av.localeCompare(bv, 'he') * factor;
+            case 'severity':
+                av = sevOrder[a.severity] || 0;
+                bv = sevOrder[b.severity] || 0;
+                // עבור desc: high לפני low. עבור asc: low לפני high.
+                // ברירת מחדל אינטואיטיבית: asc = low→high, desc = high→low.
+                // כיוון ש-sevOrder מספר את high גבוה, asc ייתן low→high ו-desc ייתן high→low.
+                return (av - bv) * factor;
+            case 'page':
+            default:
+                av = (a.pageIdx !== undefined ? a.pageIdx : 9999);
+                bv = (b.pageIdx !== undefined ? b.pageIdx : 9999);
+                if (av === bv) {
+                    // שובר שוויון — לפי סוג ב-asc
+                    const an = GEOM_KIND_NAMES[a.kind] || a.kind || '';
+                    const bn = GEOM_KIND_NAMES[b.kind] || b.kind || '';
+                    return an.localeCompare(bn, 'he');
+                }
+                return (av - bv) * factor;
+        }
+    });
+    return sorted;
+}
+
+/* [כלל עבודה 4] מחזיר חץ ↑/↓ ליד הכותרת הפעילה */
+function sortIndicator(key) {
+    if (window.__geomFilter.sortKey !== key) return '';
+    return window.__geomFilter.sortDir === 'asc' ? ' ↑' : ' ↓';
+}
 
 function renderGeomResults(container, result) {
     if (!container) return;
     container.style.display = 'block';
     const summary = result.summary || { total: 0, high: 0, medium: 0, low: 0, byKind: {} };
-    const issues = result.issues || [];
+    const allIssues = result.issues || [];
     const stats = result.stats || {};
+
+    // [כלל 3] אתחל enabledKinds ל-null (הכל מסומן) אם זו ריצה ראשונה
+    if (window.__geomFilter.enabledKinds === undefined) {
+        window.__geomFilter.enabledKinds = null;
+    }
+    // אם יש Set ישן שנבנה מריצה קודמת, בדוק שכל הסוגים בו עדיין קיימים.
+    // אם סוג כלשהו לא קיים עוד — נשאיר את ה-Set כמו שהוא (הסינון יישאר).
+    // אם אין סוגים ב-Set ו-null לא הוגדר — נציג ריק.
+
+    // [כלל 3+4] סנן לפי enabledKinds
+    let filteredIssues = allIssues;
+    if (window.__geomFilter.enabledKinds !== null && window.__geomFilter.enabledKinds.size > 0) {
+        filteredIssues = allIssues.filter(iss => window.__geomFilter.enabledKinds.has(iss.kind));
+    } else if (window.__geomFilter.enabledKinds !== null && window.__geomFilter.enabledKinds.size === 0) {
+        // Set ריק = אל תציג כלום
+        filteredIssues = [];
+    }
+    // [כלל 4] מיון
+    const sortedIssues = sortGeomIssues(filteredIssues, window.__geomFilter.sortKey, window.__geomFilter.sortDir);
+    const displayIssues = sortedIssues.slice(0, 500); // הגבלת תצוגה ל-500
+
+    // סיכום נוכחי (אחרי סינון)
+    const shownCount = displayIssues.length;
+    const hiddenByFilter = allIssues.length - filteredIssues.length;
 
     let html = '<div style="padding:8px;background:#1e293b;color:#e2e8f0;border-radius:4px 4px 0 0;font-size:9pt;font-weight:bold;">';
     html += '📐 בודק גיאומטריה — ';
@@ -2705,46 +2807,67 @@ function renderGeomResults(container, result) {
     } else {
         html += ' · <span style="color:#86efac;">✓ אין בעיות!</span>';
     }
+    if (hiddenByFilter > 0) {
+        html += ` · <span style="color:#fbbf24;">${hiddenByFilter} מוסתרים</span>`;
+    }
     if (summary.byKind && Object.keys(summary.byKind).length > 0) {
-        /* [כלל 1] השתמש בטבלת השמות הגלובלית */
+        /* [כלל 1] השתמש בטבלת השמות הגלובלית GEOM_KIND_NAMES */
         html += '<br><span style="font-size:7pt;font-weight:normal;color:#94a3b8;">';
-        html += Object.entries(summary.byKind).map(([k, v]) => `${kindNames[k] || k}: ${v}`).join(' · ');
+        html += Object.entries(summary.byKind).map(([k, v]) => `${GEOM_KIND_NAMES[k] || k}: ${v}`).join(' · ');
         html += '</span>';
     }
     html += '</div>';
 
-    if (issues.length > 0) {
+    // [כלל 3] הצג דרופדאון צ'קליסט לסינון
+    if (allIssues.length > 0) {
+        html += renderGeomKindFilter(allIssues);
+    }
+
+    if (displayIssues.length > 0) {
+        // [כלל 4] כותרות עם חץ ↑/↓ ליד הכותרת הפעילה
+        const arrowPage = sortIndicator('page');
+        const arrowType = sortIndicator('type');
+        const arrowSev = sortIndicator('severity');
         html += '<table style="width:100%;border-collapse:collapse;font-size:7pt;background:#fff;">';
         html += '<thead><tr style="background:#e2e8f0;">'
-            + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;" onclick="window.__setGeomSort(\'page\')">עמוד ↑↓</th>`
-            + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;" onclick="window.__setGeomSort(\'type\')">סוג ↑↓</th>`
-            + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;" onclick="window.__setGeomSort(\'severity\')">חומרה ↑↓</th>`
+            + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;${arrowPage ? 'color:#1e40af;' : ''}" onclick="window.__setGeomSort('page')">עמוד${arrowPage}</th>`
+            + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;${arrowType ? 'color:#1e40af;' : ''}" onclick="window.__setGeomSort('type')">סוג${arrowType}</th>`
+            + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;${arrowSev ? 'color:#1e40af;' : ''}" onclick="window.__setGeomSort('severity')">חומרה${arrowSev}</th>`
             + '<th style="padding:3px;border:1px solid #cbd5e1;">פירוט</th>'
             + '</tr></thead><tbody>';
-        issues.slice(0, 200).forEach((iss, i) => {
+        displayIssues.forEach((iss, i) => {
             const sc = iss.severity === 'high' ? '#dc2626' : (iss.severity === 'medium' ? '#d97706' : '#64748b');
-            /* [כלל 1] השתמש בטבלת השמות הגלובלית */
             const pageIdx = iss.pageIdx !== undefined ? iss.pageIdx : -1;
-            const clickable = pageIdx >= 0 ? `cursor:pointer;` : '';
-            const title = pageIdx >= 0 ? ` title="לחץ לגלילה לעמוד ${pageIdx + 1} והבהוב הבעיה"` : '';
-            // העבר את ה-issue המלא כדי שה-iframe יוכל להבהב את המסגרת
-            // נשמור את ה-issue ב-data attribute כדי להימנע מ-escaping issues
-            const issueJson = pageIdx >= 0 ? `data-issue-idx="${i}"` : '';
-            const onclick = pageIdx >= 0 ? ` onclick="scrollToIssuePage(${pageIdx}, ${i})"` : '';
-            const hover = pageIdx >= 0 ? ` onmouseover="this.style.background=\'#fef3c7\'" onmouseout="this.style.background=\'#fff\'"` : '';
+            // [כלל 2] הבהוב אזור הבעיה — זמין גם כשאין childRect (יגלול לעמוד בלבד)
+            const clickable = `cursor:pointer;`;
+            const title = pageIdx >= 0
+                ? ` title="לחץ לגלילה לעמוד ${pageIdx + 1} והבהוב הבעיה"`
+                : ` title="בעיה גלובלית — לחץ להבהוב (ללא גלילה)"`;
+            const issueJson = `data-issue-idx="${i}"`;
+            const onclick = ` onclick="scrollToIssuePage(${pageIdx}, ${i})"`;
+            const hover = ` onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='#fff'"`;
             html += `<tr style="border:1px solid #cbd5e1;${clickable}"${title}${issueJson}${onclick}${hover}>`
-                + `<td style="padding:2px;text-align:center;font-weight:bold;">${pageIdx >= 0 ? pageIdx + 1 : '?'}</td>`
+                + `<td style="padding:2px;text-align:center;font-weight:bold;">${pageIdx >= 0 ? pageIdx + 1 : '—'}</td>`
                 + `<td style="padding:2px;">${GEOM_KIND_NAMES[iss.kind] || iss.kind}</td>`
                 + `<td style="padding:2px;color:${sc};">${iss.severity}</td>`
                 + `<td style="padding:2px;">${iss.message || ''}</td>`
                 + `</tr>`;
         });
         html += '</tbody></table>';
+    } else if (allIssues.length > 0 && filteredIssues.length === 0) {
+        html += '<div style="padding:8px;text-align:center;color:#64748b;font-size:9pt;background:#fff;border:1px solid #cbd5e1;border-radius:0 0 4px 4px;">'
+            + '🔒 כל סוגי הבעיות מסוננים. הפעל סוג אחד לפחות ברשימת הסינון כדי לראות בעיות.'
+            + '</div>';
+    } else {
+        html += '<div style="padding:8px;text-align:center;color:#86efac;font-size:9pt;background:#fff;border:1px solid #cbd5e1;border-radius:0 0 4px 4px;">'
+            + '✓ אין בעיות!'
+            + '</div>';
     }
 
-    // [תיקון חשוב] שמור את ה-issues ישירות ב-window — לא דרך <script> ב-innerHTML
-    // (scripts ב-innerHTML לא מורצים על ידי דפדפנים)
-    window.__lastGeomIssues = issues.slice(0, 200);
+    // [תיקון חשוב] שמור את ה-issues המוצגים בפועל (אחרי סינון+מיון) כדי שיכללו childRect
+    // להבהוב תקין — וגם שמור את התוצאה המלאה לריענון
+    window.__lastGeomIssues = displayIssues;
+    window.__lastGeomResult = result;
 
     // מקרא צבעים
     html += '<div style="padding:6px;font-size:7pt;color:#475569;background:#f1f5f9;border-radius:0 0 4px 4px;">';
@@ -2757,49 +2880,73 @@ function renderGeomResults(container, result) {
     html += '<span style="color:#f59e0b;">■</span> כותרות · ';
     html += '<span style="color:#7c3aed;">■</span> H3-H7 · ';
     html += '<b style="color:#dc2626;">אדום עבה = בעיה</b><br>';
-    html += '<b>לחץ על שורת בעיה</b> כדי לגלול לעמוד המתאים בתצוגה';
+    html += '<b>לחץ על שורת בעיה</b> כדי לגלול לעמוד המתאים בתצוגה ולהבהב את אזור הבעיה';
     html += '</div>';
 
     container.innerHTML = html;
 }
 
-/* [חדש] גולל לעמוד הבעיה ב-iframe ומבהב את המסגרת */
+/* [חדש] גולל לעמוד הבעיה ב-iframe ומבהב את המסגרת.
+   [כלל 2] עובד גם עבור בעיות גלובליות (pageIdx=-1) — רק מבהב בלי גלילה. */
 function scrollToIssuePage(pageIdx, issueIdx) {
     const frame = document.getElementById('render-frame');
     if (!frame || !frame.contentWindow) return;
-    // קבל את ה-issue מהמערך השמור
+    // קבל את ה-issue מהמערך השמור (אחרי סינון+מיון)
     let issue = null;
     if (issueIdx !== undefined && window.__lastGeomIssues && window.__lastGeomIssues[issueIdx]) {
         issue = window.__lastGeomIssues[issueIdx];
     }
-    // שלח הודעה ל-iframe לגלול לעמוד ולהבהב את הבעיה
-    frame.contentWindow.postMessage({ type: 'geom-scroll-to-page', pageIdx: pageIdx, issue: issue }, '*');
+    // אם יש childRect — שלח geom-scroll-to-page כדי לגלול ולהבהב
+    // אם אין childRect (בעיה גלובלית) — שלח geom-highlight כדי לפחות להבהב (אם יש rect)
+    if (issue && (issue.childRect || issue.aRect || issue.bRect || issue.rightRect || issue.leftRect)) {
+        frame.contentWindow.postMessage({ type: 'geom-scroll-to-page', pageIdx: Math.max(0, pageIdx), issue: issue }, '*');
+    } else if (issue && pageIdx >= 0) {
+        // אין rect — רק גלול לעמוד
+        frame.contentWindow.postMessage({ type: 'geom-scroll-to-page', pageIdx: pageIdx, issue: null }, '*');
+    } else if (issue) {
+        // בעיה גלובלית — נסה להבהב (לא יקרה כלום אם אין rect)
+        frame.contentWindow.postMessage({ type: 'geom-highlight', issue: issue }, '*');
+    }
 }
 
 window.scrollToIssuePage = scrollToIssuePage;
-
 window.renderGeomResults = renderGeomResults;
 
-/* [כלל עבודה 3] פונקציות סינון — דרופדאון צ'קליסט */
+/* [כלל עבודה 3] פונקציות סינון — דרופדאון צ'קליסט
+   enabledKinds === null = הכל מסומן (ברירת מחדל).
+   enabledKinds === Set = רק סוגים ב-Set מוצגים. */
 window.__toggleGeomKind = function(kind, checked) {
+    if (window.__geomFilter.enabledKinds === null) {
+        // אתחל Set מכל הסוגים הקיימים, ואז הסר/הוסף את הסוג ששונה
+        const allKinds = new Set();
+        if (window.__lastGeomResult) {
+            for (const iss of window.__lastGeomResult.issues) allKinds.add(iss.kind);
+        }
+        window.__geomFilter.enabledKinds = allKinds;
+    }
     if (checked) window.__geomFilter.enabledKinds.add(kind);
     else window.__geomFilter.enabledKinds.delete(kind);
-    const container = document.getElementById('fn-audit-results');
+    // ריענון
+    const container = document.getElementById('geom-results') || document.getElementById('fn-audit-results');
     if (container && window.__lastGeomResult) renderGeomResults(container, window.__lastGeomResult);
 };
 window.__toggleAllGeomKinds = function(checkAll) {
-    if (checkAll && window.__lastGeomResult) {
-        window.__geomFilter.enabledKinds = new Set(window.__lastGeomResult.issues.map(i => i.kind));
-    } else { window.__geomFilter.enabledKinds = new Set(); }
-    const container = document.getElementById('fn-audit-results');
+    if (checkAll) {
+        // "סמן הכל" = חזור למצב null (הכל מוצג)
+        window.__geomFilter.enabledKinds = null;
+    } else {
+        // "בטל הכל" = Set ריק
+        window.__geomFilter.enabledKinds = new Set();
+    }
+    const container = document.getElementById('geom-results') || document.getElementById('fn-audit-results');
     if (container && window.__lastGeomResult) renderGeomResults(container, window.__lastGeomResult);
 };
-/* [כלל עבודה 4] פונקציית מיון — לחיצה על כותרת */
+/* [כלל עבודה 4] פונקציית מיון — לחיצה על כותרת מחליפה כיוון או מפתח */
 window.__setGeomSort = function(key) {
     if (window.__geomFilter.sortKey === key) {
         window.__geomFilter.sortDir = window.__geomFilter.sortDir === 'asc' ? 'desc' : 'asc';
     } else { window.__geomFilter.sortKey = key; window.__geomFilter.sortDir = 'asc'; }
-    const container = document.getElementById('fn-audit-results');
+    const container = document.getElementById('geom-results') || document.getElementById('fn-audit-results');
     if (container && window.__lastGeomResult) renderGeomResults(container, window.__lastGeomResult);
 };
 

@@ -1,0 +1,277 @@
+name: Issue Investigation
+
+# תיאור: חקירה עמוקה של בעיה ספציפית — מוצאת את שלב הופעת הבעיה, גורמיה,
+# והשלב שיכול לפתור אותה. מבוסס על ה-9-step priority order של המשתמש.
+#
+# מופעל ידנית דרך workflow_dispatch עם קלט:
+#   - issue_kind: סוג בעיה לחקירה (candidate-vs-final, footnote-overflow, heading-escort, ...)
+#   - chapter: פרק לחקירה (ברירת מחדל 9)
+#   - run_test_triggers: הפעל גם את ה-trigger המתאים לבעיה (אם קיים)
+#
+# תוצאות:
+#   - JSON מלא עם checkpoints + per-page
+#   - סיכום סיבתיות מפורט
+#   - השוואה: מה היה צפוי (מה-trigger) מול מה זוהה (בפועל)
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_kind:
+        description: 'סוג בעיה לחקירה (כמו ב-GEOM_KIND_NAMES)'
+        required: true
+        default: 'candidate-vs-final'
+        type: choice
+        options:
+          - candidate-vs-final
+          - footnote-overflow
+          - heading-escort
+          - orphan-heading-block
+          - private-use-chars
+          - tofu
+          - font-not-loaded
+          - text-completeness
+          - h7-conversion
+          - bracket-conversion
+          - note-marker-line-break
+          - imbalance
+          - sparse-line
+          - widow
+          - orphan
+          - overlap
+          - containment
+          - page-overflow
+          - page-underfill
+      chapter:
+        description: 'פרק לחקירה (1-79)'
+        required: true
+        default: '9'
+        type: string
+      run_test_trigger:
+        description: 'הפעל גם את קובץ ה-trigger המתאים (אם קיים)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  investigate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    name: Investigate ${{ github.event.inputs.issue_kind }} (ch ${{ github.event.inputs.chapter }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Map issue kind to trigger file
+        env:
+          ISSUE_KIND: ${{ github.event.inputs.issue_kind }}
+        run: |
+          # Map issue kind to trigger file (using underscore as separator)
+          TRIGGER_FILE=$(echo "test-triggers/test-trigger-$ISSUE_KIND" | tr '-' '_').txt
+          echo "TRIGGER_FILE=$TRIGGER_FILE" >> $GITHUB_ENV
+          echo "Looking for trigger file: $TRIGGER_FILE"
+          if [ -f "$TRIGGER_FILE" ]; then
+            echo "✓ Trigger file exists"
+          else
+            echo "ℹ No trigger file for this issue kind (will use chapter text only)"
+          fi
+
+      - name: Start HTTP server
+        run: |
+          python3 -m http.server 8765 --bind 0.0.0.0 &
+          sleep 3
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:8765/index.html
+
+      - name: Run trigger file (if requested)
+        if: github.event.inputs.run_test_trigger == 'true' && env.TRIGGER_FILE_EXISTS == 'true'
+        env:
+          ISSUE_KIND: ${{ github.event.inputs.issue_kind }}
+        run: |
+          echo "=== Running trigger file: $TRIGGER_FILE ==="
+          mkdir -p trigger-results
+          node scripts/test-trigger-runner.js "$TRIGGER_FILE" 2>&1 | tee trigger-results/trigger-$ISSUE_KIND.log
+          echo ""
+          echo "=== Trigger result ==="
+          # Parse and show what was expected vs detected
+          node -e "
+            const fs = require('fs');
+            const log = fs.readFileSync('trigger-results/trigger-$ISSUE_KIND.log', 'utf8');
+            const sumMatch = log.match(/Summary: ({.*?})/);
+            console.log('Summary:', sumMatch ? sumMatch[1] : 'n/a');
+            const byKindMatch = log.match(/Issues by kind:([\\s\\S]*?)(?:\\n\\n|Top issues:)/);
+            const byKind = {};
+            if (byKindMatch) {
+              const lines = byKindMatch[1].trim().split('\\n');
+              for (const line of lines) {
+                const m = line.match(/\\s+(\\S+): (\\d+)/);
+                if (m) byKind[m[1]] = parseInt(m[2], 10);
+              }
+            }
+            console.log('Detected kinds:', byKind);
+            const expected = '$ISSUE_KIND';
+            if (byKind[expected]) {
+              console.log('✓ Expected kind $ISSUE_KIND detected: ' + byKind[expected] + ' occurrences');
+            } else {
+              console.log('⚠️ Expected kind $ISSUE_KIND NOT detected — may indicate audit gap');
+            }
+          "
+
+      - name: Run step-by-step audit with per-page checkpoints
+        env:
+          CHAPTER: ${{ github.event.inputs.chapter }}
+          ISSUE_KIND: ${{ github.event.inputs.issue_kind }}
+        run: |
+          echo "=== Running step-by-step audit on ch$CHAPTER (focus: $ISSUE_KIND) ==="
+          cd scripts
+          node step-by-step-audit.js $CHAPTER --causality --per-page-checkpoints --verbose --json ../investigation-ch$CHAPTER-$ISSUE_KIND.json 2>&1 | tee ../investigation-output.txt
+          echo ""
+          echo "=== JSON file ==="
+          ls -la ../investigation-ch$CHAPTER-$ISSUE_KIND.json
+          echo "=== JSON file size ==="
+          wc -c ../investigation-ch$CHAPTER-$ISSUE_KIND.json
+
+      - name: Analyze issue across checkpoints
+        env:
+          CHAPTER: ${{ github.event.inputs.chapter }}
+          ISSUE_KIND: ${{ github.event.inputs.issue_kind }}
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "Issue Investigation: $ISSUE_KIND (ch$CHAPTER)"
+          echo "=========================================="
+          node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('investigation-ch$CHAPTER-$ISSUE_KIND.json', 'utf8'));
+            const ISSUE_KIND = process.env.ISSUE_KIND;
+            console.log('Checkpoints:', data.checkpoints?.length || 0);
+            console.log('Total final issues:', data.issues?.length || 0);
+            console.log('');
+
+            // For each checkpoint, count occurrences of the target issue kind
+            console.log('=== Appearances of', ISSUE_KIND, 'across checkpoints ===');
+            if (data.checkpoints) {
+              data.checkpoints.forEach((cp, i) => {
+                const matches = (cp.issues || []).filter(iss => iss.kind === ISSUE_KIND);
+                console.log('  Checkpoint ' + (i+1) + ': ' + cp.stage);
+                console.log('    pageCount=' + cp.pageCount + ', total issues=' + (cp.issues || []).length + ', ' + ISSUE_KIND + '=' + matches.length);
+                if (matches.length > 0) {
+                  matches.slice(0, 3).forEach(m => {
+                    console.log('    → page ' + (m.pageIdx + 1) + ', severity=' + m.severity + ', message=' + (m.message || '').slice(0, 80));
+                  });
+                  if (matches.length > 3) console.log('    ... and ' + (matches.length - 3) + ' more');
+                }
+              });
+            }
+
+            console.log('');
+            console.log('=== Causality classification (if available) ===');
+            if (data.issues) {
+              const target = data.issues.filter(i => i.kind === ISSUE_KIND);
+              if (target.length > 0) {
+                // Show first 5 with their causality
+                target.slice(0, 5).forEach((iss, i) => {
+                  console.log('Issue ' + (i+1) + ': page ' + (iss.pageIdx + 1) + ', severity=' + iss.severity);
+                  if (iss.causality) {
+                    console.log('  category: ' + iss.causality.category);
+                    console.log('  label: ' + iss.causality.label);
+                    if (iss.causality.appearances) {
+                      console.log('  appearances: ' + iss.causality.appearances.map(a => (a.present ? '✓' : '✗') + '@' + a.stage).join(', '));
+                    }
+                  }
+                });
+                if (target.length > 5) console.log('... and ' + (target.length - 5) + ' more issues');
+              } else {
+                console.log('No issues of kind ' + ISSUE_KIND + ' found in final audit');
+              }
+            }
+          "
+
+      - name: Identify next steps
+        env:
+          CHAPTER: ${{ github.event.inputs.chapter }}
+          ISSUE_KIND: ${{ github.event.inputs.issue_kind }}
+        run: |
+          echo ""
+          echo "=========================================="
+          echo "Next Steps Recommendation"
+          echo "=========================================="
+          node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('investigation-ch$CHAPTER-$ISSUE_KIND.json', 'utf8'));
+            const ISSUE_KIND = process.env.ISSUE_KIND;
+            if (!data.checkpoints || !data.issues) { console.log('No data'); process.exit(0); }
+            const target = data.issues.filter(i => i.kind === ISSUE_KIND);
+            if (target.length === 0) {
+              console.log('No issues of kind', ISSUE_KIND, 'in final audit. Nothing to investigate.');
+              process.exit(0);
+            }
+            // Look at first issue's causality
+            const first = target[0];
+            if (!first.causality) {
+              console.log('No causality classification available.');
+              process.exit(0);
+            }
+            const cat = first.causality.category;
+            console.log('Causality category:', cat);
+            console.log('Label:', first.causality.label);
+            console.log('');
+            switch (cat) {
+              case 'created-at-first-checkpoint':
+                console.log('→ Issue existed at first checkpoint. Look for source: text parsing, initial layout.');
+                console.log('  → Check: chapter text structure (heading levels, bracket content, footnote count)');
+                console.log('  → Check: parseSourceText() in typesetter.js');
+                break;
+              case 'created-by-stage':
+                console.log('→ Issue created by a specific stage. Look at the stage where it first appeared.');
+                console.log('  → Find first present checkpoint → that is the creating stage.');
+                console.log('  → Look at delta.added at that checkpoint for problemElement.');
+                break;
+              case 'fixed-by-stage':
+                console.log('→ Issue was fixed at some stage. Check if fix is stable.');
+                console.log('  → Find first absent checkpoint after appearance → that is the fixing stage.');
+                break;
+              case 'correction-reverted':
+                console.log('→ Issue was fixed then re-appeared. There is a regression in a later stage.');
+                console.log('  → Look for stages where the issue came back.');
+                console.log('  → May need to fix the stage that reintroduced the issue.');
+                break;
+              case 'never-appeared':
+                console.log('→ Issue never appeared in any checkpoint. May be created only in final render.');
+                console.log('  → Check final-state vs last checkpoint differences.');
+                break;
+              case 'unresolved':
+                console.log('→ Issue appeared and was never fixed. Direct candidate for solution.');
+                console.log('  → Step 5: Find careful solution that targets the creating stage.');
+                console.log('  → Step 6: Apply the solution in the engine (typesetter.js).');
+                console.log('  → Step 7: Re-run this workflow to verify the issue is resolved.');
+                break;
+              default:
+                console.log('→ Unknown causality category:', cat);
+            }
+            console.log('');
+            console.log('Recommended next action:');
+            console.log('  1. Re-run step-by-step-audit locally with --verbose on ch' + $CHAPTER);
+            console.log('  2. Identify exact stage from causality.appearances');
+            console.log('  3. Apply fix in typesetter.js');
+            console.log('  4. Push commit, GitHub Actions will verify automatically');
+          "
+
+      - name: Upload investigation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: investigation-${{ github.event.inputs.issue_kind }}-ch${{ github.event.inputs.chapter }}
+          path: |
+            investigation-ch${{ github.event.inputs.chapter }}-${{ github.event.inputs.issue_kind }}.json
+            investigation-output.txt
+            trigger-results/
+          retention-days: 60

@@ -1,0 +1,133 @@
+name: Step-by-Step Audit
+
+# תיאור: בדיקה גיאוממטרית שלב-אחר-שלב עבור פרק בודד, עם סיווג סיבתיות
+# (7 קטגוריות), per-page checkpoints, ו-delta tracking.
+#
+# מופעל ידנית דרך workflow_dispatch עם קלט:
+#   - chapter: מספר הפרק (1-79, ברירת מחדל 9)
+#   - per_page_checkpoints: הפעל per-page checkpoints (true/false)
+#   - verbose: פלט מלא כולל children, lineRects, typography
+#
+# תוצאות:
+#   - קובץ JSON מלא עם כל ה-checkpoints (artifact)
+#   - סיכום סיבתיות מודפס בלוג
+#   - חתימות עמודים ו-delta tracking לכל checkpoint
+
+on:
+  workflow_dispatch:
+    inputs:
+      chapter:
+        description: 'מספר פרק (1-79)'
+        required: true
+        default: '9'
+        type: string
+      per_page_checkpoints:
+        description: 'הפעל per-page checkpoints (איטי יותר, מדויק יותר)'
+        required: false
+        default: true
+        type: boolean
+      verbose:
+        description: 'פלט מלא (verbose)'
+        required: false
+        default: false
+        type: boolean
+      deltas_only:
+        description: 'רק delta בין checkpoints (תצוגה מקוצרת)'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    name: Step-by-Step Audit (ch ${{ github.event.inputs.chapter }})
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify project files
+        run: |
+          echo "=== Project files ==="
+          ls -la very_long_test_text.txt index.html typesetter.js renderer.html scripts/step-by-step-audit.js
+          echo "=== Test text size ==="
+          wc -c very_long_test_text.txt
+          echo "=== Chapter count ==="
+          node -e "
+            const fs = require('fs');
+            const text = fs.readFileSync('very_long_test_text.txt', 'utf8');
+            const chapters = text.split('\n').filter(l => /^כותרת 2 מספר/.test(l));
+            console.log('Chapters found:', chapters.length);
+          "
+
+      - name: Start HTTP server
+        run: |
+          python3 -m http.server 8765 --bind 0.0.0.0 &
+          sleep 3
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:8765/index.html
+
+      - name: Run step-by-step audit
+        env:
+          CHAPTER: ${{ github.event.inputs.chapter }}
+          PPC: ${{ github.event.inputs.per_page_checkpoints }}
+          VERBOSE: ${{ github.event.inputs.verbose }}
+          DELTAS_ONLY: ${{ github.event.inputs.deltas_only }}
+        run: |
+          ARGS="$CHAPTER --causality"
+          if [ "$PPC" = "true" ]; then ARGS="$ARGS --per-page-checkpoints"; fi
+          if [ "$VERBOSE" = "true" ]; then ARGS="$ARGS --verbose"; fi
+          if [ "$DELTAS_ONLY" = "true" ]; then ARGS="$ARGS --deltas-only"; fi
+          ARGS="$ARGS --json step-by-step-audit-ch$CHAPTER.json"
+          echo "Running: node scripts/step-by-step-audit.js $ARGS"
+          cd scripts
+          node step-by-step-audit.js $ARGS 2>&1 | tee ../audit-output.txt
+          echo "=== JSON file ==="
+          ls -la ../step-by-step-audit-ch$CHAPTER.json
+          echo "=== JSON file size ==="
+          wc -c ../step-by-step-audit-ch$CHAPTER.json
+
+      - name: Extract causality summary
+        if: always()
+        run: |
+          echo "=== Causality summary (from audit output) ==="
+          grep -A 3 "Causality\|category\|first-appearance\|last-known-good" audit-output.txt 2>/dev/null || true
+          echo ""
+          echo "=== JSON file structure ==="
+          if [ -f "step-by-step-audit-ch$CHAPTER.json" ]; then
+            node -e "
+              const data = require('./step-by-step-audit-ch$CHAPTER.json');
+              console.log('Checkpoints:', data.checkpoints?.length || 0);
+              console.log('Issues:', data.issues?.length || 0);
+              if (data.checkpoints) {
+                data.checkpoints.forEach((cp, i) => {
+                  console.log('  Checkpoint ' + (i+1) + ': ' + cp.stage + ', pages=' + cp.pageCount + ', issues=' + (cp.issues?.length || 0));
+                });
+              }
+              if (data.issues) {
+                console.log('Issue kinds:');
+                const byKind = {};
+                data.issues.forEach(i => { byKind[i.kind] = (byKind[i.kind] || 0) + 1; });
+                Object.entries(byKind).sort((a,b) => b[1]-a[1]).forEach(([k,v]) => console.log('  ' + k + ': ' + v));
+              }
+            "
+          fi
+
+      - name: Upload audit JSON
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: step-by-step-audit-ch${{ github.event.inputs.chapter }}
+          path: |
+            step-by-step-audit-ch${{ github.event.inputs.chapter }}.json
+            audit-output.txt
+          retention-days: 30

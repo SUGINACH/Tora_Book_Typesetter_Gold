@@ -1,0 +1,157 @@
+name: Test Triggers Runner
+
+# תיאור: מריץ את כל קבצי ה-triggers מ-/test-triggers/ דרך ה-engine ומדווח
+# אילו סוגי בעיות זוהו עבור כל קובץ.
+#
+# מטרה: לוודא שה-bugs שאמורים להיווצר ע"י כל trigger-text אכן מזוהים
+# ע"י ה-audit הגיאוממטרי (והבדיקות החדשות: audit-expansion.js ו-audit-text-integrity.js).
+#
+# מופעל ידנית דרך workflow_dispatch או אוטומטית על push ל-V21
+# (רק כאשר נעשו שינויים ב-audit-expansion.js / audit-text-integrity.js / geometry-audit.js).
+
+on:
+  workflow_dispatch:
+    inputs:
+      specific_file:
+        description: 'קובץ trigger ספציפי מ-test-triggers/ (ריק = כל הקבצים)'
+        required: false
+        default: ''
+        type: string
+  push:
+    branches: [V21]
+    paths:
+      - 'audit-expansion.js'
+      - 'audit-text-integrity.js'
+      - 'geometry-audit.js'
+      - 'typesetter.js'
+      - 'test-triggers/**'
+      - '.github/workflows/test-triggers-runner.yml'
+
+jobs:
+  run-triggers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    name: Run Test Triggers
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: List trigger files
+        env:
+          SPECIFIC: ${{ github.event.inputs.specific_file }}
+        run: |
+          echo "=== Trigger files available ==="
+          ls -la test-triggers/*.txt
+          echo ""
+          echo "=== Specific file requested ==="
+          if [ -n "$SPECIFIC" ]; then
+            echo "Specific: $SPECIFIC"
+            ls -la "test-triggers/$SPECIFIC" || echo "File not found: test-triggers/$SPECIFIC"
+          else
+            echo "All files will be tested"
+          fi
+
+      - name: Start HTTP server
+        run: |
+          python3 -m http.server 8765 --bind 0.0.0.0 &
+          sleep 3
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:8765/index.html
+
+      - name: Run all triggers
+        env:
+          SPECIFIC: ${{ github.event.inputs.specific_file }}
+        run: |
+          mkdir -p trigger-results
+          if [ -n "$SPECIFIC" ]; then
+            FILES="test-triggers/$SPECIFIC"
+          else
+            FILES=$(ls test-triggers/test-trigger-*.txt)
+          fi
+          for f in $FILES; do
+            name=$(basename "$f" .txt)
+            echo "=========================================="
+            echo "Running trigger: $name"
+            echo "=========================================="
+            node scripts/test-trigger-runner.js "$f" 2>&1 | tee "trigger-results/$name.log"
+            echo ""
+          done
+
+      - name: Aggregate trigger results
+        run: |
+          mkdir -p trigger-summary
+          node -e "
+            const fs = require('fs');
+            const path = require('path');
+            const dir = 'trigger-results';
+            const summary = { triggers: [] };
+            if (fs.existsSync(dir)) {
+              for (const f of fs.readdirSync(dir)) {
+                if (!f.endsWith('.log')) continue;
+                const log = fs.readFileSync(path.join(dir, f), 'utf8');
+                const name = f.replace(/\.log$/, '');
+                // Parse summary line: 'Summary: {\"total\":N,\"high\":N,...}'
+                const sumMatch = log.match(/Summary: ({.*?})/);
+                const byKindMatch = log.match(/Issues by kind:([\s\S]*?)(?:\\n\\n|Top issues:)/);
+                const byKind = {};
+                if (byKindMatch) {
+                  const lines = byKindMatch[1].trim().split('\\n');
+                  for (const line of lines) {
+                    const m = line.match(/\\s+(\\S+): (\\d+)/);
+                    if (m) byKind[m[1]] = parseInt(m[2], 10);
+                  }
+                }
+                summary.triggers.push({
+                  name,
+                  summary: sumMatch ? sumMatch[1] : null,
+                  byKind,
+                  expectedKinds: name.replace('test-trigger-', '').split('_')
+                });
+              }
+            }
+            fs.writeFileSync('trigger-summary/trigger-summary.json', JSON.stringify(summary, null, 2));
+            console.log(JSON.stringify(summary, null, 2));
+          "
+
+      - name: Print trigger summary
+        run: |
+          echo "=== Trigger Summary ==="
+          cat trigger-summary/trigger-summary.json | python3 -c "
+            import json, sys
+            data = json.load(sys.stdin)
+            print(f'Total triggers: {len(data[\"triggers\"])}')
+            print()
+            for t in data['triggers']:
+              print(f'--- {t[\"name\"]} ---')
+              print(f'  Expected kinds: {t[\"expectedKinds\"]}')
+              print(f'  Detected kinds: {list(t[\"byKind\"].keys())}')
+              print(f'  Summary: {t[\"summary\"]}')
+              # Check if expected kinds were detected
+              expected_set = set(t['expectedKinds'])
+              detected_set = set(t['byKind'].keys())
+              missing = expected_set - detected_set
+              if missing:
+                print(f'  ⚠️  MISSING expected: {missing}')
+              else:
+                print(f'  ✓ All expected kinds detected')
+              print()
+          "
+
+      - name: Upload trigger results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trigger-results
+          path: |
+            trigger-results/
+            trigger-summary/trigger-summary.json
+          retention-days: 30

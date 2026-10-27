@@ -2,12 +2,15 @@
 
 > **תאריך:** 2026-10-27
 > **מקור:** החלטות משתמש מתיקונים ומשוב
+> **סטטוס יישום:** כללים 1–4 מיושמים במלואם ✓
 
 ---
 
-## כלל 1 — שמות בעיות בעברית
+## כלל 1 — שמות בעיות בעברית ✓ מיושם
 
 כל שמות הבעיות בדוח הגיאוממטרי ב-UI חייבים להיות בעברית.
+
+**יישום (2026-10-27):** הוגדר האובייקט הגלובלי `GEOM_KIND_NAMES` ב-`app.js` (line 2668) עם 30 סוגי בעיות. כל שימוש ב-`iss.kind` בטבלת ה-UI עובר דרך `GEOM_KIND_NAMES[iss.kind] || iss.kind`. גם ה-`byKind` בסיכום וגם הדרופדאון צ'קליסט משתמשים בו.
 
 | kind (מזהה פנימי) | שם תצוגה בעברית |
 |---|---|
@@ -44,7 +47,7 @@
 
 ---
 
-## כלל 2 — הבהוב אזור הבעיה
+## כלל 2 — הבהוב אזור הבעיה ✓ מיושם
 
 יש ליישם את תכונת הבהוב אזור הבעיה (`highlightIssue`) גם בדיווחים החדשים:
 - orphan-heading-block
@@ -61,9 +64,19 @@
 
 **אופן יישום:** כל issue שנבחר בטבלת הדיווח ב-UI יפעיל `window.__geomAudit.highlightIssue(issue)` שמצייר מסגרת כתומה מהבהבת על האזור הבעייתי למשך 3 שניות. יש לוודא שהפונקציה תומכת בכל סוגי הבעיות החדשים (משתמשת ב-childRect/aRect/bRect/rightRect/leftRect לפי סוג הבעיה).
 
+**יישום (2026-10-27):** הוסף `childRect` לכל הבאגים החדשים ב-`audit-expansion.js`:
+- `auditHeadingEscort` — kid.rect
+- `auditOrphanH3Block` — block.rect
+- `auditFootnoteOverflow` — fnArea.rect
+- `auditPrivateUseCharacters` — node.rect
+- `auditCandidateVsFinalHeight` — blk.getBoundingClientRect()
+- `auditTofu` — firstP.getBoundingClientRect()
+- `auditNoteMarkerLineBreak` — marker rect
+- `auditH7ToSideNote` / `auditBracketToFootnote` / `auditTextCompleteness` — גלובליים (pageIdx=-1), ישלח `geom-highlight` postMessage עם ה-issue המלא — אם יש rect יודגש, אחרת רק יוצג הודעה. ה-`scrollToIssuePage()` שוכתב לטפל בכל המקרים.
+
 ---
 
-## כלל 3 — דרופדאון צ'קליסט לסינון דיווחים
+## כלל 3 — דרופדאון צ'קליסט לסינון דיווחים ✓ מיושם
 
 בראש טבלת הדיווח הגיאומטרי ב-UI, יש להוסיף רשימת דרופדאון עם צ'קליסט:
 - כל סוגי הבעיות מופיעים כצ'קבוקסים
@@ -72,9 +85,11 @@
 - הטבלה מתעדכנת מיידית בעת שינוי הסימון
 - כפתור "סמן הכל" וכפתור "בטל הכל" בראש הרשימה
 
+**יישום (2026-10-27):** נוספה הפונקציה `renderGeomKindFilter(issues)` ב-`app.js` המציירת `<details>` collapsible עם צ'קבוקסים ב-grid 2 עמודות. הסטייט נשמר ב-`window.__geomFilter.enabledKinds` — `null` = הכל מסומן, `Set` = רק הסוגים שב-Set. כפתורי "סמן הכל" / "בטל הכל" מחליפים בין `null` ל-`Set` ריק. הריענון נעשה ע"י re-call ל-`renderGeomResults` עם `window.__lastGeomResult`.
+
 ---
 
-## כלל 4 — מיון טבלת הדיווחים
+## כלל 4 — מיון טבלת הדיווחים ✓ מיושם
 
 טבלת הדיווחים ב-UI תתמך במיון לפי:
 - **ברירת מחדל: לפי עמוד** (סדר עולה)
@@ -83,6 +98,8 @@
 - לחיצה על כותרת "חומרה" → מיון לפי חומרה (high > medium > low)
 - **לחיצה נוספת על אותה כותרת → מיון הפוך** (descending)
 - חץ ↑/↓ ליד הכותרת מציין את כיוון המיון הנוכחי
+
+**יישום (2026-10-27):** נוספה הפונקציה `sortGeomIssues(issues, key, dir)` ב-`app.js` המטפלת בשלושה מפתחות (page, type, severity) ובשני כיוונים. הסטייט נשמר ב-`window.__geomFilter.sortKey/sortDir`. כיוון ברירת המחדל: `page asc`. הפונקציה `sortIndicator(key)` מחזירה חץ `' ↑'` / `' ↓'` ליד הכותרת הפעילה. הכותרת הפעילה מודגשת בצבע כחול `#1e40af`. מיון severity: `asc` = low→high, `desc` = high→low (אינטואיטיבי). מיון type משתמש ב-`localeCompare` עם שפה `he` כדי שעברית תסודר נכון. שובר שוויון במיון page: לפי סוג (Hebrew). נבדק ע"י unit-test (`scripts/test-sort-filter.js`).
 
 ---
 
