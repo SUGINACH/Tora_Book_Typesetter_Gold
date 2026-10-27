@@ -31,7 +31,10 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:8765/index.html';
 const TEST_TEXT_PATH = process.env.TEST_TEXT_PATH || path.join(__dirname, '..', 'very_long_test_text.txt');
 const RESULTS_DIR = process.env.RESULTS_DIR || path.join(__dirname, 'chapter-results');
 
-const RESTART_EVERY_N_CHAPTERS = 5;
+// [תיקון — C1] הפחתת תדירות רענון מ-5 ל-3 פרקים כדי למנוע קריסות דפדפן אינטרמיטנטיות
+// (פרקים 5, 71, 75 דווחו כבעייתיים ב-SESSION_HANDOFF). רענון תכוף יותר משחרר זיכרון
+// ומונע הצטברות GC שיכולה לגרום ל-timeout/crash.
+const RESTART_EVERY_N_CHAPTERS = 3;
 const TYPESCRIPT_TIMEOUT_MS = 180000; // 3 דקות לפרק (פרקים ענקיים לוקחים זמן)
 const GEOM_AUDIT_TIMEOUT_MS = 30000;
 

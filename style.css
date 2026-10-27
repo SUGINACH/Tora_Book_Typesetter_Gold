@@ -1292,6 +1292,9 @@ p {
     text-justify: inter-word;
     position: relative;
     line-height: var(--line-height-body, 1.34);
+    /* [חדש — F2 תיקון] text-wrap: pretty מאפשר לדפדפן לבצע אופטימיזציה של שבירת
+       שורות כדי למנוע שורה אחרונה דלילה. תומך ב-Chrome 117+ (כולל headless). */
+    text-wrap: pretty;
 }
 p.p-end { text-align-last: var(--last-line-align, center); }
 p.p-cut { text-align-last: justify; }
