@@ -1558,14 +1558,30 @@ function auditGeometry(model) {
             auditColumnBalance(c, issues);
             auditWidowOrphan(c, issues);
             auditSparseLastLine(c, issues);
+            // [חדש — AUDIT_EXPANSION_PLAN 1.1] כותרת + <2 שורות אחריה
+            if (window.__geomAudit.auditHeadingEscort) window.__geomAudit.auditHeadingEscort(c, issues);
+            // [חדש — AUDIT_EXPANSION_PLAN 1.6] ריבועים (U+E000)
+            if (window.__geomAudit.auditPrivateUseCharacters) window.__geomAudit.auditPrivateUseCharacters(c, issues);
+            // [חדש — AUDIT_EXPANSION_PLAN 1.7] שבירה אחרי note-marker
+            if (window.__geomAudit.auditNoteMarkerLineBreak) window.__geomAudit.auditNoteMarkerLineBreak(c, issues);
         }
         auditOverflowToFootnote(page, issues);
         auditPageOverflow(page, issues);
         auditOrnaments(page, issues); // [חדש] בדיקת עיטורים
+        // [חדש — AUDIT_EXPANSION_PLAN 1.4] שני block-2col בעמוד
+        if (window.__geomAudit.auditMultipleBlocksPerPage) window.__geomAudit.auditMultipleBlocksPerPage(page, issues);
+        // [חדש — AUDIT_EXPANSION_PLAN 1.5] הערה ארוכה מעמוד
+        if (window.__geomAudit.auditFootnoteOverflow) window.__geomAudit.auditFootnoteOverflow(page, issues);
     }
     auditPageFillRatio(model, issues); // בדיקת הכלה דלילה של עמוד (page-underfill)
     auditBlockGaps(model, issues); // [חדש — A2] מרחק גדול בין בלוקים
     auditSettingsVerification(model, issues); // [חדש — A3] וידוא החלת הגדרות
+    // [חדש — AUDIT_EXPANSION_PLAN 1.9] גופן לא נטען
+    if (window.__geomAudit.auditFontNotLoaded) window.__geomAudit.auditFontNotLoaded(model, issues);
+    // [חדש — AUDIT_EXPANSION_PLAN 1.10] מועמד מול סופי
+    if (window.__geomAudit.auditCandidateVsFinalHeight) window.__geomAudit.auditCandidateVsFinalHeight(model, issues);
+    // [חדש — AUDIT_EXPANSION_PLAN 1.8] טופו
+    if (window.__geomAudit.auditTofu) window.__geomAudit.auditTofu(model, issues);
     // עדכן pageIdx בכל בעיה ע"י חיפוש בעץ
     issues.forEach(iss => {
         if (iss.pageIdx === -1 || iss.pageIdx === undefined) {
@@ -2163,6 +2179,9 @@ window.__geomAudit = {
     enrichNode: enrichNode,
     getPageMetrics: getPageMetrics,
     semanticRole: semanticRole,
+    // [חדש — AUDIT_EXPANSION_PLAN] חשיפת פונקציות עזר ל-audit-expansion.js
+    getPageIdx: getPageIdx,
+    describePath: describePath,
     // [חדש] מנקה את העץ מ-_parent (circular) לפני ייצוא JSON
     cleanForExport: function(node) {
         if (!node) return node;
