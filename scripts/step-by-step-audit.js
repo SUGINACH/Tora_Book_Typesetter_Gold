@@ -314,6 +314,19 @@ function fmtElement(el, verbose = false) {
     console.log(`Checkpoints: ${checkpoints.length}\n`);
 
     if (FLAGS.jsonOut) {
+        // [Bug 6 fix 2026-10-28] Attach causality classification to each issue so
+        // downstream tools (issue-investigation workflow, debugging scripts) can read
+        // it from JSON without needing to re-run classifyCausality separately.
+        if (FLAGS.causality) {
+            for (const cp of checkpoints) {
+                for (const iss of (cp.issues || [])) {
+                    if (iss.causality) continue;  // don't overwrite existing
+                    try {
+                        iss.causality = classifyCausality(iss, checkpoints);
+                    } catch (_) { /* ignore — keep issue without causality */ }
+                }
+            }
+        }
         fs.writeFileSync(FLAGS.jsonOut, JSON.stringify(checkpoints, null, 2), 'utf8');
         console.log(`JSON נשמר: ${FLAGS.jsonOut}\n`);
     }

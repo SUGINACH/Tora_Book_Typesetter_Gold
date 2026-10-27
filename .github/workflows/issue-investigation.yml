@@ -75,14 +75,22 @@ jobs:
         env:
           ISSUE_KIND: ${{ github.event.inputs.issue_kind }}
         run: |
-          # Map issue kind to trigger file (using underscore as separator)
-          TRIGGER_FILE=$(echo "test-triggers/test-trigger-$ISSUE_KIND" | tr '-' '_').txt
+          # [Bug 5 fix 2026-10-28] Build trigger path correctly.
+          # Issue kinds use '-' as separator in the audit's `kind` field
+          # (e.g., 'heading-escort', 'page-underfill', 'sparse-line').
+          # But trigger files use '_' as separator (e.g., 'test-trigger-heading_escort.txt').
+          # Old code: tr '-' '_' on the WHOLE string — including 'test-triggers/' dir → 'test_triggers/' (broken).
+          # Fix: only translate the ISSUE_KIND part, keep the path prefix intact.
+          ISSUE_KIND_UNDERSCORE=$(echo "$ISSUE_KIND" | tr '-' '_')
+          TRIGGER_FILE="test-triggers/test-trigger-${ISSUE_KIND_UNDERSCORE}.txt"
           echo "TRIGGER_FILE=$TRIGGER_FILE" >> $GITHUB_ENV
           echo "Looking for trigger file: $TRIGGER_FILE"
           if [ -f "$TRIGGER_FILE" ]; then
             echo "✓ Trigger file exists"
+            echo "TRIGGER_FILE_EXISTS=true" >> $GITHUB_ENV
           else
             echo "ℹ No trigger file for this issue kind (will use chapter text only)"
+            echo "TRIGGER_FILE_EXISTS=false" >> $GITHUB_ENV
           fi
 
       - name: Start HTTP server
@@ -152,48 +160,48 @@ jobs:
           echo "=========================================="
           node -e "
             const fs = require('fs');
-            const data = JSON.parse(fs.readFileSync('investigation-ch$CHAPTER-$ISSUE_KIND.json', 'utf8'));
+            const raw = JSON.parse(fs.readFileSync('investigation-ch$CHAPTER-$ISSUE_KIND.json', 'utf8'));
             const ISSUE_KIND = process.env.ISSUE_KIND;
-            console.log('Checkpoints:', data.checkpoints?.length || 0);
-            console.log('Total final issues:', data.issues?.length || 0);
+            // [Bug 4 fix 2026-10-28] step-by-step-audit.js writes JSON as a LIST of checkpoints
+            // (not as {checkpoints:[...], issues:[...]} dict). The last checkpoint = final state.
+            const checkpoints = Array.isArray(raw) ? raw : (raw.checkpoints || []);
+            const finalIssues = Array.isArray(raw) ? (raw[raw.length - 1]?.issues || []) : (raw.issues || []);
+            console.log('Checkpoints:', checkpoints.length);
+            console.log('Total final issues:', finalIssues.length);
             console.log('');
 
             // For each checkpoint, count occurrences of the target issue kind
             console.log('=== Appearances of', ISSUE_KIND, 'across checkpoints ===');
-            if (data.checkpoints) {
-              data.checkpoints.forEach((cp, i) => {
-                const matches = (cp.issues || []).filter(iss => iss.kind === ISSUE_KIND);
-                console.log('  Checkpoint ' + (i+1) + ': ' + cp.stage);
-                console.log('    pageCount=' + cp.pageCount + ', total issues=' + (cp.issues || []).length + ', ' + ISSUE_KIND + '=' + matches.length);
-                if (matches.length > 0) {
-                  matches.slice(0, 3).forEach(m => {
-                    console.log('    → page ' + (m.pageIdx + 1) + ', severity=' + m.severity + ', message=' + (m.message || '').slice(0, 80));
-                  });
-                  if (matches.length > 3) console.log('    ... and ' + (matches.length - 3) + ' more');
-                }
-              });
-            }
+            checkpoints.forEach((cp, i) => {
+              const matches = (cp.issues || []).filter(iss => iss.kind === ISSUE_KIND);
+              console.log('  Checkpoint ' + (i+1) + ': ' + cp.stage);
+              console.log('    pageCount=' + cp.pageCount + ', total issues=' + (cp.issues || []).length + ', ' + ISSUE_KIND + '=' + matches.length);
+              if (matches.length > 0) {
+                matches.slice(0, 3).forEach(m => {
+                  console.log('    → page ' + (m.pageIdx + 1) + ', severity=' + m.severity + ', message=' + (m.message || '').slice(0, 80));
+                });
+                if (matches.length > 3) console.log('    ... and ' + (matches.length - 3) + ' more');
+              }
+            });
 
             console.log('');
             console.log('=== Causality classification (if available) ===');
-            if (data.issues) {
-              const target = data.issues.filter(i => i.kind === ISSUE_KIND);
-              if (target.length > 0) {
-                // Show first 5 with their causality
-                target.slice(0, 5).forEach((iss, i) => {
-                  console.log('Issue ' + (i+1) + ': page ' + (iss.pageIdx + 1) + ', severity=' + iss.severity);
-                  if (iss.causality) {
-                    console.log('  category: ' + iss.causality.category);
-                    console.log('  label: ' + iss.causality.label);
-                    if (iss.causality.appearances) {
-                      console.log('  appearances: ' + iss.causality.appearances.map(a => (a.present ? '✓' : '✗') + '@' + a.stage).join(', '));
-                    }
+            const target = finalIssues.filter(i => i.kind === ISSUE_KIND);
+            if (target.length > 0) {
+              // Show first 5 with their causality
+              target.slice(0, 5).forEach((iss, i) => {
+                console.log('Issue ' + (i+1) + ': page ' + (iss.pageIdx + 1) + ', severity=' + iss.severity);
+                if (iss.causality) {
+                  console.log('  category: ' + iss.causality.category);
+                  console.log('  label: ' + iss.causality.label);
+                  if (iss.causality.appearances) {
+                    console.log('  appearances: ' + iss.causality.appearances.map(a => (a.present ? '✓' : '✗') + '@' + a.stage).join(', '));
                   }
-                });
-                if (target.length > 5) console.log('... and ' + (target.length - 5) + ' more issues');
-              } else {
-                console.log('No issues of kind ' + ISSUE_KIND + ' found in final audit');
-              }
+                }
+              });
+              if (target.length > 5) console.log('... and ' + (target.length - 5) + ' more issues');
+            } else {
+              console.log('No issues of kind ' + ISSUE_KIND + ' found in final audit');
             }
           "
 
@@ -208,10 +216,13 @@ jobs:
           echo "=========================================="
           node -e "
             const fs = require('fs');
-            const data = JSON.parse(fs.readFileSync('investigation-ch$CHAPTER-$ISSUE_KIND.json', 'utf8'));
+            const raw = JSON.parse(fs.readFileSync('investigation-ch$CHAPTER-$ISSUE_KIND.json', 'utf8'));
             const ISSUE_KIND = process.env.ISSUE_KIND;
-            if (!data.checkpoints || !data.issues) { console.log('No data'); process.exit(0); }
-            const target = data.issues.filter(i => i.kind === ISSUE_KIND);
+            // [Bug 4 fix 2026-10-28] step-by-step-audit.js writes JSON as a LIST of checkpoints
+            const checkpoints = Array.isArray(raw) ? raw : (raw.checkpoints || []);
+            const finalIssues = Array.isArray(raw) ? (raw[raw.length - 1]?.issues || []) : (raw.issues || []);
+            if (checkpoints.length === 0) { console.log('No data'); process.exit(0); }
+            const target = finalIssues.filter(i => i.kind === ISSUE_KIND);
             if (target.length === 0) {
               console.log('No issues of kind', ISSUE_KIND, 'in final audit. Nothing to investigate.');
               process.exit(0);
@@ -249,6 +260,16 @@ jobs:
               case 'never-appeared':
                 console.log('→ Issue never appeared in any checkpoint. May be created only in final render.');
                 console.log('  → Check final-state vs last checkpoint differences.');
+                break;
+              case 'couldnt-appear-before':
+                console.log('→ Issue couldnt have appeared before — page did not exist at earlier checkpoints.');
+                console.log('  → The issue was created together with the page (engine added page during main loop).');
+                console.log('  → Common for candidate-vs-final, heading-escort, candidate-vs-final — these persist');
+                console.log('    from the moment the page is created.');
+                console.log('  → If the issue is not engine-critical (e.g., false positive in audit), consider:');
+                console.log('    - Rule 5: is this a false positive? Check actual column balance / overflow.');
+                console.log('    - Raise threshold or add exception.');
+                console.log('  → If the issue is engine-critical, debug the stage that creates the page.');
                 break;
               case 'unresolved':
                 console.log('→ Issue appeared and was never fixed. Direct candidate for solution.');
