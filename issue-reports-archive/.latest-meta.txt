@@ -1,4 +1,4 @@
-issues-bracket-conversion+containment+h7-conversion+sparse-line-in-column+text-completeness-2026-10-27T20-36-45.pdf
-2026-10-27 20:36:58 UTC
+issues-bracket-conversion+containment+h7-conversion+sparse-line-in-column+text-completeness-2026-10-27T21-30-36.pdf
+2026-10-27 21:30:43 UTC
 Chapter range: 1 - 79
 Kind filter: (all kinds)
