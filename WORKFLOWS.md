@@ -198,7 +198,7 @@ GitHub Actions שולח התראה אוטומטית לאימייל / GitHub Noti
   - `start_chapter` (1-79, default 1)
   - `end_chapter` (1-79, default 79)
   - `kind_filter` (ריק = כל הסוגים, או רשימה מופרדת בפסיקים: "footnote-overflow,imbalance")
-  - `push_to_branch` (true/false — האם להוסיף commit עם ה-PDF ל-V21)
+  - `push_to_branch` (true/false — האם לשמור את ה-PDF ב-repo; **default: true** מ-2026-10-28)
 
 **מתי להשתמש:**
 - לסקירה ויזואלית של הבעיות שה-audit מדווח
@@ -206,7 +206,7 @@ GitHub Actions שולח התראה אוטומטית לאימייל / GitHub Noti
 - לאימות דיווח ה-audit (האם הבעיה המדווחת אמיתית?)
 - להצגה למשתמש/לקוח
 
-**שם הקובץ:** כולל את סוגי הבעיות שצולמו + timestamp
+**שם הקובץ ב-artifacts:** כולל את סוגי הבעיות שצולמו + timestamp
 - דוגמה: `issues-candidate-vs-final-2026-10-27T13-01-42.pdf`
 - דוגמה: `issues-footnote-overflow+imbalance-2026-10-27T14-30-00.pdf`
 
@@ -214,13 +214,22 @@ GitHub Actions שולח התראה אוטומטית לאימייל / GitHub Noti
 - `issues-pdf-{filename}` — ה-PDF + לוג
 - retention: 90 days
 
-**אופציונלי:** אם `push_to_branch=true`, ה-PDF נשמר גם ב-`issue-reports-archive/` ב-repo עצמו (commit אוטומטי).
+**[2026-10-28] שמירה ב-repo (ברירת מחדל):** אם `push_to_branch=true` (ברירת מחדל), ה-PDF נשמר גם ב-repo בשם קבוע:
+- `issue-reports-archive/issues-latest.pdf` — ה-PDF האחרון
+- `issue-reports-archive/issues-latest.html` — גרסת HTML ל-debug
+- `issue-reports-archive/.latest-meta.txt` — מטא-נתונים (תאריך, טווח פרקים, סינון)
+- ה-PDF נגיש ישירות מה-repo בכתובת:
+  `https://github.com/SUGINACH/Tora_Book_Typesetter_Gold/blob/V21/issue-reports-archive/issues-latest.pdf`
+- **לא צריך להוריד artifact zip** — פשוט פתח את הקישור ולחץ "Download".
+- שם קבוע מונע צבירת קבצים; ריצה חוזרת מחליפה את הקובץ הקודם.
+- workflow עושה `git pull --rebase` לפני push כדי למנוע conflicts.
+- אם ה-PDF זהה לקודם (אין שינוי), ה-workflow מדלג על ה-commit.
 
 **הערה חשובה:** הסקריפט מרענן browser כל 5 פרקים כדי למנוע דליפות זיכרון. עבור 79 פרקים מלאים, הריצה לוקחת ~30-90 דקות.
 
 **שימוש למטרת אימות דיווח (כפי שהמשתמש ביקש):**
 1. הפעל את ה-workflow עם ברירת מחדל (כל 79 הפרקים, כל הסוגים)
-2. הורד את ה-PDF מ-artifacts
+2. אחרי סיום, פתח את `issue-reports-archive/issues-latest.pdf` ב-repo (או הורד artifact)
 3. עבור על כל צילום מסך וודא:
    - שהבעיה המדווחת אכן נראית לעין בעמוד
    - שהסיבה המצוינת תואמת את מה שנראה
