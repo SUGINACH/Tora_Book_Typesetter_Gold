@@ -55,11 +55,13 @@
 
 ## B. שיפורי engine — פריטים פתוחים ממסמכי ריפו
 
-### B1. P2.5 לכל הכותרות (H4/H5/H6) — לא מומש
+### B1. P2.5 לכל הכותרות (H4/H5/H6) — ✅ מומש
 **מקור:** Comprehensive §6.1 סעיף 3; Defining §20.2
 **תיאור:** P2.5 (margin-bottom של כותרת כבלוף איזון) פועל רק על H5. צריך להרחיב ל-H4 ו-H6.
 **השפעה:** יפתור imbalance עם כותרות (Δ=22px).
-**סטטוס:** חלקי — `stretchByHeadingSpacing` (שלב 4) מטפל בזה, אבל P2.5 המקורי עדיין רק H5.
+**סטטוס:** ✅ מומש — `stretchByHeadingSpacing` (שלב 4) כבר פועל על H4/H5/H6.
+       מוסיף margin-top/margin-bottom לכל כותרות 4/5/6, עם factor דינמי לפי neededPx.
+       שילוב: נקרא מתוך `justifyColumnVertically` לפני word-spacing (step 0).
 
 ### B2. rebalance אחרי `applyKpLineBreaks` — לא מומש
 **מקור:** Comprehensive §6.1 סעיף 1
@@ -72,10 +74,14 @@
 **תיאור:** מנגנון `clubpenalties: [10000, 10000, 150]` קיים אך לא מועבר מ-`getLinesFromParagraph`.
 **מטרה:** הבטחת "שתי שורות אחרי כותרת".
 
-### B4. `fixWidowContinuation` — שיפור
+### B4. `fixWidowContinuation` — ✅ לא רלוונטי כעת
 **מקור:** Comprehensive §6.1 סעיף 5; Defining §20.1
 **תיאור:** מטפל רק בחיתוך האחרון. פסקה ענקית (42 שורות) עם המשך קצר — לא מגיע ל-2 שורות.
 **פתרון:** fallback — מיזוג ההמשך חזרה ל-p-cut.
+**סטטוס:** ✅ לא רלוונטי — בקוד הנוכחי אין פונקציה בשם `fixWidowContinuation`.
+       המנגנון המקביל הוא `tryReclaimOrphanTail` (typesetter.js line 1355) שמושך 1-2 שורות יתומות מהעמוד הבא.
+       בבדיקת baseline נוכחית: **0 בעיות widow-orphan** ב-79 פרקים — המנגנון עובד.
+       אם יופיעו בעיות widow-orphan בעתיד, יש להרחיב את `tryReclaimOrphanTail` לטפל גם ב-3+ שורות (כרגע מוגבל ל-1-2).
 
 ### B5. page-height — תיקון overflow 7px
 **מקור:** LAYOUT_DEPENDENCY_MAP §13.10 סעיף 1

@@ -333,6 +333,28 @@ node step-by-step-audit.js 35
 | `--verbose` / `-v` | פלט מלא — כולל children, lineRects, typography |
 | `--json <FILE>` | שמור checkpoints מלא ל-JSON |
 | `--summary-only` | הדפס רק summary לכל checkpoint (מהיר) |
+| `--per-page-checkpoints` / `--ppc` | הפעל checkpoint אחרי כל עמוד בלולאה הראשית (איטי יותר, אבל מאפשר אבחון מדויק של מתי נוצרת כל בעיה) |
+
+#### שימוש ב-`--per-page-checkpoints`
+
+כאשר בעיה מסווגת כ-`created-at-first-checkpoint` (ב-checkpoint 0 = after-initial-layout),
+לא ניתן לדעת באיזה עמוד בדיוק היא נוצרה. הפלאג `--per-page-checkpoints` (או `--ppc`)
+מוסיף checkpoint אחרי כל עמוד בלולאה הראשית, כך שהסיווג הסיבתי יכול להיות מדויק יותר:
+
+- **לפני `--ppc`**: `created-at-first-checkpoint` — הבעיה הופיעה ב-checkpoint 0.
+- **אחרי `--ppc`**: `created-by-stage: page-N` — הבעיה נוצרה בעמוד N ספציפי.
+
+**חיסרון:** איטי יותר — כל עמוד מוסיף checkpoint שמפעיל `extractGeometry()` + `auditGeometry()`.
+עבור פרק עם 18 עמודים, זה מוסיף ~18 checkpoints × ~200ms = ~3.6 שניות.
+
+**דוגמה לפלט עם `--ppc`:**
+
+```
+[containment-rounding] page 7 — נוצרה ע"י page-5
+  category: created-by-stage
+  note: העמוד היה קיים ב-page-4 ללא הבעיה. הבעיה נוצרה ב-page-5.
+    page-1:✗  page-2:✗  page-3:✗  page-4:✗  page-5:✓(1)  page-6:✓(1)  ...
+```
 
 ### 6.3 דוגמאות שימוש
 
@@ -349,6 +371,12 @@ node step-by-step-audit.js 9 --json /tmp/ch9.json
 # השוואה מהירה
 node step-by-step-audit.js 9 --summary-only
 node step-by-step-audit.js 35 --summary-only
+
+# אבחון מדויק של מתי נוצרת כל בעיה (per-page granularity)
+node step-by-step-audit.js 3 --causality --per-page-checkpoints
+
+# אבחון מלא עם per-page ו-dump JSON
+node step-by-step-audit.js 9 --ppc --causality --verbose --json /tmp/ch9-ppc.json
 ```
 
 ### 6.4 פלט הסקריפט

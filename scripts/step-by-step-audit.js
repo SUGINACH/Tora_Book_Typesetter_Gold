@@ -28,6 +28,8 @@
      --verbose            פלט מלא — כולל children, lineRects, typography
      --json <FILE>        שמור checkpoints מלא ל-JSON
      --summary-only       הדפס רק summary לכל checkpoint (מהיר)
+     --per-page-checkpoints / --ppc  הפעל checkpoint אחרי כל עמוד בלולאה הראשית
+                                     (איטי יותר, אבל מאפשר אבחון מדויק של מתי נוצרת כל בעיה)
 
    דרוש: שרת HTTP על פורט 8765 + very_long_test_text.txt
    ========================================================================== */
@@ -60,7 +62,7 @@ let CHAPTER_NUM = 9;
 const FLAGS = {
     causality: false, deltasOnly: false, noTypography: false,
     noLineRects: false, verbose: false, summaryOnly: false,
-    jsonOut: null
+    perPageCheckpoints: false, jsonOut: null
 };
 for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -71,6 +73,7 @@ for (let i = 0; i < argv.length; i++) {
     else if (a === '--no-line-rects') FLAGS.noLineRects = true;
     else if (a === '--verbose' || a === '-v') FLAGS.verbose = true;
     else if (a === '--summary-only') FLAGS.summaryOnly = true;
+    else if (a === '--per-page-checkpoints' || a === '--ppc') FLAGS.perPageCheckpoints = true;
     else if (a === '--json') FLAGS.jsonOut = argv[++i];
 }
 
@@ -160,30 +163,8 @@ function classifyCausality(issue, checkpoints) {
     // מצא last-known-good (אחרון שלא הייתה הבעיה לפני firstApp)
     const lastGoodIdx = firstApp.idx - 1;
     const lastGood = lastGoodIdx >= 0 ? appearances[lastGoodIdx] : null;
-    // מקרה 1: "לא יכלה להופיע קודם" — העמוד לא היה קיים
-    if (lastGood) {
-        if (pageIdx >= lastGood.pageCount) {
-            return {
-                category: 'couldnt-appear-before',
-                label: 'לא יכלה להופיע קודם — העמוד לא היה קיים',
-                appearances,
-                firstApp, lastGood,
-                note: `העמוד ${pageIdx + 1} לא היה קיים ב-${lastGood.stage} (pageCount=${lastGood.pageCount}). הבעיה נוצרה יחד עם העמוד ב-${firstApp.stage}.`
-            };
-        }
-    } else {
-        // firstApp הוא checkpoint 0 — אין "אחרון תקין", הבעיה נוצרה בשלב הראשון
-        return {
-            category: 'created-at-first-checkpoint',
-            label: `נוצרה ב-${firstApp.stage} (השלב הראשון)`,
-            appearances,
-            firstApp,
-            note: `הבעיה הופיעה ב-checkpoint הראשון (${firstApp.stage}). לא ניתן לדעת אם היא נוצרה בלולאה הראשית או קודם לכן. יש להוסיף checkpoint per-page בתוך הלולאה.`
-        };
-    }
-    // מקרה 2: "נוצרה ע"י שלב" — העמוד היה קיים, הבעיה לא הייתה, ואז הופיעה
-    // מקרה 3: "נעלמה" (fixed-by-stage) — הבעיה הייתה, ונעלמה
-    // מקרה 5: "בוטל פתרון שהוחל" — appeared, fixed, re-appeared
+
+    // [תיקון — ppc] בדוק האם הבעיה נעלמה אחרי firstApp (תיקון ע"י שלב מאוחר יותר)
     const laterAppearances = appearances.slice(firstApp.idx + 1);
     const afterFirst = laterAppearances.find(a => !a.present);
     if (afterFirst) {
@@ -207,13 +188,34 @@ function classifyCausality(issue, checkpoints) {
             note: `הבעיה נוצרה ב-${firstApp.stage} ותוקנה ב-${afterFirst.stage}.`
         };
     }
-    // הבעיה הופיעה ולא נעלמה — created-by-stage
+    // הבעיה הופיעה ולא נעלמה — עכשיו סווג לפי סוג הופעה
+    // מקרה 1: "לא יכלה להופיע קודם" — העמוד לא היה קיים
+    if (lastGood) {
+        if (pageIdx >= lastGood.pageCount) {
+            return {
+                category: 'couldnt-appear-before',
+                label: 'לא יכלה להופיע קודם — העמוד לא היה קיים',
+                appearances,
+                firstApp, lastGood,
+                note: `העמוד ${pageIdx + 1} לא היה קיים ב-${lastGood.stage} (pageCount=${lastGood.pageCount}). הבעיה נוצרה יחד עם העמוד ב-${firstApp.stage}.`
+            };
+        }
+        // מקרה 2: "נוצרה ע"י שלב" — העמוד היה קיים, הבעיה לא הייתה, ואז הופיעה
+        return {
+            category: 'created-by-stage',
+            label: `נוצרה ע"י ${firstApp.stage}`,
+            appearances,
+            firstApp, lastGood,
+            note: `העמוד היה קיים ב-${lastGood.stage} ללא הבעיה. הבעיה נוצרה ב-${firstApp.stage}. זוהי רגרסיה של השלב ${firstApp.stage}.`
+        };
+    }
+    // firstApp הוא checkpoint 0 — אין "אחרון תקין", הבעיה נוצרה בשלב הראשון
     return {
-        category: 'created-by-stage',
-        label: `נוצרה ע"י ${firstApp.stage}`,
+        category: 'created-at-first-checkpoint',
+        label: `נוצרה ב-${firstApp.stage} (השלב הראשון)`,
         appearances,
-        firstApp, lastGood,
-        note: `העמוד היה קיים ב-${lastGood.stage} ללא הבעיה. הבעיה נוצרה ב-${firstApp.stage}. זוהי רגרסיה של השלב ${firstApp.stage}.`
+        firstApp,
+        note: `הבעיה הופיעה ב-checkpoint הראשון (${firstApp.stage}). לא ניתן לדעת אם היא נוצרה בלולאה הראשית או קודם לכן. יש להוסיף checkpoint per-page בתוך הלולאה.`
     };
 }
 
@@ -248,6 +250,7 @@ function fmtElement(el, verbose = false) {
     if (FLAGS.noTypography) console.log('  מצב: ללא typography');
     if (FLAGS.noLineRects) console.log('  מצב: ללא lineRects');
     if (FLAGS.verbose) console.log('  מצב: verbose');
+    if (FLAGS.perPageCheckpoints) console.log('  מצב: per-page-checkpoints (איטי יותר, אבחון מדויק יותר)');
     if (FLAGS.jsonOut) console.log(`  JSON output: ${FLAGS.jsonOut}`);
     console.log('');
 
@@ -272,7 +275,12 @@ function fmtElement(el, verbose = false) {
     await iframe.evaluate((opts) => {
         window.__stepByStepAudit = true;
         window.__stepByStepAuditOpts = opts;
-    }, { noTypography: FLAGS.noTypography, noLineRects: FLAGS.noLineRects });
+        // [חדש — per-page-checkpoints] מפעיל checkpoint אחרי כל עמוד בלולאה הראשית
+        // כדי לאפשר אבחון מדויק של בעיות שנוצרות בתוך הלולאה.
+        if (opts.perPageCheckpoints) {
+            window.__stepByStepAuditPerPage = true;
+        }
+    }, { noTypography: FLAGS.noTypography, noLineRects: FLAGS.noLineRects, perPageCheckpoints: FLAGS.perPageCheckpoints });
 
     // שלח טקסט + הגדרות
     const settings = await page.evaluate(() => {

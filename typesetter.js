@@ -5080,6 +5080,12 @@ function typesetDocumentCore() {
                     }
                 });
             }
+            // [חדש — per-page-checkpoints] אם הדגל מופעל, הפעל checkpoint אחרי כל עמוד
+            // כדי לאפשר אבחון מדויק של בעיות שנוצרות בתוך הלולאה הראשית.
+            // הדגל נפרד מ-__stepByStepAudit כי הוא יוצר checkpoint נוסף לכל עמוד (איטי יותר).
+            if (window.__stepByStepAudit && window.__stepByStepAuditPerPage) {
+                window.__runAuditCheckpoint('page-' + (pageIndex - 1));
+            }
         }
     }
 
