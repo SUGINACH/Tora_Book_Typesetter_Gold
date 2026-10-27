@@ -6160,3 +6160,86 @@ Session deliverables summary:
 6. Bug 6: step-by-step-audit.js causality in JSON (a0d0bae)
 
 All commits pushed to V21, all workflows green.
+
+---
+Task ID: user-feedback-4-points
+Agent: main agent (continuation session 2026-10-28)
+Task: 4 user-requested fixes from PDF review feedback
+
+Work Log:
+
+User reviewed the issues PDF (downloaded from CI run 40556529043) and noted:
+1. candidate-vs-final dominated the PDF but is not a real problem — it's an indicator
+2. PDF showed cover page for h7-conversion/bracket-conversion issues
+3. Mid-paragraph line at end of column was sparse (text was parenthesized ())
+4. Need PDF bookmarks with page number + issue name
+
+CI state before starting:
+- Regression Test on 1ba9389 (5df2262's parent): ❌ failure — 5 empty-column issues
+  (ch8, ch17, ch30, ch56, ch60). My previous fix (5df2262) actually resolved all of
+  them but the CI run was on 1ba9389, not 5df2262.
+- After 5df2262 push: Regression Test ✅ success, Test Triggers Runner ✅ success.
+
+Local verification:
+- ch8, ch17, ch30, ch56, ch60: all empty-column issues gone (0).
+- The fallback for empty-column-fix is now working correctly (the m-bound bug was fixed).
+
+Implementation of the 4 fixes:
+
+[נקודה 1] candidate-vs-final removed as standalone issue
+- audit-expansion.js: auditCandidateVsFinalHeight became no-op (kept for backward compat).
+- generate-issues-pdf.js: filter candidate-vs-final from relevantIssues.
+- Reason: the diff is approximation noise (placeholder 'א' vs real gematria marker
+  width variation). All 60 cases in 79 chapters showed excellent actual column
+  balance (Δ ≤ 3px). Not a bug — an indicator.
+- If anyone needs the data: read data-layout-balance-rh/lh attributes on the block.
+
+[נקודה 2] PDF — fix cover page screenshot for global issues
+- generate-issues-pdf.js: issues with pageIdx < 0 (global, like h7-conversion,
+  bracket-conversion) no longer attach to pageIdx 0 (cover).
+- Instead: attached to representative page (idx=1, second page = first body page).
+- Tagged with 'גלובלי' + 'נציג' in the HTML header.
+- Old behavior: `pIdx = iss.pageIdx >= 0 ? iss.pageIdx : 0` → always page 0.
+- New: split into globalIssues + pageSpecificIssues, attach global to idx=1.
+
+[נקודה 3] New audit: auditSparseLineInColumn
+- audit-expansion.js: new function (1.13) that checks the LAST line of any column
+  (not just the right p-cut like sparse-line does).
+- Severity: MEDIUM if ratio < 30%, LOW if 30-50% of column width.
+- Detects if the last line contains parentheses () — common cause of sparseness.
+- app.js: added 'sparse-line-in-column': 'שורה אחרונה דלילה בטור' to GEOM_KIND_NAMES.
+- geometry-audit.js: added call in main audit loop.
+- Registered in window.__geomAudit API.
+- ch9 local test: 16 sparse-line-in-column issues, including p6 with 'מכילה סוגריים ()'
+  exactly as the user described.
+
+[נקודה 4] PDF bookmarks (outlines) added via pdf-lib
+- package.json: added pdf-lib dependency.
+- generate-issues-pdf.js: build outline tree with pdf-lib low-level API.
+  - Structure: root → chapters → issues (2 levels).
+  - Each bookmark includes: issue name (Hebrew), PDF page index, severity.
+  - Separate bookmark for cover page.
+  - Uses Chromium to find y-position of each issue, then PDF page = floor(y/1123px).
+- If bookmark creation fails, PDF is still valid (try/catch).
+
+Bonus:
+- .gitignore: removed issue-reports-archive/ so push_to_branch=true works in the
+  workflow (was preventing the commit-to-V21 step from succeeding).
+
+Verification on ch9 (local):
+- candidate-vs-final: 13 → 0 ✓
+- empty-column: 0 → 0 ✓ (was already fixed by 5df2262)
+- multiple-first-word-window: 0 → 0 ✓ (was already fixed by 1ba9389)
+- sparse-line-in-column: 16 new (correct) ✓
+- Including 1 with 'מכילה סוגריים ()' marker ✓
+
+Commit: 4489d6f — feat(audit+pdf): 4 user-requested fixes
+
+Stage Summary:
+- All 4 user-requested fixes implemented in one commit.
+- New audit function (sparse-line-in-column) added with Hebrew name in UI.
+- PDF generator now: filters candidate-vs-final, handles global issues correctly,
+  adds bookmarks via pdf-lib.
+- pdf-lib added as dependency (will be installed by npm install in CI).
+- .gitignore fix for issue-reports-archive (was blocking commit-to-V21).
+- CI on 5df2262 is green; 4489d6f expected to pass (no engine changes, only audit/PDF).
