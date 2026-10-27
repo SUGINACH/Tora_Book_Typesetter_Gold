@@ -2624,7 +2624,7 @@ function renderGeomBreakdown(container, result) {
     html += '<details style="margin-top:8px;"><summary style="cursor:pointer;padding:4px;background:#e2e8f0;font-size:9pt;font-weight:bold;border-radius:4px;">סיכום לעמוד</summary>';
     html += '<table style="width:100%;border-collapse:collapse;font-size:7pt;background:#fff;margin-top:4px;">';
     html += '<thead><tr style="background:#e2e8f0;">'
-        + '<th style="padding:3px;border:1px solid #cbd5e1;">עמוד</th>'
+        + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;" onclick="window.__setGeomSort(\'page\')">עמוד ↑↓</th>`
         + '<th style="padding:3px;border:1px solid #cbd5e1;">טורים</th>'
         + '<th style="padding:3px;border:1px solid #cbd5e1;">פסקאות</th>'
         + '<th style="padding:3px;border:1px solid #cbd5e1;">שורות</th>'
@@ -2664,6 +2664,28 @@ function renderGeomBreakdown(container, result) {
 window.renderGeomBreakdown = renderGeomBreakdown;
 
 /* [חדש — גיאומטריה] מציג את תוצאות ה-bug הגיאומטרי */
+/* [כלל עבודה 1] שמות עבריים לכל סוגי הבעיות */
+const GEOM_KIND_NAMES = {
+    'containment': 'חריגת הכלה', 'containment-rounding': 'עיגול פיקסלים',
+    'overlap': 'חפיפה', 'imbalance': 'אי-איזון טורים',
+    'widow': 'אלמנה', 'orphan': 'יתום', 'sparse-line': 'שורה דלילה',
+    'fn-overflow': 'גוף→הערות', 'pn-overflow': 'גוף→מספר', 'page-overflow': 'גלישת עמוד',
+    'fn-page-overflow': 'הערות→תחתית', 'fn-pn-overflow': 'הערות→מספר',
+    'fn-containment': 'הכלה בהערות', 'fn-line-overflow': 'שורת הערה חורגת',
+    'footnote-overflow': 'הערות חורגות מאזור',
+    'page-underfill': 'עמוד דליל', 'block-gap': 'מרווח בין בלוקים',
+    'ornament-overflow': 'עיטור חורג', 'ornament-overlap': 'עיטור חופף', 'ornament-asymmetry': 'עיטור א-סימטרי',
+    'heading-escort': 'כותרת בתחתית טור', 'orphan-heading-block': 'בלוק עם כותרת אלמנה',
+    'candidate-vs-final': 'פער מועמד-סופי', 'private-use-chars': 'תווים פרטיים (ריבועים)',
+    'tofu': 'טופו (תו חסר)', 'font-not-loaded': 'גופן לא נטען',
+    'settings-verification': 'הגדרה לא הוחלה', 'text-completeness': 'שלמות טקסט',
+    'h7-conversion': 'המרת H7 לכותרת צד', 'bracket-conversion': 'המרת סוגריים להערות',
+    'note-marker-line-break': 'סמן הערה בסוף שורה',
+};
+/* [כלל עבודה 3+4] מצב סינון ומיון גלובלי */
+window.__geomFilter = window.__geomFilter || { enabledKinds: null, sortKey: 'page', sortDir: 'asc' };
+window.__lastGeomResult = null;
+
 function renderGeomResults(container, result) {
     if (!container) return;
     container.style.display = 'block';
@@ -2684,17 +2706,7 @@ function renderGeomResults(container, result) {
         html += ' · <span style="color:#86efac;">✓ אין בעיות!</span>';
     }
     if (summary.byKind && Object.keys(summary.byKind).length > 0) {
-        const kindNames = {
-            'containment': 'חריגת הכלה',
-            'overlap': 'חפיפה',
-            'imbalance': 'אי-איזון טורים',
-            'widow': 'אלמנה',
-            'orphan': 'יתום',
-            'sparse-line': 'שורה דלילה',
-            'fn-overflow': 'גלישה להערות',
-            'pn-overflow': 'גלישה למספר עמוד',
-            'page-overflow': 'גלישת עמוד'
-        };
+        /* [כלל 1] השתמש בטבלת השמות הגלובלית */
         html += '<br><span style="font-size:7pt;font-weight:normal;color:#94a3b8;">';
         html += Object.entries(summary.byKind).map(([k, v]) => `${kindNames[k] || k}: ${v}`).join(' · ');
         html += '</span>';
@@ -2704,21 +2716,14 @@ function renderGeomResults(container, result) {
     if (issues.length > 0) {
         html += '<table style="width:100%;border-collapse:collapse;font-size:7pt;background:#fff;">';
         html += '<thead><tr style="background:#e2e8f0;">'
-            + '<th style="padding:3px;border:1px solid #cbd5e1;">עמוד</th>'
-            + '<th style="padding:3px;border:1px solid #cbd5e1;">סוג</th>'
-            + '<th style="padding:3px;border:1px solid #cbd5e1;">חומרה</th>'
+            + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;" onclick="window.__setGeomSort(\'page\')">עמוד ↑↓</th>`
+            + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;" onclick="window.__setGeomSort(\'type\')">סוג ↑↓</th>`
+            + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;" onclick="window.__setGeomSort(\'severity\')">חומרה ↑↓</th>`
             + '<th style="padding:3px;border:1px solid #cbd5e1;">פירוט</th>'
             + '</tr></thead><tbody>';
         issues.slice(0, 200).forEach((iss, i) => {
             const sc = iss.severity === 'high' ? '#dc2626' : (iss.severity === 'medium' ? '#d97706' : '#64748b');
-            const kindNames = {
-                'containment': 'חריגת הכלה', 'overlap': 'חפיפה', 'imbalance': 'אי-איזון',
-                'widow': 'אלמנה', 'orphan': 'יתום', 'sparse-line': 'שורה דלילה',
-                'containment-rounding': 'עיגול פיקסלים',
-                'fn-overflow': 'גוף→הערות', 'pn-overflow': 'גוף→מספר', 'page-overflow': 'גלישת עמוד',
-                'fn-page-overflow': 'הערות→תחתית', 'fn-pn-overflow': 'הערות→מספר',
-                'fn-containment': 'הכלה בהערות', 'fn-line-overflow': 'שורת הערה'
-            };
+            /* [כלל 1] השתמש בטבלת השמות הגלובלית */
             const pageIdx = iss.pageIdx !== undefined ? iss.pageIdx : -1;
             const clickable = pageIdx >= 0 ? `cursor:pointer;` : '';
             const title = pageIdx >= 0 ? ` title="לחץ לגלילה לעמוד ${pageIdx + 1} והבהוב הבעיה"` : '';
@@ -2729,7 +2734,7 @@ function renderGeomResults(container, result) {
             const hover = pageIdx >= 0 ? ` onmouseover="this.style.background=\'#fef3c7\'" onmouseout="this.style.background=\'#fff\'"` : '';
             html += `<tr style="border:1px solid #cbd5e1;${clickable}"${title}${issueJson}${onclick}${hover}>`
                 + `<td style="padding:2px;text-align:center;font-weight:bold;">${pageIdx >= 0 ? pageIdx + 1 : '?'}</td>`
-                + `<td style="padding:2px;">${kindNames[iss.kind] || iss.kind}</td>`
+                + `<td style="padding:2px;">${GEOM_KIND_NAMES[iss.kind] || iss.kind}</td>`
                 + `<td style="padding:2px;color:${sc};">${iss.severity}</td>`
                 + `<td style="padding:2px;">${iss.message || ''}</td>`
                 + `</tr>`;
@@ -2775,6 +2780,29 @@ window.scrollToIssuePage = scrollToIssuePage;
 
 window.renderGeomResults = renderGeomResults;
 
+/* [כלל עבודה 3] פונקציות סינון — דרופדאון צ'קליסט */
+window.__toggleGeomKind = function(kind, checked) {
+    if (checked) window.__geomFilter.enabledKinds.add(kind);
+    else window.__geomFilter.enabledKinds.delete(kind);
+    const container = document.getElementById('fn-audit-results');
+    if (container && window.__lastGeomResult) renderGeomResults(container, window.__lastGeomResult);
+};
+window.__toggleAllGeomKinds = function(checkAll) {
+    if (checkAll && window.__lastGeomResult) {
+        window.__geomFilter.enabledKinds = new Set(window.__lastGeomResult.issues.map(i => i.kind));
+    } else { window.__geomFilter.enabledKinds = new Set(); }
+    const container = document.getElementById('fn-audit-results');
+    if (container && window.__lastGeomResult) renderGeomResults(container, window.__lastGeomResult);
+};
+/* [כלל עבודה 4] פונקציית מיון — לחיצה על כותרת */
+window.__setGeomSort = function(key) {
+    if (window.__geomFilter.sortKey === key) {
+        window.__geomFilter.sortDir = window.__geomFilter.sortDir === 'asc' ? 'desc' : 'asc';
+    } else { window.__geomFilter.sortKey = key; window.__geomFilter.sortDir = 'asc'; }
+    const container = document.getElementById('fn-audit-results');
+    if (container && window.__lastGeomResult) renderGeomResults(container, window.__lastGeomResult);
+};
+
 /* [חדש — מהימנות מדידה] מציג את תוצאות ה-audit בצורה טבלאית.
    מציג לכל עמוד עם הערות: מספר העמוד, מספרי ההערות, תחזית מדידה, גובה אמיתי, פער. */
 function renderFnAuditResults(container, result) {
@@ -2805,7 +2833,7 @@ function renderFnAuditResults(container, result) {
 
     html += '<table style="width:100%;border-collapse:collapse;font-size:7pt;background:#fff;">'
         + '<thead><tr style="background:#e2e8f0;">'
-        + '<th style="padding:3px;border:1px solid #cbd5e1;">עמוד</th>'
+        + `<th style="padding:3px;border:1px solid #cbd5e1;cursor:pointer;" onclick="window.__setGeomSort(\'page\')">עמוד ↑↓</th>`
         + '<th style="padding:3px;border:1px solid #cbd5e1;">מס׳ הערות</th>'
         + '<th style="padding:3px;border:1px solid #cbd5e1;">תחזית</th>'
         + '<th style="padding:3px;border:1px solid #cbd5e1;">scrollH</th>'
