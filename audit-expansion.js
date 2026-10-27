@@ -178,7 +178,12 @@ function auditPrivateUseCharacters(node, issues) {
     for (const c of (node.children || [])) auditPrivateUseCharacters(c, issues);
 }
 
-/* 1.9 — גופן לא נטען (fallback detection) */
+/* 1.9 — גופן לא נטען (fallback detection)
+   [תיקון 2026-10-28 — מחקר 1_Defining_Layout_Issues.md סעיף 13]
+   ההגדרה (סעיף 13.5): "נפילה לגופן השני ברשימת fallback — תקין!"
+   הקוד הישן בדק רק את הגופן הראשון (fontBody.split(',')[0]) — false positive!
+   תיקון: בדוק את כל רשימת ה-fallback. רק אם אף אחד לא נטען — דווח.
+*/
 function auditFontNotLoaded(model, issues) {
     if (!model.pages || model.pages.length === 0) return;
     const fontBody = document.getElementById('font-body')?.value;
@@ -186,19 +191,28 @@ function auditFontNotLoaded(model, issues) {
 
     // בדוק טעינת גופן באמצעות document.fonts.check()
     try {
-        // נסה כמה גדלים נפוצים
+        // [תיקון 2026-10-28] בדוק את כל רשימת ה-fallback, לא רק את הראשון.
+        // סעיף 13.5: "נפילה לגופן השני ברשימת fallback — תקין!"
+        // רק אם אף גופן ברשימה לא נטען — זו בעיה.
+        const fontList = fontBody.split(',').map(s => s.replace(/['"]/g, '').trim()).filter(s => s.length > 0);
         const sizes = ['12px', '16px', '10pt'];
-        let loaded = false;
-        for (const sz of sizes) {
-            // fontBody יכול להכיל מספר גופנים מופרדים בפסיק — קח את הראשון
-            const primaryFont = fontBody.split(',')[0].replace(/['"]/g, '').trim();
-            if (document.fonts.check(`${sz} "${primaryFont}"`) || document.fonts.check(`${sz} ${primaryFont}`)) {
-                loaded = true;
+        let anyLoaded = false;
+        for (const font of fontList) {
+            // דלג על גופנים גנריים — הם תמיד "נטענים"
+            if (['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui'].includes(font)) {
+                anyLoaded = true;
                 break;
             }
+            for (const sz of sizes) {
+                if (document.fonts.check(`${sz} "${font}"`) || document.fonts.check(`${sz} ${font}`)) {
+                    anyLoaded = true;
+                    break;
+                }
+            }
+            if (anyLoaded) break;
         }
-        if (!loaded) {
-            // בדוק גם עם document.fonts.status
+        if (!anyLoaded) {
+            // אף גופן ברשימת ה-fallback לא נטען — זו בעיה אמיתית
             const status = document.fonts.status;
             if (status !== 'loaded') {
                 issues.push({
@@ -209,7 +223,7 @@ function auditFontNotLoaded(model, issues) {
                     setting: 'font-body',
                     expected: fontBody,
                     actual: `fonts.status=${status}`,
-                    message: `גופן הגוף (${fontBody}) אינו נטען — document.fonts.status=${status}. הדפדפן משתמש בגופן חלופי עם מדדים שונים`
+                    message: `אף גופן ברשימת ה-fallback (${fontBody}) לא נטען — document.fonts.status=${status}. הדפדפן משתמש בגופן חלופי עם מדדים שונים`
                 });
             }
         }
@@ -234,7 +248,14 @@ function auditCandidateVsFinalHeight(model, issues) {
     return;
 }
 
-/* 1.8 — טופו (תווים שלא קיימים בגופן) — בדיקת רוחב תווים */
+/* 1.8 — טופו (תווים שלא קיימים בגופן) — בדיקת רוחב תווים
+   [תיקון 2026-10-28 — מחקר 1_Defining_Layout_Issues.md סעיף 14]
+   ההגדרה (סעיף 14.6): השוואה ל-serif גנרי היא השיטה הנכונה.
+   הקוד הישן השווה לרוחב ריבוע □ — פחות מדויק.
+   תיקון: השווה רוחב תו בגופן המבוקש מול רוחב אותו תו ב-serif גנרי.
+   אם הם זהים (הפרש < 5% ממספר הפיקסלים), הגופן לא נטען והתו מצויר ע"י fallback.
+   סעיף 14.5: גופנים גנריים (serif, sans-serif, monospace) — לעולם אינם tofu.
+*/
 function auditTofu(model, issues) {
     if (!model.pages || model.pages.length === 0) return;
     // קח פסקה ראשונה ובדוק רוחב תווים
@@ -246,47 +267,52 @@ function auditTofu(model, issues) {
 
     try {
         const fontStr = getComputedStyle(firstP).fontFamily;
+        const fontSize = getComputedStyle(firstP).fontSize;
         const text = firstP.textContent || '';
         if (text.length < 2) return;
 
-        // השתמש ב-Canvas API למדידת רוחב תווים
+        // [תיקון 2026-10-28] דלג אם הגופן הוא גנרי (סעיף 14.5)
+        const genericFonts = ['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui'];
+        const fontList = fontStr.split(',').map(s => s.replace(/['"]/g, '').trim());
+        const isAllGeneric = fontList.every(f => genericFonts.includes(f));
+        if (isAllGeneric) return;
+
+        // [תיקון 2026-10-28] השוואה ל-serif גנרי (סעיף 14.6)
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
-        ctx.font = getComputedStyle(firstP).fontSize + ' ' + fontStr;
+        const suspectFont = fontList.find(f => !genericFonts.includes(f)) || fontList[0];
 
-        // מדוד תו רגיל מול ריבוע
-        const normalChar = text[0];
-        const tofuChar = '\u25A1'; // □
-
-        const normalW = ctx.measureText(normalChar).width;
-        const tofuW = ctx.measureText(tofuChar).width;
-
-        // אם הרוחב של תו רגיל שווה לרוחב של ריבוע, ייתכן שהתו לא בגופן
-        // (הדפדפן מציג אותו כריבוע באותו רוחב)
-        if (normalW > 0 && Math.abs(normalW - tofuW) < 0.5) {
-            // בדוק עוד תווים
-            let suspectCount = 0;
-            for (let i = 0; i < Math.min(text.length, 100); i++) {
-                const w = ctx.measureText(text[i]).width;
-                if (w > 0 && Math.abs(w - tofuW) < 0.5) suspectCount++;
-            }
-            if (suspectCount > 5) {
-                const bc = document.getElementById('book-container');
-                const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
-                const pRect = firstP.getBoundingClientRect();
-                issues.push({
-                    kind: 'tofu',
-                    severity: 'high',
-                    pageIdx: 0,
-                    location: 'global',
-                    suspectCount,
-                    fontFamily: fontStr,
-                    childRect: { x: Math.round(pRect.left - bcRect.left), y: Math.round(pRect.top - bcRect.top), w: Math.round(pRect.width), h: Math.round(pRect.height) },
-                    message: `אפשרות לטופו: ${suspectCount} מתוך 100 תווים בעלי רוחב זהה לריבוע (□) — ייתכן שהגופן (${fontStr}) לא תומך בתווים אלו`
-                });
+        // מדוד תווים בגופן המבוקש מול serif גנרי
+        let suspectCount = 0;
+        const sampleSize = Math.min(text.length, 100);
+        for (let i = 0; i < sampleSize; i++) {
+            const ch = text[i];
+            if (ch === ' ' || ch === '\n' || ch === '\t') continue;
+            ctx.font = `${fontSize} "${suspectFont}"`;
+            const w1 = ctx.measureText(ch).width;
+            ctx.font = `${fontSize} serif`;
+            const w2 = ctx.measureText(ch).width;
+            // אם הרוחבים זהים (הפרש < 5%), התו מצויר ע"י fallback (לא הגופן המבוקש)
+            if (w1 > 0 && w2 > 0 && Math.abs(w1 - w2) / Math.max(w1, w2) < 0.05) {
+                suspectCount++;
             }
         }
-    } catch(e) { /* ignore */ }
+        if (suspectCount > 5) {
+            const bc = document.getElementById('book-container');
+            const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
+            const pRect = firstP.getBoundingClientRect();
+            issues.push({
+                kind: 'tofu',
+                severity: 'high',
+                pageIdx: 0,
+                location: 'global',
+                suspectCount,
+                font: suspectFont,
+                childRect: { x: Math.round(pRect.left - bcRect.left), y: Math.round(pRect.top - bcRect.top), w: Math.round(pRect.width), h: Math.round(pRect.height) },
+                message: `${suspectCount} תווים נראים כ-tofu (מצוירים ע"י גופן חלופי, לא "${suspectFont}"). השוואה ל-serif גנרי הראתה רוחב זהה.`
+            });
+        }
+    } catch(e) { /* ignore — Canvas API עלול להיכשל */ }
 }
 
 /* 1.7 — שבירת שורה אחרי סמן הערה */
@@ -361,9 +387,15 @@ function isSpecialPage(page) {
 */
 function auditEmptyColumn(model, issues) {
     if (!model.pages) return;
-    for (const page of model.pages) {
+    for (let pageIdx = 0; pageIdx < model.pages.length; pageIdx++) {
+        const page = model.pages[pageIdx];
         // [נקודה ממשתמש 2026-10-28] דלג על עמודי שער — אינם עמודי תוכן רגילים
         if (isSpecialPage(page)) continue;
+        // [תיקון 2026-10-28 — 1_Defining_Layout_Issues.md סעיף 9.5]
+        // טור ריק בסוף פרק — תקין! אי אפשר למלא טור בלי תוכן.
+        // בדוק אם זה העמוד האחרון של הפרק (העמוד הבא הוא שער/blank או שאין עמוד הבא).
+        const isLastInChapter = (pageIdx === model.pages.length - 1) ||
+            (pageIdx + 1 < model.pages.length && isSpecialPage(model.pages[pageIdx + 1]));
         const el = window.__geomAudit?.findDom?.(page);
         if (!el) continue;
         const blocks = el.querySelectorAll('.block-2col');
@@ -379,6 +411,9 @@ function auditEmptyColumn(model, issues) {
 
             // דלג על בלוקים ריקים לחלוטין (אין תוכן בכלל — לא נקראת balanceColumns)
             if (rChildren === 0 && lChildren === 0) return;
+
+            // [תיקון 2026-10-28] דלג על טור ריק בסוף פרק (תקין לפי סעיף 9.5)
+            if (isLastInChapter && (rChildren === 0 || lChildren === 0)) return;
 
             const bc = document.getElementById('book-container');
             const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
