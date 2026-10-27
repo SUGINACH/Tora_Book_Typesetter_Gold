@@ -6243,3 +6243,55 @@ Stage Summary:
 - pdf-lib added as dependency (will be installed by npm install in CI).
 - .gitignore fix for issue-reports-archive (was blocking commit-to-V21).
 - CI on 5df2262 is green; 4489d6f expected to pass (no engine changes, only audit/PDF).
+
+---
+Task ID: pdf-bookmarks-fix-and-sparse-tuning
+Agent: main agent (continuation session 2026-10-28)
+Task: Fix PDF bookmarks (pdf-lib API) + git push permissions + tune sparse-line-in-column
+
+User feedback:
+- "פעם הבאה ברגע שניתן להריץ את הוורקפלו הרץ אותה בעצמך" — I should trigger the workflow myself.
+- "הכן את התיקון הבא, ובדוק וכוונן וחוזר חלילה עד להסקת הפתרון הראוי"
+- "המתן להערות על הPDF לפני אישור ודחיפת התיקון" — DO NOT push until user reviews PDF.
+
+Investigation of failed Issues Screenshot PDF (run 40575982328 on 022a42d):
+- Bookmark creation: 'TypeError: key.sizeInBytes is not a function'
+  Root cause: pdfDoc.context.obj(string) doesn't handle plain strings.
+- git push: '403 Permission to SUGINACH/Tora_Book_Typesetter_Gold.git denied'
+  Root cause: GITHUB_TOKEN default is read-only.
+
+Fixes (commit 50ec68a, pushed):
+1. bookmarks pdf-lib API:
+   - Title: PDFHexString.fromText(title) (was: pdfDoc.context.obj(title))
+   - Dest array: PDFArray.withContext + push(destPageRef, PDFName.of('XYZ'), PDFNull x3)
+   - Count: PDFNumber.of(length) (was: length number)
+   - outlineRoot: built manually with PDFName.of + PDFNumber.of
+   - catalog.set: PDFName.of('Outlines'), PDFName.of('PageMode'), PDFName.of('UseOutlines')
+2. permissions: contents: write in 'generate-pdf' job (enables GITHUB_TOKEN push).
+3. Verification: ch9 local = 17 bookmarks (16 issues + 1 cover), PDF 1.9MB.
+
+Triggered Issues Screenshot PDF workflow on 50ec68a (all 79 chapters, push_to_branch=true).
+- Run started at 2026-10-27T20:29:45Z.
+- Expected to finish in 30-90 minutes.
+
+[While waiting] Tuning sparse-line-in-column (commit NOT pushed yet — awaiting user approval):
+Analysis of 79 chapters baseline (50% threshold):
+- 371 issues total: 203 medium (ratio < 30%), 168 low (30-50%)
+- 33 with parens (9% of total)
+- Ratio distribution:
+  <10%: 10, 10-20%: 48, 20-30%: 139, 30-40%: 103, 40-50%: 69, >50%: 2
+- Top affected: ch28 (29), ch8 (24), ch9 (16), ch4 (15), ch30 (15), ch63 (15)
+- Conclusion: 371 issues is too noisy — most are natural (paragraph ends mid-line).
+
+Tuning applied (local only):
+- Report only if: ratio < 15% OR (hasParens=true AND ratio < 50%)
+- Severity: HIGH if ratio < 10%, MEDIUM otherwise.
+- ch9 verification: 16 → 1 issue (p6, 24%, with parens — exactly as user described).
+- Expected across 79 chapters: ~50-60 issues (down from 371).
+
+Next steps:
+1. Wait for Issues Screenshot PDF workflow to finish.
+2. User reviews the PDF (with bookmarks, no candidate-vs-final).
+3. User provides feedback on sparse-line-in-column tuning.
+4. After approval: commit + push the sparse-line-in-column tuning.
+5. Re-run Issues Screenshot PDF to verify final state.

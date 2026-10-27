@@ -467,7 +467,12 @@ function auditMultipleFirstWordWindow(model, issues) {
    הבדיקה הקיימת 'sparse-line' (ב-geometry-audit.js) בודקת רק את ה-p-cut הימני
    ב-balanceColumns. הבדיקה הזו מרחיבה לכל פסקה שמסתיימת בתחתית טור.
    סיבה נפוצה: השורה האחרונה מכילה טקסט מוסגר () שיוצר רוחב קטן.
-   חומרה: MEDIUM אם השורה האחרונה דלילה מ-30% מרוחב הטור, LOW אם 30-50%.
+
+   [כוונון 2026-10-28 — כלל 5 false-positive investigation]
+   ניתוח 79 פרקים: 371 issues ב-50% threshold, רק 33 עם סוגריים (9%).
+   רוב ה-issues הם false positive — שורה אחרונה דלילה היא טבעית בעימוד תורני.
+   כוונון: דווח רק אם hasParens=true (כי זה מה שהמשתמש תיאר) OR ratio < 15% (חמור).
+   חומרה: HIGH אם ratio < 10%, MEDIUM אם ratio < 15% או hasParens, אחרת לא מדווח.
 */
 function auditSparseLineInColumn(model, issues) {
     if (!model.pages) return;
@@ -514,16 +519,21 @@ function auditSparseLineInColumn(model, issues) {
                     const firstW = firstLine.r - firstLine.l;
                     const ratio = lastW / colWidth;
 
-                    // דליל: ratio < 50% מרוחב הטור (לא רק מהשורה הראשונה — יותר קפדני)
-                    // נעשה זאת רק אם יש 2+ שורות (לא שורה בודדת)
-                    if (lines.length >= 2 && ratio < 0.5) {
+                    // בדוק אם השורה האחרונה מכילה סוגריים
+                    const hasParens = /\([^)]*\)/.test((lastChild.textContent || '').slice(-50));
+
+                    // [כוונון 2026-10-28] דווח רק במקרים הבאים:
+                    // 1. ratio < 15% (חמור — שורה בודדת בסוף טור)
+                    // 2. hasParens=true AND ratio < 50% (סוגריים + דלילות יחסית — לא מלאה)
+                    // [תיקון נוסף] אם ratio >= 50% אין דלילות גם אם יש סוגריים — אל תדווח.
+                    const isSparse = ratio < 0.15 || (hasParens && ratio < 0.5);
+                    if (lines.length >= 2 && isSparse) {
                         const bc = document.getElementById('book-container');
                         const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
                         const colRect = col.getBoundingClientRect();
                         const pText = (lastChild.textContent || '').slice(0, 50).replace(/\s+/g, ' ');
-                        const severity = ratio < 0.3 ? 'medium' : 'low';
-                        // בדוק אם השורה האחרונה מכילה סוגריים
-                        const hasParens = /\([^)]*\)/.test((lastChild.textContent || '').slice(-50));
+                        // חומרה: HIGH אם ratio < 10%, MEDIUM אחרת (כי יש סוגריים או ratio < 15%)
+                        const severity = ratio < 0.10 ? 'high' : 'medium';
 
                         issues.push({
                             kind: 'sparse-line-in-column',

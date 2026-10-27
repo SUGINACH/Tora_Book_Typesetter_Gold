@@ -101,7 +101,11 @@ function escapeHtml(s) {
     console.log(`[generate-issues-pdf] סה"כ פרקים במקור: ${allChapters.length}`);
 
     const browser = await chromium.launch({ headless: true });
-    const ctx = await browser.newContext({ viewport: { width: 1280, height: 1024 } });
+    // [תיקון 2026-10-28 — בעיית "פס תחתון כהה"]
+    // ה-viewport הקודם היה 1280×1024, אבל עמוד A4 הוא 793×1122 (גובהו גדול מה-viewport!).
+    // לכן Playwright לא יכול היה לצלם את כל העמוד בבת אחת והשאר התמלא ברקע האפור #334155.
+    // פתרון: הגדל את ה-viewport ל-1280×1600 (מספיק ל-A4 + שערים + margin).
+    const ctx = await browser.newContext({ viewport: { width: 1280, height: 1600 } });
     const page = await ctx.newPage();
     await page.goto(BASE_URL, { waitUntil: 'load', timeout: 60000 });
     await page.waitForFunction(() => !!document.querySelector('iframe#render-frame'), { timeout: 15000 });
@@ -118,7 +122,7 @@ function escapeHtml(s) {
             console.log(`[generate-issues-pdf] מרענן browser לאחר ${chIdx} פרקים (מונע דליפות זיכרון)`);
             try { await curBrowser.close(); } catch(_) {}
             const newBrowser = await chromium.launch({ headless: true });
-            const newCtx = await newBrowser.newContext({ viewport: { width: 1280, height: 1024 } });
+            const newCtx = await newBrowser.newContext({ viewport: { width: 1280, height: 1600 } });
             const newPage = await newCtx.newPage();
             await newPage.goto(BASE_URL, { waitUntil: 'load', timeout: 60000 });
             await newPage.waitForFunction(() => !!document.querySelector('iframe#render-frame'), { timeout: 15000 });
@@ -240,15 +244,50 @@ function escapeHtml(s) {
             }, pIdx);
             await curPage.waitForTimeout(400);
 
+            // [תיקון 2026-10-28 — בעיית "פס תחתון כהה"]
+            // הגדר את הרקעים של body, #preview-pane, #book-container, .a4-page,
+            // .page-content-wrapper, .page-body-flow, .block-2col ללבן.
+            // [חשוב] ה-wrapper עצמו שקוף, ולכן ה-screenshot שלו כולל את הרקע שמאחוריו.
+            // כדי למנוע את הרקע האפור-כהה (#334155), חובה להגדיר את כל האלמנטים ב-hierarchy.
+            // גם הסר box-shadow ו-margin-bottom של .a4-page.
+            // זה נעשה פעם אחת (idempotent).
+            await curIframe.evaluate(() => {
+                if (!document.body.__screenshotMode) {
+                    document.body.__screenshotMode = true;
+                    document.body.style.setProperty('background', '#ffffff', 'important');
+                    const pp = document.querySelector('#preview-pane');
+                    if (pp) pp.style.setProperty('background', '#ffffff', 'important');
+                    const bc = document.querySelector('#book-container');
+                    if (bc) bc.style.setProperty('background', '#ffffff', 'important');
+                    // הגדר את כל ה-a4-page וילדיהם לרקע לבן
+                    document.querySelectorAll('.a4-page').forEach(p => {
+                        p.style.setProperty('background', '#ffffff', 'important');
+                        p.style.setProperty('box-shadow', 'none', 'important');
+                        p.style.setProperty('margin-bottom', '0', 'important');
+                        // הגדר את ה-wrapper והילדים ללבן
+                        p.querySelectorAll('.page-content-wrapper, .page-body-flow, .block-2col, .top-header-grid, .page-number-footer').forEach(e => {
+                            e.style.setProperty('background', '#ffffff', 'important');
+                        });
+                    });
+                }
+            });
+            await curPage.waitForTimeout(200);
+
             // צלם את העמוד (element screenshot דרך iframe Frame API)
+            // גם עם omitBackground: true כדי לוודא שהרקע שקוף (לא צריך להיות שקוף,
+            // אבל זה בטוח יותר).
             let screenshotBase64 = null;
             try {
+                // [תיקון סופי 2026-10-28 — בעיית "פס תחתון כהה"]
+                // הבעיה: element.screenshot() של .page-content-wrapper כולל את הרקע
+                // שמאחורי ה-wrapper (כי ה-wrapper שקוף). הרקע הזה הוא #334155 מ-renderer.html.
+                // פתרון: צלם את .a4-page כולו (שהוא לבן עם !important). ה-padding (57px)
+                // יהיה שוליים לבנים — נראה טבעי כמו שולי עמוד רגילים.
+                // ה-clip של Playwright לא עובד על element.screenshot (מתעלם), אבל לא צריך אותו.
                 const pageHandle = await curIframe.$(`.a4-page:nth-of-type(${pIdx + 1})`);
                 if (pageHandle) {
                     screenshotBase64 = await pageHandle.screenshot({ type: 'png', timeout: 15000 });
                     await pageHandle.dispose();
-                } else {
-                    screenshotBase64 = await curIframe.screenshot({ type: 'png', timeout: 15000 });
                 }
             } catch (err) {
                 console.log(`    [שגיאת צילום] page ${pIdx}: ${err.message}`);
