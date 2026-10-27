@@ -524,23 +524,38 @@ function auditSparseLastLine(node, issues) {
             // [תיקון חשוב] בדוק אם השורה האחרונה מכילה טקסט בסוגריים (paren-text).
             // טקסט בסוגריים מוצג בגופן קטן יותר (בד"כ -2pt), ולכן השורה נראית "דלילה"
             // למרות שהיא מלאה בתוכן. זוהי התראת שווא — אל תדווח.
+            //
+            // [תיקון — 2026-10-27 Finding 2] הבדיקה הקודמת השוותה רק את TOP של ה-span
+            // ל-TOP של השורה האחרונה (עם סטייה של 8px). אבל paren-text span יכול להיות
+            // מרוב-שורות — ה-TOP שלו יכול להיות בשורה קודמת, והוא עדיין מכסה את השורה
+            // האחרונה. לכן עברנו לבדיקת חפיפה אנכית (overlap): האם טווח ה-Y של ה-span
+            // מצטלב עם טווח ה-Y של השורה האחרונה.
+            //
+            // [תיקון נוסף — Finding 2] גם note-marker (סימון הערה) ו-first-word-window
+            // (עיצוב מילה ראשונה) הם אלמנטים קטנים שיכולים להופיע בשורה האחרונה
+            // ולהצדיק "שורה דלילה" — הרי התוכן אינו חלק מהפסקה הרגילה.
+            // לכן בודקים גם note-marker, וכן first-word-window/first-word-inline/first-word-bold.
             const el = _nodeToEl.get(node);
-            let hasParenOnLastLine = false;
+            let hasSmallContentOnLastLine = false;
             if (el) {
-                const parenSpans = el.querySelectorAll('.paren-text');
                 const lastLineTop = Math.round(lastLine.y);
-                for (const span of parenSpans) {
+                const lastLineBottom = Math.round(lastLine.y + lastLine.h);
+                // בדוק paren-text, note-marker, ו-first-word-* spans
+                const smallContentSpans = el.querySelectorAll('.paren-text, .note-marker, .first-word-window, .first-word-inline, .first-word-bold');
+                for (const span of smallContentSpans) {
                     const sr = span.getBoundingClientRect();
                     const off = getBookContainerOffset();
                     const spanTop = Math.round(sr.top - off.y);
-                    // אם ה-span נמצא באותו Y כמו השורה האחרונה (±5px)
-                    if (Math.abs(spanTop - lastLineTop) < 8) {
-                        hasParenOnLastLine = true;
+                    const spanBottom = Math.round(sr.bottom - off.y);
+                    // [תיקון — Finding 2] בדיקת חפיפה אנכית (overlap)
+                    // אם ה-span מצטלב עם השורה האחרונה בציר ה-Y, נחשב אותו כ"על השורה האחרונה"
+                    if (spanTop <= lastLineBottom + 2 && spanBottom >= lastLineTop - 2) {
+                        hasSmallContentOnLastLine = true;
                         break;
                     }
                 }
             }
-            if (!hasParenOnLastLine) {
+            if (!hasSmallContentOnLastLine) {
                 issues.push({
                     kind: 'sparse-line',
                     severity: 'low',
@@ -1851,7 +1866,9 @@ function enrichNode(node) {
             try {
                 const range = document.createRange();
                 range.selectNodeContents(el);
-                const pr = rectOf(el.parentElement || el);
+                // [תיקון — Finding 2] השתמש ב-getBoundingClientRect של el עצמו (viewport coords)
+                // במקום rectOf (book-container coords) — כי range.getClientRects מחזיר viewport coords.
+                const pr = el.getBoundingClientRect();
                 const map = new Map();
                 for (const r of range.getClientRects()) {
                     if (r.width < 0.1 || r.height < 0.1) continue;
@@ -1864,8 +1881,10 @@ function enrichNode(node) {
                     map.set(k, b);
                 }
                 node.lineRects = Array.from(map.values()).sort((a, b) => a.t - b.t).map(r => ({
-                    x: Math.round(r.l - pr.x), y: Math.round(r.t - pr.y),
-                    w: Math.round(r.r - r.l), h: Math.round(r.b - r.t)
+                    x: Math.round(r.l - pr.left),
+                    y: Math.round(r.t - pr.top),
+                    w: Math.round(r.r - r.l),
+                    h: Math.round(r.b - r.t)
                 }));
                 node.lineCount = node.lineRects.length;
             } catch (_) { /* ignore */ }

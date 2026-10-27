@@ -1879,6 +1879,36 @@ function balanceColumns(block, colWidth, styleObj, snapshot, availableHeight = I
 
     // ---- 3. הערכת מועמד (רינדור ניסיוני של שני הטורים ומדידה) ----
     const memo = new Map();
+    // [חדש — דיוק Finding 2] מודד את רוחב השורה האחרונה של p-cut ימני.
+    // אם השורה האחרונה דלילה (< 50% מהשורה הראשונה), נחשב את המועמד כ-sparse
+    // ונוסיף עונש וירטואלי ל-cost כדי להעדיף מועמדים חלופיים.
+    const SPARSE_LAST_LINE_RATIO = 0.5; // < 50% מהשורה הראשונה = דליל
+    const SPARSE_PENALTY_PX = 25;        // עונש וירטואלי (px) — גדול מספיק לשבירת שוויון, קטן מכדי לגבור על הבדל משמעותי
+    function getLastLineInfo(p) {
+        if (!p || !p.parentNode) return null;
+        try {
+            const range = document.createRange();
+            range.selectNodeContents(p);
+            const rects = Array.from(range.getClientRects())
+                .filter(r => r.width > 0.5 && r.height > 0.5);
+            if (rects.length < 2) return null;
+            // אחד שורות לפי top (מעוגל ל-0.5px)
+            const map = new Map();
+            for (const r of rects) {
+                const k = Math.round(r.top * 2) / 2;
+                if (!map.has(k)) map.set(k, { l: r.left, r: r.right, t: r.top, b: r.bottom });
+                const e = map.get(k);
+                e.l = Math.min(e.l, r.left);
+                e.r = Math.max(e.r, r.right);
+                e.t = Math.min(e.t, r.top);
+                e.b = Math.max(e.b, r.bottom);
+            }
+            const lines = Array.from(map.values()).sort((a, b) => a.t - b.t);
+            const last = lines[lines.length - 1];
+            const first = lines[0];
+            return { lastW: last.r - last.l, firstW: first.r - first.l, lineCount: lines.length };
+        } catch (_) { return null; }
+    }
     function evalCand(k) {
         if (memo.has(k)) return memo.get(k);
         const c = cands[k];
@@ -1905,14 +1935,43 @@ function balanceColumns(block, colWidth, styleObj, snapshot, availableHeight = I
         for (let i = c.l > 0 ? c.i + 1 : c.i; i < items.length; i++) renderSingleItemFast(lCol, items[i]);
         const rH = rCol.scrollHeight, lH = lCol.scrollHeight;
         const diff = rH - lH;
-        const res = { k, rH, lH, diff, abs: Math.abs(diff), fits: Math.max(rH, lH) <= availableHeight, over: Math.max(rH, lH) };
+        // [חדש — דיוק Finding 2] בדוק האם השורה האחרונה של ה-p-cut הימני דלילה.
+        // אם כן, סמן sparse=true והוסף עונש וירטואלי ל-cost.
+        let sparse = false;
+        let sparseInfo = null;
+        if (c.l > 0) {
+            const pRight = rCol.lastElementChild;
+            if (pRight && pRight.tagName === 'P' && pRight.classList.contains('p-cut')) {
+                sparseInfo = getLastLineInfo(pRight);
+                if (sparseInfo && sparseInfo.lineCount > 1 &&
+                    sparseInfo.firstW > 0 &&
+                    sparseInfo.lastW < sparseInfo.firstW * SPARSE_LAST_LINE_RATIO) {
+                    sparse = true;
+                }
+            }
+        }
+        const absDiff = Math.abs(diff);
+        const cost = absDiff + (sparse ? SPARSE_PENALTY_PX : 0);
+        const res = {
+            k, rH, lH, diff,
+            abs: absDiff,
+            fits: Math.max(rH, lH) <= availableHeight,
+            over: Math.max(rH, lH),
+            sparse, sparseInfo, cost
+        };
         memo.set(k, res);
         return res;
     }
     function better(a, b) {
         if (a.fits !== b.fits) return a.fits;
-        if (!a.fits) return a.over < b.over; // אף אחד לא נכנס: הפחות גולש
-        if (a.abs !== b.abs) return a.abs < b.abs;
+        if (!a.fits) {
+            // אף אחד לא נכנס: הפחות גולש, ואז עדיפות ללא sparse
+            if (a.over !== b.over) return a.over < b.over;
+            if (a.sparse !== b.sparse) return !a.sparse;
+        } else {
+            // שניהם נכנסים: השוואת cost = abs + עונש sparse
+            if (a.cost !== b.cost) return a.cost < b.cost;
+        }
         return a.diff >= 0 && b.diff < 0; // שוויון: עדיפות לטור ימין גבוה יותר
     }
 
@@ -3738,9 +3797,28 @@ function typesetDocumentCore() {
                         pageElements = collectPageElements(page, 3);
                         pageMetrics = pageMetricsByPage[pageIdx] || null;
                         pageDelta = deltasByPage[pageIdx] || null;
-                        if (i.childType || i.location) {
+                        if (i.childType || i.location || i.kind === 'sparse-line' || i.kind === 'widow-orphan') {
                             function findProblemNode(node) {
                                 if (!node) return null;
+                                // [חדש — sparse-line] אם הבעיה היא sparse-line על p-cut, חפש p-cut
+                                if (i.kind === 'sparse-line' && node.type === 'p-cut' && (node.lines || []).length > 1) {
+                                    // התאם לפי childRect (השורה הדלילה) אם יש
+                                    if (i.childRect && node.rect) {
+                                        const cr = i.childRect;
+                                        const nr = node.rect;
+                                        // התאמה חלקית: האלמנט מכיל את השורה הדלילה
+                                        if (cr.y >= nr.y - 5 && cr.y + cr.h <= nr.y + nr.h + 5) {
+                                            return node;
+                                        }
+                                    } else {
+                                        // אם אין childRect, החזר את ה-p-cut הראשון שנמצא
+                                        return node;
+                                    }
+                                }
+                                // [חדש — widow-orphan] אם הבעיה היא widow-orphan, חפש p-cut/p-end
+                                if (i.kind === 'widow-orphan' && (node.type === 'p-cut' || node.type === 'p-end')) {
+                                    return node;
+                                }
                                 if (i.childType && node.type === i.childType) return node;
                                 if ((i.kind === 'containment' || i.kind === 'imbalance' || i.kind === 'block-gap') &&
                                     (node.type === 'block-2col' || node.type === 'block-single-col' || node.type === 'block-h3-span')) {
@@ -3771,6 +3849,24 @@ function typesetDocumentCore() {
                         pageMetrics: pageMetrics,
                         // [חדש — דיוק] delta: אילו אלמנטים נוספו/הוסרו/השתנו מאז ה-checkpoint הקודם
                         pageDelta: pageDelta,
+                        // [חדש — דיוק] שמור שדות מקוריים נוספים מה-issue (childRect, lastW, firstW, pText, location, וכו')
+                        // כדי לאפשר אבחון מדויק של sparse-line, widow-orphan, imbalance, וכו'
+                        issueData: {
+                            childType: i.childType || null,
+                            childRect: i.childRect || null,
+                            location: i.location || null,
+                            lastW: i.lastW != null ? i.lastW : null,
+                            firstW: i.firstW != null ? i.firstW : null,
+                            pText: i.pText || null,
+                            aRect: i.aRect || null,
+                            bRect: i.bRect || null,
+                            rightRect: i.rightRect || null,
+                            leftRect: i.leftRect || null,
+                            rightH: i.rightH != null ? i.rightH : null,
+                            leftH: i.leftH != null ? i.leftH : null,
+                            diff: i.diff != null ? i.diff : null,
+                            overflow: i.overflow || null,
+                        },
                     };
                 });
                 window.__auditCheckpoints.push({
