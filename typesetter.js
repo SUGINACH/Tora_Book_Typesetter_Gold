@@ -1510,7 +1510,20 @@ function justifyColumnVertically(col, targetHeight, styleObj, maxStretch = 60, l
     const aqLhMax = parseInt(document.getElementById('aq-line-height-max')?.value) || 3;
 
     let diff = targetHeight - col.scrollHeight;
-    if (!(diff > 0.5 && diff <= maxStretch)) return col.scrollHeight;
+    // [תיקון — B1] כש-diff > maxStretch, במקום לוותר לגמרי, נמתח ב-maxStretch בלבד (מתיחה חלקית).
+    // לפני: התנאי diff <= maxStretch גרם לכך שטור קצר ב-64px לא מתוח כלל, ונוצרה imbalance של 64px.
+    // אחרי: הטור ימתח ב-60px (לפי maxStretch), ורק 4px יישאר כ-imbalance.
+    if (!(diff > 0.5)) return col.scrollHeight;
+    const effectiveStretch = Math.min(diff, maxStretch);
+    // אם diff > maxStretch, נשתמש ב-effectiveStretch במקום ב-diff בפועל
+    // כדי שכל המנגנונים (heading-spacing, word-spacing, line-height, para-spacing)
+    // יפעלו לפי היעד החלקי, לא יוותרו מראש.
+    const actualTargetHeight = col.scrollHeight + effectiveStretch;
+    if (diff > maxStretch) {
+        // עדכן את diff ו-targetHeight למתיחה החלקית
+        diff = effectiveStretch;
+        targetHeight = actualTargetHeight;
+    }
 
     const kids = Array.from(col.children);
 
@@ -1692,9 +1705,24 @@ function stretchLastBlockToBottom(bodyFlow, freeSpace, styleObj, maxStretch) {
         // הדפדפן מעגל כל שורה כלפי מעלה לפיקסל שלם. כשמותחים N שורות ב-0.3px כל אחת, העלייה בפועל יכולה להגיע ל-N פיקסלים.
         // לכן מפחיתים את היעד ב-2px כדי לתת מרווח בטחון.
         const target = Math.min(top + freeSpace - 2, reach);
-        if (target - top < 0.5) return false;
-        justifyColumnVertically(rCol, target, styleObj, maxStretch + 40, JUSTIFY_MAX_LH_EXTRA, false);
-        justifyColumnVertically(lCol, target, styleObj, maxStretch + 40, JUSTIFY_MAX_LH_EXTRA, false);
+
+        // [חדש — B1 תיקון] מניעת יצירת imbalance ע"י stretchPageToBottom.
+        // אם הטור הקצר לא יכול להגיע ל-target (reach < target), אז מתיחת הטור הארוך
+        // תיצור imbalance. במקרה זה, נמתח רק עד reach (הגובה ששני הטורים יכולים להגיע אליו),
+        // ולא עד target (הגובה הרצוי שרק הטור הארוך יכול להגיע אליו).
+        // זה מונע את המצב שבו stretchPageToBottom מותח את הטור הארוך ויוצר פער גדול.
+        let effectiveTarget = target;
+        const shortColCap = (rH >= lH) ? columnStretchCapacity(lCol) : columnStretchCapacity(rCol);
+        const shortColBase = Math.min(rH, lH);
+        const shortColReach = shortColBase + shortColCap;
+        if (shortColReach < target - 5) {
+            // הטור הקצר לא יכול להגיע ל-target — נמתח רק עד shortColReach כדי לא ליצור imbalance
+            // (מותח גם את הטור הארוך וגם את הקצר לאותו גובה, מה ששומר על איזון יחסי)
+            effectiveTarget = Math.max(top, shortColReach);
+        }
+        if (effectiveTarget - top < 0.5) return false;
+        justifyColumnVertically(rCol, effectiveTarget, styleObj, maxStretch + 40, JUSTIFY_MAX_LH_EXTRA, false);
+        justifyColumnVertically(lCol, effectiveTarget, styleObj, maxStretch + 40, JUSTIFY_MAX_LH_EXTRA, false);
         repositionBlockNotes(last, Math.max(rCol.scrollHeight, lCol.scrollHeight));
         return true;
     }
@@ -5167,6 +5195,23 @@ function typesetDocumentCore() {
                 if (lHafter > rH + 1.5) {
                     shrinkColumnVertically(lC, rH, styleObj, 150);
                 }
+                // [חדש — B1 תיקון] אם שמאל לא הצליח להגיע לימין (פער נותר > 5px),
+                // נסה לכווץ את ימין לגובה של שמאל. זה מאזן את הטורים גם כש-shmuel
+                // לא מצליח להימתח מספיק (למשל כשאין כותרות H4/H5/H6 וקיבולת ה-line-height
+                // מוגבלת). התנאי: הפער הנותר > 5px (מעל סף האיזון) ו-shrinkColumnVertically
+                // מסוגל לכווץ.
+                const lHfinal = lC.scrollHeight;
+                const remainingDiff = rH - lHfinal;
+                if (remainingDiff > 5) {
+                    // נסה לכווץ את ימין לגובה של שמאל — זה ייצור איזון
+                    const rHbefore = rC.scrollHeight;
+                    shrinkColumnVertically(rC, lHfinal, styleObj, 150);
+                    const rHafter = rC.scrollHeight;
+                    // אם הכיווץ הצליח להביא את ימין קרוב לשמאל — עדכן את rH
+                    if (Math.abs(rHafter - lHfinal) < Math.abs(rHbefore - lHfinal)) {
+                        rH = rHafter;
+                    }
+                }
             } else {
                 // טור שמאל גבוה יותר — מותחים את ימין להגיע אליו
                 justifyColumnVertically(rC, lH, styleObj, 150, null);
@@ -5174,6 +5219,18 @@ function typesetDocumentCore() {
                 const rHafter = rC.scrollHeight;
                 if (rHafter > lH + 1.5) {
                     shrinkColumnVertically(rC, lH, styleObj, 150);
+                }
+                // [חדש — B1 תיקון] אם ימין לא הצליח להגיע לשמאל (פער נותר > 5px),
+                // נסה לכווץ את שמאל לגובה של ימין.
+                const rHfinal = rC.scrollHeight;
+                const remainingDiff = lH - rHfinal;
+                if (remainingDiff > 5) {
+                    const lHbefore = lC.scrollHeight;
+                    shrinkColumnVertically(lC, rHfinal, styleObj, 150);
+                    const lHafter2 = lC.scrollHeight;
+                    if (Math.abs(lHafter2 - rHfinal) < Math.abs(lHbefore - rHfinal)) {
+                        lH = lHafter2;
+                    }
                 }
             }
 

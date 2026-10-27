@@ -733,6 +733,17 @@ function findChild(node, type) {
     return node.children.find(c => c.type === type);
 }
 
+/* [חדש — A3] מוצא descendant מסוג מסוים (רקורסיבית) */
+function findDescendantByType(node, type) {
+    if (!node) return null;
+    if (node.type === type) return node;
+    for (const c of (node.children || [])) {
+        const found = findDescendantByType(c, type);
+        if (found) return found;
+    }
+    return null;
+}
+
 function getPageIdx(node) {
     // עולה בעץ דרך _parent עד ל-page
     let n = node;
@@ -1332,6 +1343,169 @@ function auditSettingsVerification(model, issues) {
     if (aqPageHeight === true || aqPageHeight === 'true') {
         // אם page-height מופעל, בדוק שאין page-overflow חדש
         // זה כבר נבדק על-ידי auditPageOverflow — לא צריך בדיקה נוספת
+    }
+
+    // [חדש — A3 השלמה] בדיקות 12-16: font-body, line-height, heading first-child, shaar pages, TOC pages
+
+    // בדיקה 12: font-body — השוואה בין font-family של p בפועל להגדרה
+    if (fontBody && totalPages > 0) {
+        try {
+            const firstPage = model.pages[0];
+            const wrapper = firstPage.children[0];
+            const firstP = findDescendantByType(wrapper, 'p-end') || findDescendantByType(wrapper, 'p-cut');
+            if (firstP) {
+                const el = _nodeToEl.get(firstP);
+                if (el) {
+                    const actualFont = getComputedStyle(el).fontFamily;
+                    // השוואה גסה: אם ההגדרה היא 'Foo Bar' וה-actual מכיל 'Foo' או 'Bar'
+                    const expectedParts = fontBody.split(/[\s,']+|"/).filter(s => s.length > 2);
+                    const matchesSome = expectedParts.some(part => actualFont.includes(part));
+                    if (!matchesSome && expectedParts.length > 0) {
+                        issues.push({
+                            kind: 'settings-verification',
+                            severity: 'low',
+                            pageIdx: 0,
+                            location: 'global',
+                            setting: 'font-body',
+                            expected: fontBody,
+                            actual: actualFont,
+                            note: ' (הגדרת font-body אינה תואמת ל-computed font-family של p)',
+                            message: `font-body=${fontBody} אינו תואם ל-actual=${actualFont.slice(0,50)} — ייתכן שלא הוחל או שהגופן לא נטען`
+                        });
+                    }
+                }
+            }
+        } catch (e) { /* ignore — בדיקה רכה */ }
+    }
+
+    // בדיקה 13: line-height-body — השוואה בין line-height של p בפועל להגדרה
+    if (lineHeightBody && totalPages > 0) {
+        try {
+            const firstPage = model.pages[0];
+            const wrapper = firstPage.children[0];
+            const firstP = findDescendantByType(wrapper, 'p-end') || findDescendantByType(wrapper, 'p-cut');
+            if (firstP) {
+                const el = _nodeToEl.get(firstP);
+                if (el) {
+                    const actualLH = parseFloat(getComputedStyle(el).lineHeight) || 0;
+                    const fontSize = parseFloat(getComputedStyle(el).fontSize) || 16;
+                    const actualRatio = actualLH / fontSize;
+                    const expectedRatio = parseFloat(lineHeightBody);
+                    // סטייה של יותר מ-10% נחשבת כאי-התאמה
+                    if (expectedRatio > 0 && Math.abs(actualRatio - expectedRatio) / expectedRatio > 0.1) {
+                        issues.push({
+                            kind: 'settings-verification',
+                            severity: 'low',
+                            pageIdx: 0,
+                            location: 'global',
+                            setting: 'line-height-body',
+                            expected: String(expectedRatio),
+                            actual: actualRatio.toFixed(3),
+                            note: ' (line-height של p בפועל אינו תואם להגדרה, סטייה > 10%)',
+                            message: `line-height-body=${expectedRatio} אינו תואם ל-actual=${actualRatio.toFixed(3)} — ייתכן שלא הוחל`
+                        });
+                    }
+                }
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    // בדיקה 14: כותרות first-child — margin-top:0
+    {
+        let headingsChecked = 0, headingsWithWrongMargin = 0;
+        function checkHeadingFirstChildMargin(node) {
+            if (node.type === 'h4' || node.type === 'h5' || node.type === 'h6') {
+                const el = _nodeToEl.get(node);
+                if (el) {
+                    const parent = el.parentElement;
+                    if (parent && parent.firstElementChild === el) {
+                        headingsChecked++;
+                        const mt = parseFloat(getComputedStyle(el).marginTop) || 0;
+                        if (mt > 1) headingsWithWrongMargin++;
+                    }
+                }
+            }
+            for (const c of (node.children || [])) checkHeadingFirstChildMargin(c);
+        }
+        for (const page of model.pages) {
+            for (const c of page.children) checkHeadingFirstChildMargin(c);
+        }
+        if (headingsChecked > 0 && headingsWithWrongMargin === headingsChecked) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'low',
+                pageIdx: -1,
+                location: 'global',
+                setting: 'heading-first-child-margin-top',
+                expected: '0',
+                actual: `>0 on all ${headingsChecked} first-child headings`,
+                note: ' (כותרות first-child בטור צריכות margin-top:0)',
+                message: `כל ${headingsChecked} כותרות first-child בטור עם margin-top שגוי — ייתכן שה-CSS של first-child לא הוחל`
+            });
+        }
+    }
+
+    // בדיקה 15: shaar pages + TOC pages
+    // [תיקון] בדיקות shaar ו-TOC רלוונטיות רק במסמך מלא, לא בריצת פרק בודד.
+    // אינדיקציה: בריצת פרק בודד, העמוד הראשון הוא h2Open (כותרת הפרק), לא main-shaar-page.
+    const showMainShaar = getSetting('show-main-shaar');
+    const showBackShaar = getSetting('show-back-shaar');
+    const showSubShaar = getSetting('show-sub-shaar');
+    let mainShaarCount = 0, backShaarCount = 0, subShaarCount = 0, tocPageCount = 0;
+    for (const page of model.pages) {
+        if (!page.cls) continue;
+        if (page.cls.includes('main-shaar-page')) mainShaarCount++;
+        if (page.cls.includes('back-shaar-page')) backShaarCount++;
+        if (page.cls.includes('sub-shaar-page')) subShaarCount++;
+        if (page.cls.includes('toc-page')) tocPageCount++;
+    }
+    // [תיקון] בדוק אם העמוד הראשון הוא main-shaar-page (מסמך מלא) או לא (פרק בודד)
+    const firstPageCls = (model.pages[0] && model.pages[0].cls) || '';
+    const isFullDocument = firstPageCls.includes('main-shaar-page') ||
+                          mainShaarCount > 0 || backShaarCount > 0 || subShaarCount > 0 || tocPageCount > 0;
+    // דלוג אם פרק בודד או מסמך קצר (shaar ו-toc קיימים רק במסמך מלא)
+    if (totalPages > 10 && isFullDocument) {
+        if ((showMainShaar === true || showMainShaar === 'true') && mainShaarCount === 0) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'medium',
+                pageIdx: -1, location: 'global',
+                setting: 'show-main-shaar', expected: 'main-shaar-page', actual: 'not found',
+                note: ' (show-main-shaar פעיל אך לא נמצא main-shaar-page)',
+                message: 'show-main-shaar פעיל אך לא נמצא עמוד שער ראשי — ייתכן שלא הוחל'
+            });
+        }
+        if ((showBackShaar === true || showBackShaar === 'true') && backShaarCount === 0) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'medium',
+                pageIdx: -1, location: 'global',
+                setting: 'show-back-shaar', expected: 'back-shaar-page', actual: 'not found',
+                note: ' (show-back-shaar פעיל אך לא נמצא back-shaar-page)',
+                message: 'show-back-shaar פעיל אך לא נמצא עמוד שער אחורי — ייתכן שלא הוחל'
+            });
+        }
+        if ((showSubShaar === true || showSubShaar === 'true') && subShaarCount === 0) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'low',
+                pageIdx: -1, location: 'global',
+                setting: 'show-sub-shaar', expected: 'sub-shaar-page', actual: 'not found',
+                note: ' (show-sub-shaar פעיל אך לא נמצא sub-shaar-page)',
+                message: 'show-sub-shaar פעיל אך לא נמצא עמוד שער משנה — ייתכן שלא הוחל או שאין חלוקת משנה'
+            });
+        }
+        // בדיקה 16: TOC pages
+        if (tocPageCount === 0) {
+            issues.push({
+                kind: 'settings-verification',
+                severity: 'low',
+                pageIdx: -1, location: 'global',
+                setting: 'toc-pages', expected: 'toc-page', actual: 'not found',
+                note: ' (לא נמצאו עמודי תוכן עניינים)',
+                message: 'לא נמצאו עמודי תוכן עניינים (toc-page) — ייתכן ש-TOC כבוי או לא הוחל'
+            });
+        }
     }
 }
 
