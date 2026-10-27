@@ -43,6 +43,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     name: Generate Issues PDF
+    # [2026-10-28] נדרש כדי שה-step "Save PDF to repo" יוכל לדחוף commits חזרה ל-V21
+    # דרך GITHUB_TOKEN (ברירת מחדל ב-repo חדש היא read-only).
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:

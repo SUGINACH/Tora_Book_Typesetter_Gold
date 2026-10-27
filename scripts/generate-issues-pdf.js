@@ -426,30 +426,20 @@ function escapeHtml(s) {
     // [נקודה 4 ממשתמש — 2026-10-28] הוסף סימניות (bookmarks) ל-PDF עם pdf-lib
     // הסימניות כוללות: "פרק N עמוד M — שם הבעיה" לכל issue.
     try {
-        const { PDFDocument } = require('pdf-lib');
+        const { PDFDocument, PDFHexString, PDFString, PDFArray, PDFName, PDFNull, PDFNumber } = require('pdf-lib');
         const existingPdfBytes = fs.readFileSync(pdfPath);
         const pdfDoc = await PDFDocument.load(existingPdfBytes);
         const totalPages = pdfDoc.getPageCount();
         console.log(`[generate-issues-pdf] PDF נוצר עם ${totalPages} עמודים, מוסיף סימניות...`);
 
         // גישה פשוטה למציאת מספר העמוד ב-PDF:
-        // ה-HTML מחולק לעמודים ע"י page-break. נשתמש בעובדה שכל chapter-divider
-        // (page-break-before: always) מתחיל עמוד חדש, וכל issue-block הוא בעמוד של ה-chapter-divider
-        // הקרוב אליו (כי page-break-inside: avoid על issue-block).
-        // אסטרטגיה: נחשב את העמוד של כל issue ע"י ספירת chapter-dividers לפניו.
-        // העמוד הראשון ב-PDF (idx 0) = עמוד השער.
-        // כל chapter-divider = עמוד חדש.
-        // אבל issue-blocks יכולים להיות בעמוד אחר מ-chapter-divider אם הם לא נכנסים.
-        // פתרון פשוט: נמדוד ישירות את המיקום ה-y של כל issue ב-HTML, ונחלק לפי גובה A4.
-        // נקבל עמוד PDF = floor(y / pageHeightPx) + 1, אבל עמוד שער = 1 (PDF 0).
-
+        // נמדוד ישירות את המיקום ה-y של כל issue ב-HTML, ונחלק לפי גובה A4.
         const pageHeightPx = 1123; // A4 height in CSS pixels (96dpi)
         const issueYPositions = await pdfPage.evaluate((issueIds) => {
             const results = [];
             for (const id of issueIds) {
                 const el = document.getElementById(id);
                 if (!el) { results.push({ id, y: -1 }); continue; }
-                // ה-top ביחס לתחילת ה-HTML document (כולל scroll)
                 const y = el.getBoundingClientRect().top + window.scrollY;
                 results.push({ id, y });
             }
@@ -457,10 +447,6 @@ function escapeHtml(s) {
         }, bookmarkList.map(b => `issue-${b.issueIdx}`));
 
         // חשב PDF page index לכל issue
-        // ה-HTML document מתחיל מ-y=0. עמוד שער הוא מ-y=0 עד y=pageHeightPx.
-        // אבל עמוד שער מסתיים ע"י page-break-after: always.
-        // גישה: נספור כמה page-breaks יש לפני כל issue, ונוסיף 1 לעמוד שער.
-        // פשוט יותר: נשתמש ב-y היחסי. floor(y / pageHeightPx) = מספר העמוד (0-indexed) ב-PDF.
         const byChapter = new Map();
         for (let i = 0; i < bookmarkList.length; i++) {
             const b = bookmarkList[i];
@@ -476,22 +462,31 @@ function escapeHtml(s) {
 
         // בנה outline tree ידנית עם pdf-lib low-level API
         // מבנה: root → chapters → issues (2 levels)
+        // [תיקון 2026-10-28] השתמש ב-PDFHexString.fromText עבור Title (תומך בעברית)
+        // ו-PDFNull ב-Dest array (במקום null שגרם ל-"value.sizeInBytes is not a function").
         const pages = pdfDoc.getPages();
         const outlineRootRef = pdfDoc.context.nextRef();
         const rootChildren = [];
 
         const makeOutlineNode = (title, parentRef, pageIdxOrNull) => {
-            const nodeDict = {
-                Title: pdfDoc.context.obj(title),
-                Parent: parentRef,
-            };
+            const titleStr = PDFHexString.fromText(title);
+            const nodeDict = pdfDoc.context.obj({});
+            nodeDict.set(PDFName.of('Title'), titleStr);
+            nodeDict.set(PDFName.of('Parent'), parentRef);
             if (pageIdxOrNull !== null && pageIdxOrNull < pages.length) {
                 const destPageRef = pages[pageIdxOrNull].ref;
-                nodeDict.Dest = pdfDoc.context.obj([destPageRef, 'XYZ', null, null, null]);
+                // Dest = [pageRef, /XYZ, null, null, null]
+                // חובה להשתמש ב-PDFNull במקום null רגיל כי pdf-lib לא מתמודד עם null.
+                const destArr = PDFArray.withContext(pdfDoc.context);
+                destArr.push(destPageRef);
+                destArr.push(PDFName.of('XYZ'));
+                destArr.push(PDFNull);
+                destArr.push(PDFNull);
+                destArr.push(PDFNull);
+                nodeDict.set(PDFName.of('Dest'), destArr);
             }
-            const dict = pdfDoc.context.obj(nodeDict);
-            const ref = pdfDoc.context.register(dict);
-            return { ref, dict };
+            const ref = pdfDoc.context.register(nodeDict);
+            return { ref, dict: nodeDict };
         };
 
         // צור chapter nodes
@@ -511,22 +506,22 @@ function escapeHtml(s) {
 
             // חבר את ה-issue siblings
             for (let i = 0; i < issueRefs.length; i++) {
-                if (i > 0) issueRefs[i].dict.set('Prev', issueRefs[i - 1].ref);
-                if (i < issueRefs.length - 1) issueRefs[i].dict.set('Next', issueRefs[i + 1].ref);
+                if (i > 0) issueRefs[i].dict.set(PDFName.of('Prev'), issueRefs[i - 1].ref);
+                if (i < issueRefs.length - 1) issueRefs[i].dict.set(PDFName.of('Next'), issueRefs[i + 1].ref);
             }
 
             // חבר chapter First/Last/Count
             if (issueRefs.length > 0) {
-                chNode.dict.set('First', issueRefs[0].ref);
-                chNode.dict.set('Last', issueRefs[issueRefs.length - 1].ref);
-                chNode.dict.set('Count', issueRefs.length);
+                chNode.dict.set(PDFName.of('First'), issueRefs[0].ref);
+                chNode.dict.set(PDFName.of('Last'), issueRefs[issueRefs.length - 1].ref);
+                chNode.dict.set(PDFName.of('Count'), PDFNumber.of(issueRefs.length));
             }
         }
 
         // חבר root children siblings
         for (let i = 0; i < rootChildren.length; i++) {
-            if (i > 0) rootChildren[i].dict.set('Prev', rootChildren[i - 1].ref);
-            if (i < rootChildren.length - 1) rootChildren[i].dict.set('Next', rootChildren[i + 1].ref);
+            if (i > 0) rootChildren[i].dict.set(PDFName.of('Prev'), rootChildren[i - 1].ref);
+            if (i < rootChildren.length - 1) rootChildren[i].dict.set(PDFName.of('Next'), rootChildren[i + 1].ref);
         }
 
         // עמוד שער bookmark
@@ -534,20 +529,21 @@ function escapeHtml(s) {
         // הכנס cover בראש הרשימה
         rootChildren.unshift(coverNode);
         for (let i = 0; i < rootChildren.length; i++) {
-            if (i > 0) rootChildren[i].dict.set('Prev', rootChildren[i - 1].ref);
-            if (i < rootChildren.length - 1) rootChildren[i].dict.set('Next', rootChildren[i + 1].ref);
+            if (i > 0) rootChildren[i].dict.set(PDFName.of('Prev'), rootChildren[i - 1].ref);
+            if (i < rootChildren.length - 1) rootChildren[i].dict.set(PDFName.of('Next'), rootChildren[i + 1].ref);
         }
 
         // צור root
-        const outlineRoot = pdfDoc.context.obj({
-            Type: 'Outlines',
-            First: rootChildren[0].ref,
-            Last: rootChildren[rootChildren.length - 1].ref,
-            Count: rootChildren.length,
-        });
+        // [תיקון 2026-10-28] בנה את ה-dict ידנית עם PDFName values כדי למנוע
+        // "value.sizeInBytes is not a function" שנגרם מ-obj({Type: 'Outlines', ...}).
+        const outlineRoot = pdfDoc.context.obj({});
+        outlineRoot.set(PDFName.of('Type'), PDFName.of('Outlines'));
+        outlineRoot.set(PDFName.of('First'), rootChildren[0].ref);
+        outlineRoot.set(PDFName.of('Last'), rootChildren[rootChildren.length - 1].ref);
+        outlineRoot.set(PDFName.of('Count'), PDFNumber.of(rootChildren.length));
         pdfDoc.context.assign(outlineRootRef, outlineRoot);
-        pdfDoc.catalog.set('Outlines', outlineRootRef);
-        pdfDoc.catalog.set('PageMode', 'UseOutlines');
+        pdfDoc.catalog.set(PDFName.of('Outlines'), outlineRootRef);
+        pdfDoc.catalog.set(PDFName.of('PageMode'), PDFName.of('UseOutlines'));
 
         const modifiedPdfBytes = await pdfDoc.save();
         fs.writeFileSync(pdfPath, modifiedPdfBytes);
