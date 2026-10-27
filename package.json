@@ -9,6 +9,7 @@
     "determinism": "cd scripts && node determinism-test.js 9 3"
   },
   "dependencies": {
+    "pdf-lib": "^1.17.1",
     "playwright": "^1.49.0"
   }
 }

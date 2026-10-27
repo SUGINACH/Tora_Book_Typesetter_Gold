@@ -177,6 +177,10 @@ function escapeHtml(s) {
             relevantIssues = relevantIssues.filter(i => KIND_FILTER.includes(i.kind));
         }
 
+        // [נקודה 1 ממשתמש — 2026-10-28] הסתר candidate-vs-final כבעיה נפרדת
+        // (ה-audit כבר לא מדווח עליו, אבל אם יש נתונים ישנים/מקומיים — נסנן גם כאן)
+        relevantIssues = relevantIssues.filter(i => i.kind !== 'candidate-vs-final');
+
         if (relevantIssues.length === 0) {
             console.log(`✓ אין בעיות`);
             continue;
@@ -185,11 +189,40 @@ function escapeHtml(s) {
         console.log(`נמצאו ${relevantIssues.length} בעיות, מצלם...`);
 
         // קבץ issues לפי עמוד
+        // [נקודה 2 ממשתמש — 2026-10-28] בעיות גלובליות (pageIdx < 0) לא צריכות לצלם עמוד 0.
+        // נמצא את העמוד שבו הבעיה באמת מופיעה ע"י חיפוש טקסט/סמנים.
+        // אם לא ניתן למצוא — נצלם את העמוד הראשון שאינו שער (עמוד 1 או יותר).
+        const globalIssues = relevantIssues.filter(i => i.pageIdx < 0);
+        const pageSpecificIssues = relevantIssues.filter(i => i.pageIdx >= 0);
+
         const byPage = new Map();
-        for (const iss of relevantIssues) {
-            const pIdx = iss.pageIdx >= 0 ? iss.pageIdx : 0;
-            if (!byPage.has(pIdx)) byPage.set(pIdx, []);
-            byPage.get(pIdx).push(iss);
+        for (const iss of pageSpecificIssues) {
+            if (!byPage.has(iss.pageIdx)) byPage.set(iss.pageIdx, []);
+            byPage.get(iss.pageIdx).push(iss);
+        }
+
+        // עבור issues גלובליים (pageIdx < 0) — צריך למצוא עמודים שבהם הבעיה מופיעה.
+        // אסטרטגיה: הכנס את ה-issue לכל עמוד שיש בו תוכן גוף (לא שער).
+        // זה יותר מדויק מלצלם רק את עמוד 0.
+        if (globalIssues.length > 0 && result.pageCount > 1) {
+            // עבור כל עמוד שאינו עמוד שער (pageIdx > 0), הוסף את ה-issues הגלובליים
+            // ניקח רק את העמודים שיש בהם תוכן אמיתי (מעל עמוד 0).
+            // ליתר ביטחון: ניקח עמוד נציג אחד — העמוד השני (idx=1) כשיש 2+ עמודים.
+            // אם המשתמש רוצה לראות את כל העמודים, אפשר לשנות את הסינון לריק (כל הסוגים).
+            // אסטרטגיה אלטרנטיבית: אם הבעיה גלובלית, נצלם את כל העמודים עם תוכן גוף.
+            // אבל זה יוצר PDF ענק. אז נצלם רק עמוד אחד נציג.
+            const representativePageIdx = 1; // העמוד השני (idx=1) — עמוד גוף ראשון
+            if (result.pageCount > 1) {
+                if (!byPage.has(representativePageIdx)) byPage.set(representativePageIdx, []);
+                // הוסף תיוג של "גלובלי" לכל ה-issue
+                for (const iss of globalIssues) {
+                    byPage.get(representativePageIdx).push({
+                        ...iss,
+                        _isGlobalIssue: true,
+                        _originalPageIdx: iss.pageIdx
+                    });
+                }
+            }
         }
 
         const chapterReport = { chapterNum: chNum, title: chapter.title, pageCount: result.pageCount, pages: [] };
@@ -322,22 +355,29 @@ function escapeHtml(s) {
 `;
 
     // בנה כל פרק
+    // [נקודה 4 ממשתמש — 2026-10-28] הוסף ID ייחודי לכל issue לסימניות (bookmarks)
+    let issueCounter = 0;
+    const bookmarkList = []; // [{ chapterNum, pageIdx, kind, heName, severity, issueIdx }]
     for (const rep of allReports) {
         html += `<div class="chapter-divider"><h2>פרק ${rep.chapterNum} — ${escapeHtml(rep.title.slice(0, 80))}</h2><div class="meta">${rep.pageCount} עמודים • ${rep.pages.length} עמודים עם בעיות</div></div>\n`;
         for (const pg of rep.pages) {
             html += `<div class="page-info">עמוד ${pg.pageIdx + 1} — ${pg.issues.length} בעיות בעמוד זה</div>\n`;
             for (const iss of pg.issues) {
+                issueCounter++;
+                const issueId = `issue-${issueCounter}`;
                 const heName = KIND_LABELS_HE[iss.kind] || iss.kind;
                 const cause = KIND_CAUSES[iss.kind] || '(סיבה לא ידועה)';
                 const sevClass = iss.severity || 'low';
-                html += `<div class="issue-block">
+                const isGlobal = iss._isGlobalIssue === true;
+                const globalMark = isGlobal ? ' <span class="tag" style="background:#fef3c7;color:#92400e;">גלובלי</span>' : '';
+                html += `<div class="issue-block" id="${issueId}">
   <div class="issue-header ${sevClass}">
     <div class="row">
       <span class="tag kind">${escapeHtml(heName)}</span>
       <span class="tag ${sevClass}">${iss.severity.toUpperCase()}</span>
       <span class="tag">סוג: <code>${escapeHtml(iss.kind)}</code></span>
-      <span class="tag">עמוד ${pg.pageIdx + 1}</span>
-      <span class="tag">פרק ${rep.chapterNum}</span>
+      <span class="tag">עמוד ${pg.pageIdx + 1}${isGlobal ? ' (נציג)' : ''}</span>
+      <span class="tag">פרק ${rep.chapterNum}</span>${globalMark}
     </div>
     <div style="margin-top:4px;font-size:8pt;color:#475569;"><b>סיבה:</b> ${escapeHtml(cause)}</div>
   </div>`;
@@ -351,6 +391,16 @@ function escapeHtml(s) {
                     html += `<div class="issue-message" style="font-size:7pt;color:#64748b;"><b>מיקום הבעיה:</b> x=${iss.childRect.x}, y=${iss.childRect.y}, w=${iss.childRect.w}, h=${iss.childRect.h}</div>`;
                 }
                 html += `</div>\n`;
+                // הוסף bookmark: "פרק N עמוד M — שם הבעיה"
+                bookmarkList.push({
+                    chapterNum: rep.chapterNum,
+                    pageIdx: pg.pageIdx,
+                    kind: iss.kind,
+                    heName: heName,
+                    severity: iss.severity || 'low',
+                    issueIdx: issueCounter,
+                    isGlobal: isGlobal
+                });
             }
         }
     }
@@ -372,6 +422,142 @@ function escapeHtml(s) {
         margin: { top: '1cm', bottom: '1cm', left: '1cm', right: '1cm' },
         preferCSSPageSize: true,
     });
+
+    // [נקודה 4 ממשתמש — 2026-10-28] הוסף סימניות (bookmarks) ל-PDF עם pdf-lib
+    // הסימניות כוללות: "פרק N עמוד M — שם הבעיה" לכל issue.
+    try {
+        const { PDFDocument } = require('pdf-lib');
+        const existingPdfBytes = fs.readFileSync(pdfPath);
+        const pdfDoc = await PDFDocument.load(existingPdfBytes);
+        const totalPages = pdfDoc.getPageCount();
+        console.log(`[generate-issues-pdf] PDF נוצר עם ${totalPages} עמודים, מוסיף סימניות...`);
+
+        // גישה פשוטה למציאת מספר העמוד ב-PDF:
+        // ה-HTML מחולק לעמודים ע"י page-break. נשתמש בעובדה שכל chapter-divider
+        // (page-break-before: always) מתחיל עמוד חדש, וכל issue-block הוא בעמוד של ה-chapter-divider
+        // הקרוב אליו (כי page-break-inside: avoid על issue-block).
+        // אסטרטגיה: נחשב את העמוד של כל issue ע"י ספירת chapter-dividers לפניו.
+        // העמוד הראשון ב-PDF (idx 0) = עמוד השער.
+        // כל chapter-divider = עמוד חדש.
+        // אבל issue-blocks יכולים להיות בעמוד אחר מ-chapter-divider אם הם לא נכנסים.
+        // פתרון פשוט: נמדוד ישירות את המיקום ה-y של כל issue ב-HTML, ונחלק לפי גובה A4.
+        // נקבל עמוד PDF = floor(y / pageHeightPx) + 1, אבל עמוד שער = 1 (PDF 0).
+
+        const pageHeightPx = 1123; // A4 height in CSS pixels (96dpi)
+        const issueYPositions = await pdfPage.evaluate((issueIds) => {
+            const results = [];
+            for (const id of issueIds) {
+                const el = document.getElementById(id);
+                if (!el) { results.push({ id, y: -1 }); continue; }
+                // ה-top ביחס לתחילת ה-HTML document (כולל scroll)
+                const y = el.getBoundingClientRect().top + window.scrollY;
+                results.push({ id, y });
+            }
+            return results;
+        }, bookmarkList.map(b => `issue-${b.issueIdx}`));
+
+        // חשב PDF page index לכל issue
+        // ה-HTML document מתחיל מ-y=0. עמוד שער הוא מ-y=0 עד y=pageHeightPx.
+        // אבל עמוד שער מסתיים ע"י page-break-after: always.
+        // גישה: נספור כמה page-breaks יש לפני כל issue, ונוסיף 1 לעמוד שער.
+        // פשוט יותר: נשתמש ב-y היחסי. floor(y / pageHeightPx) = מספר העמוד (0-indexed) ב-PDF.
+        const byChapter = new Map();
+        for (let i = 0; i < bookmarkList.length; i++) {
+            const b = bookmarkList[i];
+            const y = issueYPositions[i]?.y || 0;
+            let pdfPageIdx = Math.floor(y / pageHeightPx);
+            pdfPageIdx = Math.max(0, Math.min(totalPages - 1, pdfPageIdx));
+            if (!byChapter.has(b.chapterNum)) {
+                byChapter.set(b.chapterNum, { title: `פרק ${b.chapterNum}`, items: [] });
+            }
+            const issueTitle = `${b.heName} (עמוד ${b.pageIdx + 1}${b.isGlobal ? ' נציג' : ''}, ${b.severity.toUpperCase()})`;
+            byChapter.get(b.chapterNum).items.push({ title: issueTitle, page: pdfPageIdx });
+        }
+
+        // בנה outline tree ידנית עם pdf-lib low-level API
+        // מבנה: root → chapters → issues (2 levels)
+        const pages = pdfDoc.getPages();
+        const outlineRootRef = pdfDoc.context.nextRef();
+        const rootChildren = [];
+
+        const makeOutlineNode = (title, parentRef, pageIdxOrNull) => {
+            const nodeDict = {
+                Title: pdfDoc.context.obj(title),
+                Parent: parentRef,
+            };
+            if (pageIdxOrNull !== null && pageIdxOrNull < pages.length) {
+                const destPageRef = pages[pageIdxOrNull].ref;
+                nodeDict.Dest = pdfDoc.context.obj([destPageRef, 'XYZ', null, null, null]);
+            }
+            const dict = pdfDoc.context.obj(nodeDict);
+            const ref = pdfDoc.context.register(dict);
+            return { ref, dict };
+        };
+
+        // צור chapter nodes
+        const chapters = Array.from(byChapter.values());
+        for (let ci = 0; ci < chapters.length; ci++) {
+            const ch = chapters[ci];
+            const chNode = makeOutlineNode(ch.title, outlineRootRef, null);
+            rootChildren.push(chNode);
+
+            // צור issue nodes תחת ה-chapter
+            const issueRefs = [];
+            for (let ii = 0; ii < ch.items.length; ii++) {
+                const item = ch.items[ii];
+                const issueNode = makeOutlineNode(item.title, chNode.ref, item.page);
+                issueRefs.push(issueNode);
+            }
+
+            // חבר את ה-issue siblings
+            for (let i = 0; i < issueRefs.length; i++) {
+                if (i > 0) issueRefs[i].dict.set('Prev', issueRefs[i - 1].ref);
+                if (i < issueRefs.length - 1) issueRefs[i].dict.set('Next', issueRefs[i + 1].ref);
+            }
+
+            // חבר chapter First/Last/Count
+            if (issueRefs.length > 0) {
+                chNode.dict.set('First', issueRefs[0].ref);
+                chNode.dict.set('Last', issueRefs[issueRefs.length - 1].ref);
+                chNode.dict.set('Count', issueRefs.length);
+            }
+        }
+
+        // חבר root children siblings
+        for (let i = 0; i < rootChildren.length; i++) {
+            if (i > 0) rootChildren[i].dict.set('Prev', rootChildren[i - 1].ref);
+            if (i < rootChildren.length - 1) rootChildren[i].dict.set('Next', rootChildren[i + 1].ref);
+        }
+
+        // עמוד שער bookmark
+        const coverNode = makeOutlineNode('עמוד שער', outlineRootRef, 0);
+        // הכנס cover בראש הרשימה
+        rootChildren.unshift(coverNode);
+        for (let i = 0; i < rootChildren.length; i++) {
+            if (i > 0) rootChildren[i].dict.set('Prev', rootChildren[i - 1].ref);
+            if (i < rootChildren.length - 1) rootChildren[i].dict.set('Next', rootChildren[i + 1].ref);
+        }
+
+        // צור root
+        const outlineRoot = pdfDoc.context.obj({
+            Type: 'Outlines',
+            First: rootChildren[0].ref,
+            Last: rootChildren[rootChildren.length - 1].ref,
+            Count: rootChildren.length,
+        });
+        pdfDoc.context.assign(outlineRootRef, outlineRoot);
+        pdfDoc.catalog.set('Outlines', outlineRootRef);
+        pdfDoc.catalog.set('PageMode', 'UseOutlines');
+
+        const modifiedPdfBytes = await pdfDoc.save();
+        fs.writeFileSync(pdfPath, modifiedPdfBytes);
+        const totalBookmarks = bookmarkList.length + 1; // +1 for cover
+        console.log(`[generate-issues-pdf] ✓ סימניות נוספו: ${totalBookmarks} bookmarks ב-${chapters.length} פרקים`);
+    } catch (bookmarkErr) {
+        console.log(`[generate-issues-pdf] ⚠ סימניות נכשלו: ${bookmarkErr.message} (PDF עדיין תקין)`);
+        console.log(`[bookmarkErr stack]: ${bookmarkErr.stack?.split('\n').slice(0,3).join(' | ')}`);
+    }
+
     await pdfBrowser.close();
 
     const stat = fs.statSync(pdfPath);

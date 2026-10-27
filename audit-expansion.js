@@ -216,61 +216,22 @@ function auditFontNotLoaded(model, issues) {
     } catch(e) { /* ignore — document.fonts עלול לא להיות זמין */ }
 }
 
-/* 1.10 — מועמד מול סופי (פער גובה) */
+/* 1.10 — מועמד מול סופי (פער גובה)
+   [תיקון 2026-10-28 — נקודה 1 ממשתמש] הסבר:
+   candidate-vs-final אינו בעיה עצמאית — זו אינדיקציה למציאת מקור בעיות.
+   ה-engine מודד מועמדים עם isDryRun=true (placeholder 'א' קבוע) והרינדור הסופי
+   משתמש ב-marker אמיתי (גימטריה ברוחב משתנה). הפער הוא approximation noise.
+   כל 60 ה-cases ב-79 פרקים הראו איזון מצוין (Δ ≤ 3px בין טורים).
+   פתרון: לא לדווח כבעיה נפרדת. נשאיר את הפונקציה אבל לא נדחוף issues.
+   מי שרוצה את המידע יכול לקרוא data-layout-balance-rh/lh attributes ישירות
+   מה-DOM. הסף הקודם (>25 / >50) הוסר לחלוטין.
+*/
 function auditCandidateVsFinalHeight(model, issues) {
-    if (!model.pages) return;
-    for (const page of model.pages) {
-        const el = window.__geomAudit?.findDom?.(page);
-        if (!el) continue;
-        const blocks = el.querySelectorAll('.block-2col');
-        blocks.forEach((blk, bi) => {
-            const recordedRH = parseFloat(blk.getAttribute('data-layout-balance-rh'));
-            const recordedLH = parseFloat(blk.getAttribute('data-layout-balance-lh'));
-            if (isNaN(recordedRH) || isNaN(recordedLH)) return;
-
-            const rC = blk.querySelector('.right-col');
-            const lC = blk.querySelector('.left-col');
-            if (!rC || !lC) return;
-            const actualRH = Math.round(rC.scrollHeight);
-            const actualLH = Math.round(lC.scrollHeight);
-
-            const diffR = Math.abs(actualRH - recordedRH);
-            const diffL = Math.abs(actualLH - recordedLH);
-            const maxDiff = Math.max(diffR, diffL);
-
-            // [תיקון 2026-10-28 — כלל 5 false-positive investigation]
-            // הסף עלה מ-5 → 25 (כל דיווח), 20 → 50 (medium). סיבה:
-            // ה-engine מודד מועמדים עם isDryRun=true — placeholder marker קבוע 'א'
-            // (רוחב ~14px). הרינדור הסופי משתמש ב-isDryRun=false — marker גימטריה
-            // אמיתי ברוחב משתנה (1-4 chars: 'א','יא','קיא','תקיא').
-            // בנוסף, appendItemFinal מוסיף endNote markers ו-justifyColumnVertically
-            // מותח את הטור הקצר — שניהם מגדילים את ה-diff.
-            //
-            // ניתוח ch9 (13 issues): כל 13 ה-cases הראו איזון טורים מצוין בפועל
-            // (Δ ≤ 3px בין טור R ו-L). ה-diff היה 7-43px, אך לא הצביע על בעיה אמיתית
-            // באיזון. לכן הסף הקודם (>5) היה נמוך מדי — הוא דיווח על approximation noise.
-            //
-            // סף >25 מסנן placeholder-vs-real-marker approximation (typical 7-25px)
-            // ועדיין תופס diffs גדולים שעלולים להצביע על באג אמיתי ב-engine.
-            // סף medium >50 מבדיל בין "approximation גדול" (low) ל"חריגה משמעותית" (medium).
-            if (maxDiff > 25) {
-                // חשב rect בקואורדינטות book-container (כדי ש-highlightIssue יעבוד)
-                const bc = document.getElementById('book-container');
-                const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
-                const blkRect = blk.getBoundingClientRect();
-                issues.push({
-                    kind: 'candidate-vs-final',
-                    severity: maxDiff > 50 ? 'medium' : 'low',
-                    pageIdx: page.idx,
-                    location: `page ${page.label} block ${bi + 1}`,
-                    recordedRH, recordedLH, actualRH, actualLH,
-                    diffR: Math.round(diffR), diffL: Math.round(diffL),
-                    childRect: { x: Math.round(blkRect.left - bcRect.left), y: Math.round(blkRect.top - bcRect.top), w: Math.round(blkRect.width), h: Math.round(blkRect.height) },
-                    message: `פער בין גובה מועמד לסופי: R=${recordedRH}→${actualRH} (Δ${Math.round(diffR)}), L=${recordedLH}→${actualLH} (Δ${Math.round(diffL)})`
-                });
-            }
-        });
-    }
+    // [נקודה 1 ממשתמש — 2026-10-28] אינו בעיה עצמאית — אינדיקציה בלבד.
+    // לא מדווחים עוד על candidate-vs-final כבעיה. הפונקציה נשמרת כ-no-op לתאימות
+    // לאחור (קריאות קיימות ב-geometry-audit.js).
+    // אם רוצים לראות את המידע, אפשר לקרוא data-layout-balance-rh/lh מ-attributes.
+    return;
 }
 
 /* 1.8 — טופו (תווים שלא קיימים בגופן) — בדיקת רוחב תווים */
@@ -501,6 +462,90 @@ function auditMultipleFirstWordWindow(model, issues) {
     }
 }
 
+/* 1.13 — שורה אחרונה דלילה בטור (sparse-line-in-column)
+   דיווח כשהשורה האחרונה של טור (כל פסקה שמסתיימת בתחתית הטור) דלילה.
+   הבדיקה הקיימת 'sparse-line' (ב-geometry-audit.js) בודקת רק את ה-p-cut הימני
+   ב-balanceColumns. הבדיקה הזו מרחיבה לכל פסקה שמסתיימת בתחתית טור.
+   סיבה נפוצה: השורה האחרונה מכילה טקסט מוסגר () שיוצר רוחב קטן.
+   חומרה: MEDIUM אם השורה האחרונה דלילה מ-30% מרוחב הטור, LOW אם 30-50%.
+*/
+function auditSparseLineInColumn(model, issues) {
+    if (!model.pages) return;
+    for (const page of model.pages) {
+        const el = window.__geomAudit?.findDom?.(page);
+        if (!el) continue;
+        const blocks = el.querySelectorAll('.block-2col');
+        blocks.forEach((blk, bi) => {
+            const cols = blk.querySelectorAll('.right-col, .left-col');
+            cols.forEach(col => {
+                const colName = col.classList.contains('right-col') ? 'right' : 'left';
+                // קח את הילד האחרון (פסקה או כותרת) של הטור
+                const children = Array.from(col.children);
+                if (children.length === 0) return;
+                const lastChild = children[children.length - 1];
+                if (lastChild.tagName !== 'P') return; // כותרת בסוף טור נתפסת ע"י heading-escort
+
+                // קבל את רוחב הטור
+                const colWidth = col.getBoundingClientRect().width;
+                if (!colWidth || colWidth < 50) return;
+
+                try {
+                    const range = document.createRange();
+                    range.selectNodeContents(lastChild);
+                    const rects = Array.from(range.getClientRects())
+                        .filter(r => r.width > 0.5 && r.height > 0.5);
+                    if (rects.length < 2) return; // שורה אחת — לא ניתן לדווח
+
+                    // אחד שורות לפי top
+                    const map = new Map();
+                    for (const r of rects) {
+                        const k = Math.round(r.top * 2) / 2;
+                        if (!map.has(k)) map.set(k, { l: r.left, r: r.right, t: r.top, b: r.bottom });
+                        const e = map.get(k);
+                        e.l = Math.min(e.l, r.left);
+                        e.r = Math.max(e.r, r.right);
+                        e.t = Math.min(e.t, r.top);
+                        e.b = Math.max(e.b, r.bottom);
+                    }
+                    const lines = Array.from(map.values()).sort((a, b) => a.t - b.t);
+                    const lastLine = lines[lines.length - 1];
+                    const firstLine = lines[0];
+                    const lastW = lastLine.r - lastLine.l;
+                    const firstW = firstLine.r - firstLine.l;
+                    const ratio = lastW / colWidth;
+
+                    // דליל: ratio < 50% מרוחב הטור (לא רק מהשורה הראשונה — יותר קפדני)
+                    // נעשה זאת רק אם יש 2+ שורות (לא שורה בודדת)
+                    if (lines.length >= 2 && ratio < 0.5) {
+                        const bc = document.getElementById('book-container');
+                        const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
+                        const colRect = col.getBoundingClientRect();
+                        const pText = (lastChild.textContent || '').slice(0, 50).replace(/\s+/g, ' ');
+                        const severity = ratio < 0.3 ? 'medium' : 'low';
+                        // בדוק אם השורה האחרונה מכילה סוגריים
+                        const hasParens = /\([^)]*\)/.test((lastChild.textContent || '').slice(-50));
+
+                        issues.push({
+                            kind: 'sparse-line-in-column',
+                            severity: severity,
+                            pageIdx: page.idx,
+                            location: `page ${page.label} block ${bi + 1} ${colName}-col (last line)`,
+                            column: colName,
+                            lineCount: lines.length,
+                            lastLineWidth: Math.round(lastW),
+                            columnWidth: Math.round(colWidth),
+                            ratio: Math.round(ratio * 100) / 100,
+                            hasParens: hasParens,
+                            childRect: { x: Math.round(colRect.left - bcRect.left), y: Math.round(colRect.top - bcRect.top), w: Math.round(colRect.width), h: Math.round(colRect.height) },
+                            message: `שורה אחרונה דלילה בטור ${colName === 'right' ? 'ימני' : 'שמאלי'}: ${Math.round(lastW)}px מתוך ${Math.round(colWidth)}px (${Math.round(ratio*100)}%). פסקה אחרונה: "${pText}...". ${hasParens ? 'מכילה סוגריים () — ייתכן שזה גורם לדלילות.' : ''}`
+                        });
+                    }
+                } catch (e) { /* ignore — getClientRects עלול להיכשל */ }
+            });
+        });
+    }
+}
+
 /* הלפרים — משתמשים בפונקציות הקיימות מ-geometry-audit.js דרך API ציבורי */
 function getPageIdxSafe(node) {
     try {
@@ -527,13 +572,14 @@ Object.assign(window.__geomAudit, {
     auditFootnoteOverflow,
     auditPrivateUseCharacters,
     auditFontNotLoaded,
-    auditCandidateVsFinalHeight,
+    auditCandidateVsFinalHeight,  // [נקודה 1] כעת no-op — מידע בלבד
     auditTofu,
     auditNoteMarkerLineBreak,
     auditEmptyColumn,
-    auditMultipleFirstWordWindow
+    auditMultipleFirstWordWindow,
+    auditSparseLineInColumn
 });
 
-console.log('[audit-expansion] נטען. 10 בדיקות חדשות זמינות.');
+console.log('[audit-expansion] נטען. 11 בדיקות חדשות זמינות.');
 
 })();
