@@ -205,18 +205,23 @@ function escapeHtml(s) {
             byPage.get(iss.pageIdx).push(iss);
         }
 
-        // עבור issues גלובליים (pageIdx < 0) — צריך למצוא עמודים שבהם הבעיה מופיעה.
-        // אסטרטגיה: הכנס את ה-issue לכל עמוד שיש בו תוכן גוף (לא שער).
-        // זה יותר מדויק מלצלם רק את עמוד 0.
+        // עבור issues גלובליים (pageIdx < 0) — צריך למצוא עמוד נציג.
+        // [תיקון 2026-10-28 — נקודה ממשתמש] אל תצלם עמוד שער! מצא את העמוד הראשון
+        // שאינו עמוד מיוחד (main-shaar, back-shaar, sub-shaar, toc, blank).
         if (globalIssues.length > 0 && result.pageCount > 1) {
-            // עבור כל עמוד שאינו עמוד שער (pageIdx > 0), הוסף את ה-issues הגלובליים
-            // ניקח רק את העמודים שיש בהם תוכן אמיתי (מעל עמוד 0).
-            // ליתר ביטחון: ניקח עמוד נציג אחד — העמוד השני (idx=1) כשיש 2+ עמודים.
-            // אם המשתמש רוצה לראות את כל העמודים, אפשר לשנות את הסינון לריק (כל הסוגים).
-            // אסטרטגיה אלטרנטיבית: אם הבעיה גלובלית, נצלם את כל העמודים עם תוכן גוף.
-            // אבל זה יוצר PDF ענק. אז נצלם רק עמוד אחד נציג.
-            const representativePageIdx = 1; // העמוד השני (idx=1) — עמוד גוף ראשון
-            if (result.pageCount > 1) {
+            // מצא את העמוד הראשון שאינו עמוד מיוחד
+            const representativePageIdx = await curIframe.evaluate(() => {
+                const pages = document.querySelectorAll('#book-container .a4-page');
+                for (let i = 0; i < pages.length; i++) {
+                    const cls = pages[i].className.toString();
+                    const isSpecial = cls.includes('blank-page') || cls.includes('sub-shaar-page') ||
+                                      cls.includes('main-shaar-page') || cls.includes('back-shaar-page') ||
+                                      cls.includes('toc-page');
+                    if (!isSpecial) return i;
+                }
+                return -1;
+            });
+            if (representativePageIdx >= 0) {
                 if (!byPage.has(representativePageIdx)) byPage.set(representativePageIdx, []);
                 // הוסף תיוג של "גלובלי" לכל ה-issue
                 for (const iss of globalIssues) {
