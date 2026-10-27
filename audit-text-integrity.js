@@ -59,6 +59,12 @@ function parseSourceText(rawText) {
 function normalizeText(text) {
     // הסר ניקוד וטעמים (U+0591-U+05C7, U+05F3-U+05F4)
     text = text.replace(/[\u0591-\u05C7\u05F3\u05F4]/g, '');
+    // [תיקון טוקניזציה] נרמל את רווחים לפני/אחרי סימני פיסוק כדי למנוע הבדלי חלוקה
+    // בין מקור ("בראשונה)" + ".") ל-DOM ("בראשונה).")
+    // נתון: הוסף רווח לפני סוגריים סגירה ונקודה כדי שיהיו טוקנים נפרדים
+    text = text.replace(/\s*([\)\}])/g, ' $1');  // רווח לפני סגירת סוגריים
+    text = text.replace(/\s*([.])/g, ' $1');       // רווח לפני נקודה
+    text = text.replace(/\s*([,;:])/g, ' $1');    // רווח לפני פסיק/נקודה-פסיק/נקודה-תוים
     // נורמליזציה רווחים
     text = text.replace(/\s+/g, ' ').trim();
     return text;
@@ -125,9 +131,11 @@ function auditTextCompleteness(model, sourceText, issues) {
         const totalMissing = missing.reduce((a, m) => a + m.deficit, 0);
         issues.push({
             kind: 'text-completeness',
-            severity: totalMissing > 10 ? 'high' : (totalMissing > 3 ? 'medium' : 'low'),
+            // [כלל — החלטת משתמש] היעלמות מילים היא תמיד high, אפילו מילה אחת!
+            // טקסט תורני — כל מילה קריטית. שום מילה לא אמורה להיעלם בעימוד.
+            severity: 'high',
             pageIdx: -1, location: 'global',
-            missingWords: missing.slice(0, 10),
+            missingWords: missing.slice(0, 20),
             totalMissing,
             message: `${totalMissing} מילים חסרות ב-DOM (קיימות במקור אבל לא בעמודים המרונדרים) — ייתכן שטקסט הלך לאיבוד בעימוד`
         });
@@ -182,7 +190,10 @@ function auditH7ToSideNote(model, sourceText, issues) {
     }
 
     // בדוק ש-H7 לא מופיע כ-<p> בגוף הטקסט
+    // [תיקון false-positive] השוואת 20 תווים ראשונים גרמה לתוצאות שווא כשציטוט גמרא הכיל
+    // את אותן מילים כמו כותרת H7. כעת משווים את הטקסט המלא של ה-H7 (או לפחות 30 תווים).
     let inBodyCount = 0;
+    const h7InBodyDetails = [];
     for (const page of model.pages) {
         const el = window.__geomAudit?.findDom?.(page);
         if (!el) continue;
@@ -191,8 +202,16 @@ function auditH7ToSideNote(model, sourceText, issues) {
             const pText = normalizeText(p.textContent || '');
             for (const h7text of parsed.h7Texts) {
                 const normalized = normalizeText(h7text);
-                if (pText.includes(normalized.slice(0, Math.min(20, normalized.length)))) {
+                // השתמש בלפחות 30 תווים להשוואה (או את כל הטקסט אם קצר יותר)
+                const minLen = Math.min(30, normalized.length);
+                const searchStr = normalized.slice(0, minLen);
+                if (pText.includes(searchStr)) {
                     inBodyCount++;
+                    h7InBodyDetails.push({
+                        h7text: normalized.slice(0, 60),
+                        pageIdx: page.idx,
+                        pPreview: pText.slice(0, 80)
+                    });
                     break;
                 }
             }
@@ -217,7 +236,8 @@ function auditH7ToSideNote(model, sourceText, issues) {
             severity: 'high',
             pageIdx: -1, location: 'global',
             inBodyCount,
-            message: `${inBodyCount} כותרות H7 נמצאו בגוף הטקסט (כ-p) במקום בהערות צד — המרת H7→side-note נכשלה`
+            h7InBodyDetails: h7InBodyDetails.slice(0, 5),
+            message: `${inBodyCount} כותרות H7 נמצאו בגוף הטקסט (כ-p) במקום בהערות צד — המרת H7→side-note נכשלה. דוגמה: "${h7InBodyDetails[0]?.h7text || ''}"`
         });
     }
 }
