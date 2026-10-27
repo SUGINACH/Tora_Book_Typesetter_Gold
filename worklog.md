@@ -5753,3 +5753,258 @@ Stage Summary:
 - Side effects: NO new HIGH issues anywhere. test-trigger-overflow no longer
   triggers footnote-overflow (correctly — the engine handles overflow gracefully).
 - CI status: regression-test.yml should now PASS (exit 0) on push to V21.
+
+---
+Task ID: fix-test-triggers-runner-py-indent
+Agent: main agent (continuation session 2026-10-28)
+Task: Fix Test Triggers Runner CI failure (Python IndentationError in Print trigger summary step)
+
+Work Log:
+
+Initial state check:
+- Read SESSION_HANDOFF.md fully (sections 1-12).
+- Read WORKING_RULES.md fully (rules 1-6).
+- Read worklog.md tail (5500-5755) — last entries: working-rules-ui-1-to-4, github-actions-workflows, fix-footnote-overflow-ch9.
+- git fetch origin V21 — clean, latest is 29d039f (docs: SESSION_HANDOFF.md).
+
+CI status check (via GitHub API):
+- Regression Test on 29d039f: ✅ success (CI green, as expected per handoff)
+- Test Triggers Runner on 0ac4891: ❌ failure
+- Issues Screenshot PDF: never run (0 runs found)
+
+Investigation of Test Triggers Runner failure:
+- Downloaded logs for run 40510013295 (sha 0ac4891).
+- The "Aggregate trigger results" step (node -e block) succeeded — wrote trigger-summary/trigger-summary.json.
+- The "Print trigger summary" step FAILED with: "File "<string>", line 2 / import json, sys / IndentationError: unexpected indent"
+
+9-step process on this bug:
+
+Step 1 — Definition + exceptions:
+- Issue: In .github/workflows/test-triggers-runner.yml, the "Print trigger summary" step embeds a Python script via `python3 -c "..."`.
+- The Python code was indented with 2 spaces inside the bash double-quoted string.
+- YAML block scalar (`run: |`) strips the common indent (10 spaces), leaving 2 spaces before `import json, sys`.
+- Python rejects leading whitespace on top-level statements → IndentationError.
+
+Step 2 — Detection capability:
+- Confirmed via CI log: "IndentationError: unexpected indent" on line 2.
+
+Step 3 — Trigger verification:
+- The workflow itself IS the trigger — push to V21 with path changes to test-triggers-runner.yml triggers it.
+
+Step 4 — Find creating stage + cause:
+- The bug was introduced when the workflow was first authored (commit 5b8bd7d, "feat: implement working rules 1-4 in UI + add 4 GitHub Actions workflows").
+- It was masked by another bug (footnote-overflow false positive) that caused separate workflow behavior; once that was fixed (c78435c), the IndentationError became the only remaining failure.
+
+Step 5 — Careful solution design:
+- Remove the extra 2-space indent inside `python3 -c "..."` so all Python top-level statements are at column 0.
+- Statements inside the `for` loop remain at 2-space indent (correct Python).
+- Statements inside `if missing` / `else` remain at 4-space indent (correct Python).
+- No logic change — only indentation fix.
+- Surgical: 17 lines changed (just whitespace adjustment).
+
+Step 6 — Apply solution:
+- Modified .github/workflows/test-triggers-runner.yml lines 128-147.
+- Verified: yaml.safe_load succeeds.
+- Verified: shlex.split extracts the Python correctly; compile() succeeds.
+- Verified: mock stdin run produces expected output (Total triggers, per-trigger blocks, "MISSING expected" warnings without sys.exit(1)).
+- Verified: The Node.js -e block in the "Aggregate trigger results" step was ALREADY working (it wrote trigger-summary/trigger-summary.json in the previous run).
+
+Step 7 — Test solution success:
+- commit ea667bc pushed to origin/V21.
+- Both Test Triggers Runner and Regression Test workflows started automatically (in_progress).
+
+Step 8 — Implications + verification (pending CI completion):
+- Expected: Test Triggers Runner exits 0 (no IndentationError), uploads trigger-results artifact, prints summary with informational "MISSING expected: {'overflow'}" warnings (which are a separate issue — see Notes below).
+- Expected: Regression Test continues to pass (no engine/audit code changed).
+
+Notes / Side issues discovered:
+- The "MISSING expected" logic uses `name.replace('test-trigger-', '').split('_')` to derive expectedKinds.
+  This is BROKEN for multi-word kinds:
+  - test-trigger-overflow → ['overflow'] (but audit detects 'footnote-overflow'/'page-overflow' — never exactly 'overflow')
+  - test-trigger-page_underfill → ['page', 'underfill'] (should be ['page-underfill'])
+  - test-trigger-heading_escort → ['heading', 'escort'] (should be ['heading-escort'])
+  - test-trigger-sparse_line → ['sparse', 'line'] (should be ['sparse-line'])
+- These warnings are informational only (Python doesn't sys.exit(1)) — they don't fail the workflow.
+- Fixing this requires replacing `_` split with `-` split, or matching by prefix. Defer to a later task.
+
+Stage Summary:
+- Single-file fix: .github/workflows/test-triggers-runner.yml (17 lines, whitespace only)
+- Commit: ea667bc pushed to origin/V21
+- Expected outcome: Test Triggers Runner CI will go from RED → GREEN
+- No engine/audit/UI code modified — only CI workflow indentation.
+- Discovered separate issue: expectedKinds derivation uses split('_') which is wrong for multi-word kinds (overflow, page-underfill, heading-escort, sparse-line). Logged for future work.
+
+---
+Task ID: fix-test-triggers-runner-bykind-regex
+Agent: main agent (continuation session 2026-10-28)
+Task: Fix Bug 2 — first kind in "Issues by kind:" section was silently dropped from trigger-summary.json
+
+Work Log:
+
+Discovered while investigating the previous fix (IndentationError). After the Python step
+succeeded, I downloaded the trigger-results artifact from run 40540133194 (ea667bc) and
+noticed that trigger-summary.json's byKind field was missing the FIRST kind from each
+trigger's "Issues by kind:" log section.
+
+Reproduction (script /home/z/my-project/scripts/test-aggregate-regex.js):
+- For test-trigger-heading_escort.log:
+  - Log content:
+    "Issues by kind:\n  heading-escort: 2\n  candidate-vs-final: 2\n  text-completeness: 1\n\nTop issues:"
+  - Captured group after trim(): "heading-escort: 2\n  candidate-vs-final: 2\n  text-completeness: 1"
+  - Lines after split('\n'): ["heading-escort: 2", "  candidate-vs-final: 2", "  text-completeness: 1"]
+  - OLD regex /\s+(\S+): (\d+)/ requires 1+ leading whitespace:
+    * "heading-escort: 2"      → NO leading whitespace after trim() → ✗ NOT matched
+    * "  candidate-vs-final: 2" → 2 leading spaces → ✓ matched
+    * "  text-completeness: 1"  → 2 leading spaces → ✓ matched
+  - OLD byKind: {candidate-vs-final:2, text-completeness:1} — missing heading-escort!
+
+Fix:
+- Changed regex from /\s+(\S+): (\d+)/ to /\s*(\S+): (\d+)/ (zero-or-more whitespace).
+- After fix, the first line "heading-escort: 2" is also matched.
+- New byKind: {heading-escort:2, candidate-vs-final:2, text-completeness:1} ✓
+
+Verification:
+- yaml.safe_load OK
+- node --check on extracted Node.js code OK
+- The regex line is now: const m = line.match(/\s*(\S+): (\d+)/);
+
+Bug 3 — discovered but DEFERRED:
+- expectedKinds uses name.replace('test-trigger-','').split('_') to derive expected kinds.
+- This is broken for multi-word kind names (kinds use '-' as separator, filenames use '_'):
+  - test-trigger-heading_escort  → ['heading', 'escort']   should be ['heading-escort']
+  - test-trigger-page_underfill  → ['page', 'underfill']   should be ['page-underfill']
+  - test-trigger-sparse_line     → ['sparse', 'line']      should be ['sparse-line']
+  - test-trigger-settings_conversion → ['settings', 'conversion']  should be ['settings-verification', 'bracket-conversion', 'h7-conversion']
+  - test-trigger-widow_orphan    → ['widow', 'orphan']     ← happens to be correct (TWO kinds)
+- Fixing requires a lookup table mapping each trigger filename to its expected kinds.
+- Deferred to a future task — logged here for traceability.
+
+Commit: 564ee34 — fix(ci): test-triggers-runner — fix regex \s+ → \s* so first kind in 'Issues by kind:' section is captured
+
+Stage Summary:
+- Surgical one-line regex fix (\s+ → \s*) in .github/workflows/test-triggers-runner.yml
+- trigger-summary.json now correctly captures ALL kinds from each trigger's log
+- "MISSING expected" warnings in Print trigger summary step are now meaningful
+- Bug 3 (split('_')) logged for future work
+- No engine/audit/UI code modified — only CI workflow parsing logic
+
+---
+Task ID: cvf-threshold-fix
+Agent: main agent (continuation session 2026-10-28)
+Task: 9-step on candidate-vs-final — 13 medium+low issues on ch9
+
+Work Log:
+
+Step 1 — Definition + exceptions:
+- Audit `auditCandidateVsFinalHeight` (audit-expansion.js:220-271):
+  - Reads `data-layout-balance-rh/lh` (recorded at layout time, rounded integer).
+  - Measures `actualRH/LH = Math.round(rC/lC.scrollHeight)` (current DOM, rounded).
+  - Reports if `maxDiff > 5` (was the threshold).
+  - Severity: `>20 → medium`, else `low`. No `high` threshold defined.
+
+Step 2 — Detection capability verified:
+- Local audit on ch9 produces 13 candidate-vs-final issues (6 medium, 7 low).
+- CI also reports 13 issues on ch9.
+
+Step 3 — Triggers verified:
+- No specific trigger file for candidate-vs-final (test-trigger-candidate_vs_final.txt doesn't exist).
+- The audit detects the issue on regular chapters (ch9 specifically).
+
+Step 4 — Find creating stage + cause (causality classification):
+- Triggered Issue Investigation workflow (run 40541973110) on candidate-vs-final ch9.
+- All 13 issues have causality category `couldnt-appear-before` — created with the page,
+  persisting through all subsequent stages (after-initial-layout, after-cross-paragraph-parens,
+  after-rebalance2, after-page-height).
+- Root cause analysis (via code reading):
+  - In `balanceColumns` (typesetter.js), the engine evaluates candidates by populating rCol/lCol
+    with `createDropWord(item.lines.slice(0, c.l).join(' '), ..., _insideParenR)` and
+    `applyDelimiterStyles(p, 'body', getBodySizePt(), true)` — isDryRun=true.
+  - In `buildStyledFragment` (typesetter.js:2458-2463), isDryRun=true creates a DUMMY marker
+    `<a class="note-marker">א</a>` (single Hebrew letter, fixed width ~14px).
+  - After candidate is chosen, the engine CLEARS the columns (line 2096-2097: `rCol.innerHTML = ''`)
+    and re-renders via `appendItemFinal`, which uses isDryRun=false → REAL gematria markers via
+    `createNoteMarkerAndQueue` (typesetter.js:2721) → `formatNoteMarker` returns:
+    - decimal: '1', '2', '12', '237' (variable width)
+    - gematria (default): 'א', 'ב', 'יא', 'קיא', 'תקיא' (1-4 chars)
+  - The diff between placeholder 'א' and the actual gematria marker is the source of
+    candidate-vs-final diff. Wider markers cause more text wrapping, increasing scrollHeight.
+  - Additionally, `appendItemFinal` (line 2144) appends endNote markers, and
+    `justifyColumnVertically` (lines 2187-2193) stretches the shorter column to match the
+    longer one. Both add to the candidate-vs-final diff.
+
+Step 5 — Careful solution design (Rule 5 false-positive investigation):
+- All 13 ch9 issues have EXCELLENT actual column balance (Δ ≤ 3px between L and R columns):
+  Issue 1 (p5): R=529, L=527, balance Δ=2 ✓
+  Issue 2 (p6): R=292, L=289, balance Δ=3 ✓
+  Issue 3 (p7): R=603, L=603, balance Δ=0 ✓
+  Issue 4 (p8): R=563, L=563, balance Δ=0 ✓
+  Issue 5 (p9): R=912, L=912, balance Δ=0 ✓
+  Issue 6 (p10): R=509, L=507, balance Δ=2 ✓ (Δ43 = the worst candidate-vs-final diff!)
+  Issue 7 (p11): R=186, L=186, balance Δ=0 ✓
+  Issue 8 (p12): R=403, L=403, balance Δ=0 ✓
+  Issue 9 (p13): R=923, L=923, balance Δ=0 ✓
+  Issue 10 (p15): R=710, L=710, balance Δ=0 ✓
+  Issue 11 (p16): R=841, L=841, balance Δ=0 ✓ (Δ34)
+  Issue 12 (p17): R=670, L=668, balance Δ=2 ✓
+  Issue 13 (p19): R=414, L=414, balance Δ=0 ✓
+- Threshold sweep on ch9:
+  - >5 (current): 13 reports, 6 medium
+  - >15: 10 reports, 1 medium
+  - >20: 6 reports, 1 medium
+  - >25: 2 reports, 1 medium (Δ34 low, Δ43 medium if medium threshold >40)
+  - >30: 2 reports, 0 medium
+  - >50: 0 reports, 0 medium
+- Decision: raise threshold to >25 (any report), >50 (medium).
+  - Filters 11/13 ch9 false positives.
+  - Keeps Δ34 and Δ43 as low-severity (informational, may indicate wide markers).
+  - Still catches real bugs (diffs >50 would be genuinely suspicious).
+- Rule 5: "if no visible flaw, raise threshold" — clearly applicable.
+
+Step 6 — Apply solution:
+- Modified `audit-expansion.js` lines 241-248:
+  - `if (maxDiff > 5)` → `if (maxDiff > 25)`
+  - `severity: maxDiff > 20 ? 'medium' : 'low'` → `severity: maxDiff > 50 ? 'medium' : 'low'`
+  - Added detailed comment explaining the placeholder-vs-real-marker root cause.
+- Updated `WORKING_RULES.md` Rule 5 history with this change.
+
+Step 7 — Test solution success:
+- `node -c audit-expansion.js` → syntax OK.
+- Local audit on ch9:
+  - Before: 13 issues (6 medium, 7 low).
+  - After: 2 issues (0 medium, 2 low: Δ34 on p16, Δ43 on p10).
+- Both remaining issues still have excellent actual balance (Δ=0 and Δ=2).
+
+Step 8 — Implications + verification (pending CI):
+- Expected: Regression Test on push will pass (no engine code changed, only audit threshold).
+- Expected: Total issues across 79 chapters will decrease significantly (most candidate-vs-final
+  diffs are 7-25px and will be filtered).
+- Expected: Test Triggers Runner may report fewer candidate-vs-final in trigger files (cleaner).
+
+Step 9 — Partial success handling:
+- Full success for ch9 (13 → 2 issues). Both remaining are below medium threshold.
+- The remaining 2 (Δ34, Δ43) are still false positives (excellent actual balance), but they
+  represent "interesting" cases worth flagging — they have the widest markers (3-4 char gematria).
+- If the user wants to filter even these, raise threshold to >50.
+- Future work: fix the placeholder to be wider (e.g., 'אאא' or actual marker preview) to
+  reduce approximation error. But this is a separate optimization, not a bug fix.
+
+Side issues discovered during this work:
+- Bug 4 (issue-investigation.yml analysis scripts): The two Node.js scripts in steps
+  "Analyze issue across checkpoints" and "Identify next steps" expect `data.checkpoints`
+  and `data.issues`, but the actual JSON is a LIST of checkpoints
+  (data = [{stage, issues}, ...]). So the workflow outputs "No data" instead of useful
+  analysis. Logged for future fix.
+- Bug 5 (issue-investigation.yml trigger path): The `tr '-' '_'` command transforms the
+  WHOLE string, including the directory `test-triggers/` → `test_triggers/`. So the trigger
+  file path is wrong. Also logged for future fix.
+- Bug 3 (test-triggers-runner.yml expectedKinds): `name.replace('test-trigger-','').split('_')`
+  is broken for multi-word kind names (heading_escort → ['heading','escort'] instead of
+  ['heading-escort']). Already documented in previous worklog entry.
+
+Stage Summary:
+- 9-step on candidate-vs-final completed. Threshold raised from >5 → >25 (any report) and
+  >20 → >50 (medium). ch9 issues: 13 → 2.
+- Files modified: audit-expansion.js (line 241-248), WORKING_RULES.md (Rule 5 history).
+- Verification: ch9 local audit confirms 2 remaining issues (both low, both excellent actual balance).
+- Pending: Regression Test on push to verify no side effects across all 79 chapters.
+- Documented in WORKING_RULES.md Rule 5 history for future reference.

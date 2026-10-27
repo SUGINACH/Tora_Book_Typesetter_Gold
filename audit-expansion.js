@@ -238,14 +238,29 @@ function auditCandidateVsFinalHeight(model, issues) {
             const diffL = Math.abs(actualLH - recordedLH);
             const maxDiff = Math.max(diffR, diffL);
 
-            if (maxDiff > 5) {
+            // [תיקון 2026-10-28 — כלל 5 false-positive investigation]
+            // הסף עלה מ-5 → 25 (כל דיווח), 20 → 50 (medium). סיבה:
+            // ה-engine מודד מועמדים עם isDryRun=true — placeholder marker קבוע 'א'
+            // (רוחב ~14px). הרינדור הסופי משתמש ב-isDryRun=false — marker גימטריה
+            // אמיתי ברוחב משתנה (1-4 chars: 'א','יא','קיא','תקיא').
+            // בנוסף, appendItemFinal מוסיף endNote markers ו-justifyColumnVertically
+            // מותח את הטור הקצר — שניהם מגדילים את ה-diff.
+            //
+            // ניתוח ch9 (13 issues): כל 13 ה-cases הראו איזון טורים מצוין בפועל
+            // (Δ ≤ 3px בין טור R ו-L). ה-diff היה 7-43px, אך לא הצביע על בעיה אמיתית
+            // באיזון. לכן הסף הקודם (>5) היה נמוך מדי — הוא דיווח על approximation noise.
+            //
+            // סף >25 מסנן placeholder-vs-real-marker approximation (typical 7-25px)
+            // ועדיין תופס diffs גדולים שעלולים להצביע על באג אמיתי ב-engine.
+            // סף medium >50 מבדיל בין "approximation גדול" (low) ל"חריגה משמעותית" (medium).
+            if (maxDiff > 25) {
                 // חשב rect בקואורדינטות book-container (כדי ש-highlightIssue יעבוד)
                 const bc = document.getElementById('book-container');
                 const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
                 const blkRect = blk.getBoundingClientRect();
                 issues.push({
                     kind: 'candidate-vs-final',
-                    severity: maxDiff > 20 ? 'medium' : 'low',
+                    severity: maxDiff > 50 ? 'medium' : 'low',
                     pageIdx: page.idx,
                     location: `page ${page.label} block ${bi + 1}`,
                     recordedRH, recordedLH, actualRH, actualLH,

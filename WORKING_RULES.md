@@ -116,6 +116,12 @@
 - overlap: סף 1px² → 5px² + חריגים לזוגות תקינים (כלל 2026-10-27)
 - footnote-overflow: סף 5px → 15px + ביטול low (כלל 2026-10-27)
 - multiple-blocks: הוסר לחלוטין — אינה בעיה (כלל 2026-10-27)
+- candidate-vs-final: סף 5px → 25px (כל דיווח), 20px → 50px (medium) (כלל 2026-10-28)
+  - **סיבה:** ה-engine מודד מועמדים עם placeholder marker קבוע `'א'` (isDryRun=true),
+    בעוד הרינדור הסופי משתמש ב-marker גימטריה אמיתי (isDryRun=false) ברוחב משתנה.
+    ההפרש placeholder-vs-real הוא 7-43px ב-ch9 — אך בכל 13 ה-cases האיזון בפועל
+    היה מצוין (Δ ≤ 3px בין טור R ו-L). כלומר ה-diff הוא approximation noise, לא באג.
+  - **ניתוח מפורט:** `worklog.md` task `cvf-threshold-fix`.
 
 ---
 
