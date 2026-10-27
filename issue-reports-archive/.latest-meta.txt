@@ -1,4 +1,4 @@
-issues-bracket-conversion+containment+h7-conversion+text-completeness-2026-10-27T23-06-08.pdf
-2026-10-27 23:06:13 UTC
+issues-bracket-conversion+containment+h7-conversion+text-completeness-2026-10-27T23-13-04.pdf
+2026-10-27 23:13:08 UTC
 Chapter range: 1 - 79
 Kind filter: (all kinds)
