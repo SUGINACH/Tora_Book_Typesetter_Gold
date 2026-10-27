@@ -993,8 +993,11 @@ function auditPageFillRatio(model, issues) {
         const fillRatio = bodyFlowUsedH / bodyFlowAvailableH;
         const wastedPx = bodyFlowAvailableH - bodyFlowUsedH;
 
-        // דווח רק אם הפער משמעותי (>100px = ~10% מעמוד A4)
-        if (wastedPx < 100) return;
+        // [תיקון — Finding 4] דווח רק אם הפער משמעותי.
+        // קודם: רק wastedPx >= 100 (מה שגרם לדיווח עמודים עם 88% מילוי כ"דלילים").
+        // עכשיו: דרוש גם wastedPx >= 100 וגם fillRatio < 0.85 (פחות מ-85% מילוי).
+        // עמוד עם 88% מילוי הוא תקין — יש תמיד רווח תחתית טבעי.
+        if (wastedPx < 100 || fillRatio >= 0.85) return;
 
         let severity = 'low';
         let kind = 'page-underfill';
