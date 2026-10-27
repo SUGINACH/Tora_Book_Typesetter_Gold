@@ -5005,3 +5005,69 @@ Files Modified:
 - step-by-step-audit-Method.md (full rewrite ~470 lines, 11 sections)
 - parallel-step-by-step-audit-23.js (DELETED)
 - parallel-step-by-step-audit-method-23.md (DELETED)
+
+---
+Task ID: finding-2-sparse-line
+Agent: main agent
+Task: טיפול בממצא 2 — שורות דלילות ממילה בודדת. אבחון ותיקון.
+
+Work Log:
+- הרצתי step-by-step-audit.js 9 --causality --verbose כדי לראות פלט מלא של הכלי המדויק.
+- הרצתי baseline regression על 79 פרקים ומצאתי 11 sparse-line issues ב-10 פרקים (3, 4, 12, 30, 39, 41, 55, 63, 64, 75).
+- הרצתי step-by-step-audit.js 3 --verbose --json וניתחתי את הפלט:
+  * הבעיה: p-cut עם tokenId=7, עם 6 lineRects, lastW=30 firstW=269.
+  * הופיע ב-checkpoint 0 (after-initial-layout), מסווג כ-created-at-first-checkpoint.
+- כתבתי scripts/debug-sparse-line.js כדי לבודד את ה-DOM של p-cut עם sparse-line.
+- מצאתי את שורש הבעיה:
+  * ה-p-cut מכיל span של paren-text (סוגריים) עם top=4683, height=38.
+  * השורה האחרונה היא ב-y=4704 (בתוך הטווח של ה-paren-text span).
+  * אבל הבדיקה הקודמת השוותה רק TOP של ה-span ל-TOP של השורה (|4683-4704|=21, לא < 8).
+  * לכן ה-audit לא זיהה שה-paren-text מכסה את השורה האחרונה, ודיווח false positive.
+
+- תיקון 1 — geometry-audit.js (auditSparseLastLine):
+  * שיניתי את הבדיקה מ-top-proximity (±8px) ל-vertical overlap.
+  * תנאי חדש: spanTop <= lastLineBottom + 2 && spanBottom >= lastLineTop - 2.
+  * הרחבתי את הבדיקה גם ל-note-marker, first-word-window, first-word-inline, first-word-bold.
+
+- תיקון 2 — typesetter.js (balanceColumns evalCand):
+  * הוספתי עונש (penalty) למועמדים שמייצרים p-cut עם שורה אחרונה דלילה.
+  * פונקציה חדשה getLastLineInfo(p) מודדת את רוחב השורה האחרונה מול הראשונה.
+  * אם lastW < 0.5 * firstW ויש יותר משורה אחת, המועמד מסווג כ-sparse.
+  * cost = abs(diff) + (sparse ? 25 : 0) — עונש וירטואלי של 25px.
+  * better() משווה cost במקום abs, ומעדיף מועמדים ללא sparse כש-heights דומים.
+
+- תיקון 3 — typesetter.js (__runAuditCheckpoint):
+  * findProblemNode תומך כעת גם ב-sparse-line (מחפש p-cut עם התאמת childRect) וב-widow-orphan (מחפש p-cut/p-end).
+  * enrichment שומר כעת את כל השדות המקוריים של ה-issue (childRect, lastW, firstW, pText, location, וכו') תחת issueData, לאבחון מדויק.
+
+- תיקון 4 — geometry-audit.js (enrichNode lineRects):
+  * מצאתי באג: השתמשתי ב-rectOf (book-container coords) בשילוב עם range.getClientRects (viewport coords). תוצאה: lineRects עם ערכים שגויים.
+  * תיקנתי להשתמש ב-el.getBoundingClientRect() (viewport coords) לשני החלקים.
+
+- הרצתי debug-collectLines-vs-enrichNode.js כדי להשוות בין collectLines (של ה-audit) לבין enrichNode (שלי). מצאתי:
+  * collectLines משתמש ב-y:h כמפתח de-dup, ושומר כל rect נפרד.
+  * enrichNode משתמש ב-y בלבד כמפתח, וממזג rects חופפים.
+  * זה יוצר הבדל במספר השורות וב-lastW. אבל ה-audit עצמו משתמש ב-collectLines, אז התיקון שלי לא השפיע על הדיווח.
+
+- תוצאות:
+  * לפני: 11 sparse-line issues ב-10 פרקים.
+  * אחרי: 2 sparse-line issues ב-2 פרקים (55, 63).
+  * ירידה של 82% ב-sparse-line (11→2), ו-9 issues פחות בסה"כ (102→93).
+
+- ממצאים שנותרו (55, 63):
+  * פרק 55 עמוד 5: p-cut בעמודה שמאלית עם lastW=15. אין paren-text/note-marker על השורה האחרונה — זוהי שורה דלילה אמיתית מ-line breaking.
+  * פרק 63 עמוד 19: p-cut עם paren-text מרוב-שורות שדוחק את הטקסט הרגיל. השורה האחרונה (lastW=28) היא מתחת ל-paren-text (אין חפיפה אנכית). זוהי בעיה אמיתית שדורשת Knuth-Plass line breaking.
+
+- commit: 74c8dcc (pushed to origin/V21)
+
+Stage Summary:
+- הבעיה העיקרית הייתה false positives — ה-audit לא זיהה נכון כש-paren-text span מכסה את השורה האחרונה מבלי להתחיל בה.
+- התיקון: בדיקת overlap אנכי במקום top-proximity, והרחבה ל-note-marker ו-first-word-* spans.
+- הוספתי גם penalty ב-balanceColumns כ-safety net למקרים עתידיים.
+- שני מקרים אמיתיים נותרו — דורשים שיפור אלגוריתם שבירת שורות (Knuth-Plass).
+
+Files Modified/Created:
+- geometry-audit.js: auditSparseLastLine (overlap check + extended spans), enrichNode (lineRects coordinate fix)
+- typesetter.js: balanceColumns evalCand (sparse penalty), __runAuditCheckpoint (findProblemNode + issueData preservation)
+- scripts/debug-sparse-line.js: NEW — debug p-cut DOM structure
+- scripts/debug-collectLines-vs-enrichNode.js: NEW — compare collectLines vs enrichNode
