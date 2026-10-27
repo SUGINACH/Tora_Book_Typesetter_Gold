@@ -2681,6 +2681,7 @@ const GEOM_KIND_NAMES = {
     'settings-verification': 'הגדרה לא הוחלה', 'text-completeness': 'שלמות טקסט',
     'h7-conversion': 'המרת H7 לכותרת צד', 'bracket-conversion': 'המרת סוגריים להערות',
     'note-marker-line-break': 'סמן הערה בסוף שורה',
+    'empty-column': 'עמודה ריקה', 'multiple-first-word-window': 'מספר חלונות מילה ראשונה בטור',
 };
 /* [כלל עבודה 3+4] מצב סינון ומיון גלובלי — enabledKinds הוא Set או null (null = הכל מסומן) */
 window.__geomFilter = window.__geomFilter || { enabledKinds: null, sortKey: 'page', sortDir: 'asc' };

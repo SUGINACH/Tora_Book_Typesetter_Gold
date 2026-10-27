@@ -1801,24 +1801,31 @@ function repositionBlockNotes(block, boundaryHeight) {
    - החיפוש בינארי (diff = R-L עולה מונוטונית עם נקודת הפיצול) ולא סריקה מלאה: מהיר פי כמה.
    - חלק פסקה שממשיך לעמוד הבא נשאר p-cut, וסימון הערת סיום מוצמד לסוף הפסקה האמיתי.
    ========================================================================== */
+function fixDropWordInColumns(blockEl) {
+    if (!blockEl) return;
+    const cols = blockEl.querySelectorAll('.right-col, .left-col, .single-wide-col');
+    cols.forEach(col => {
+        // [תיקון 2026-10-28] תפוס גם first-word-window שהם ילדים ישירים של <p> בלבד.
+        // זה מונע מצב שבו first-word-window מקונן בתוך paren-text או ספאנים אחרים
+        // ולא מתוקן (זהירות: לא לגעת ב-windows שהם לא ילדים ישירים של פסקה).
+        const windows = col.querySelectorAll('p > .first-word-window');
+        // שמור את הראשון, הפוך את השאר ל-inline
+        for (let i = 1; i < windows.length; i++) {
+            windows[i].classList.remove('first-word-window');
+            windows[i].classList.add('first-word-inline');
+        }
+    });
+}
+
 function balanceColumns(block, colWidth, styleObj, snapshot, availableHeight = Infinity) {
 
     // [תיקון 1] תקן first-word-window — רק הפסקה הראשונה בכל טור צריכה לקבל window (float:right).
     // פסקאות נוספות שקיבלו first-word-window יגרמו להידלדלות הטור וחריגה מטווח העמוד.
-    // פתרון: אחרי balanceColumns, סרוק כל טור והפוך first-word-window נוספים ל-first-word-inline.
-    function fixDropWordInColumns(blockEl) {
-        const cols = blockEl.querySelectorAll('.right-col, .left-col, .single-wide-col');
-        cols.forEach(col => {
-            const windows = col.querySelectorAll('.first-word-window');
-            // שמור את הראשון, הפוך את השאר ל-inline
-            for (let i = 1; i < windows.length; i++) {
-                windows[i].classList.remove('first-word-window');
-                windows[i].classList.add('first-word-inline');
-            }
-        });
-    }
-    // הפעל את התיקון בסוף balanceColumns (לפני ה-return)
-    const _originalReturn = { rH: 0, lH: 0, fits: true }; // placeholder
+    // [תיקון 2026-10-28] הפונקציה הועברה מ-nested (בתוך balanceColumns) ל-global כדי שאפשר
+    // יהיה לקרוא לה גם ב-Branch 4 (עמוד רגיל מאוזן) וב-Branch 1 עם keepChapterEndUnbalanced=true.
+    // בעבר fixDropWordInColumns רצה רק בסוף balanceColumns — מה שגרם לפסקאות מרובות
+    // עם first-word-window באותו טור כש-balanceColumns לא נקראה (Branch 4).
+    // ראה: auditMultipleFirstWordWindow ב-audit-expansion.js שמזהה את התופעה.
     if (snapshot) {
         footnoteQueueForPage.length = snapshot.footnoteQueueLen;
         endnoteQueueForPart.length = snapshot.endnoteQueueLen;
@@ -5114,6 +5121,9 @@ function typesetDocumentCore() {
                     } else {
                         // בלי איזון: הערות הצד שנוצרו במילוי הרגיל עדיין לא מוקמו (balanceColumns מקים את שלו בעצמו, וה-break שלמטה מדלג על ההקמה הרגילה)
                         finalizeNotePositions(pagePendingNotes, Math.max(rCol.scrollHeight, lCol.scrollHeight));
+                        // [תיקון 2026-10-28] fixDropWordInColumns נקראת גם כשלא מאזנים — אחרת
+                        // פסקאות מרובות באותו טור יקבלו first-word-window (ראה auditMultipleFirstWordWindow).
+                        fixDropWordInColumns(block2Col);
                     }
 
                     const divHTML = getSectionDividerHTML(secDivStyle);
@@ -5158,6 +5168,11 @@ function typesetDocumentCore() {
                                 justifyColumnVertically(rCol, lCol.scrollHeight, styleObj);
                             }
                         }
+                        // [תיקון 2026-10-28] גם ב-Branch 4 (עמוד רגיל מאוזן) צריך להפעיל
+                        // fixDropWordInColumns — אחרת פסקאות מרובות באותו טור מקבלות first-word-window.
+                        // balanceColumns לא נקראת ב-Branch 4, ולכן fixDropWordInColumns (שהייתה
+                        // nested בתוכה) לא רצה — מה שגרם לבאג multiple-first-word-window.
+                        fixDropWordInColumns(block2Col);
                     }
                 }
 

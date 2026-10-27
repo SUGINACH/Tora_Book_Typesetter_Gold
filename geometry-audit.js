@@ -1592,6 +1592,10 @@ function auditGeometry(model) {
     if (window.__geomAudit.auditFontNotLoaded) window.__geomAudit.auditFontNotLoaded(model, issues);
     // [חדש — AUDIT_EXPANSION_PLAN 1.10] מועמד מול סופי
     if (window.__geomAudit.auditCandidateVsFinalHeight) window.__geomAudit.auditCandidateVsFinalHeight(model, issues);
+    // [חדש — 2026-10-28] עמודה ריקה בבלוק 2-טורים (באג חמור — HIGH)
+    if (window.__geomAudit.auditEmptyColumn) window.__geomAudit.auditEmptyColumn(model, issues);
+    // [חדש — 2026-10-28] מספר חלונות מילה ראשונה בטור (fixDropWordInColumns לא רץ)
+    if (window.__geomAudit.auditMultipleFirstWordWindow) window.__geomAudit.auditMultipleFirstWordWindow(model, issues);
     // [חדש — AUDIT_EXPANSION_PLAN 1.8] טופו
     if (window.__geomAudit.auditTofu) window.__geomAudit.auditTofu(model, issues);
     // [חדש — AUDIT_EXPANSION_PLAN פריט 2+3] בדיקות שלמות טקסט והמרות

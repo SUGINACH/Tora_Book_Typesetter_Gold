@@ -374,6 +374,133 @@ function auditNoteMarkerLineBreak(node, issues) {
     }
 }
 
+/* 1.11 — עמודה ריקה בבלוק 2-טורים (empty-column)
+   דיווח כשבלוק .block-2col מכיל עמודה (right-col או left-col) ריקה לחלוטין או כמעט ריקה.
+   סיבות אפשריות:
+   1. balanceColumns נקראת כשיש רק פסקה אחת קצרה (לא יכולה להתפצל לפי getSplitRules minFirst/minLast).
+      המועמד היחיד הוא {i: 1, l: 0} — כל הפריט ל-rCol, lCol ריק.
+   2. ה-engine בחר מועמד {i: items.length, l: 0} שמכניס הכל ל-right.
+   חומרה: HIGH — בלוק 2-טורים עם עמודה ריקה הוא פגם חמור בעימוד.
+*/
+function auditEmptyColumn(model, issues) {
+    if (!model.pages) return;
+    for (const page of model.pages) {
+        const el = window.__geomAudit?.findDom?.(page);
+        if (!el) continue;
+        const blocks = el.querySelectorAll('.block-2col');
+        blocks.forEach((blk, bi) => {
+            const rC = blk.querySelector('.right-col');
+            const lC = blk.querySelector('.left-col');
+            if (!rC || !lC) return; // לא בלוק 2-טורים תקין
+
+            const rChildren = rC.children.length;
+            const lChildren = lC.children.length;
+            const rH = Math.round(rC.scrollHeight);
+            const lH = Math.round(lC.scrollHeight);
+
+            // דלג על בלוקים ריקים לחלוטין (אין תוכן בכלל — לא נקראת balanceColumns)
+            if (rChildren === 0 && lChildren === 0) return;
+
+            const bc = document.getElementById('book-container');
+            const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
+            const blkRect = blk.getBoundingClientRect();
+
+            // מקרה 1: עמודה אחת ריקה לחלוטין (0 ילדים), השנייה עם תוכן
+            if (rChildren === 0 || lChildren === 0) {
+                const emptyCol = rChildren === 0 ? 'right' : 'left';
+                const otherH = rChildren === 0 ? lH : rH;
+                issues.push({
+                    kind: 'empty-column',
+                    severity: 'high',
+                    pageIdx: page.idx,
+                    location: `page ${page.label} block ${bi + 1} (${emptyCol}-col empty)`,
+                    emptyColumn: emptyCol,
+                    rightChildren: rChildren,
+                    leftChildren: lChildren,
+                    rightHeight: rH,
+                    leftHeight: lH,
+                    childRect: { x: Math.round(blkRect.left - bcRect.left), y: Math.round(blkRect.top - bcRect.top), w: Math.round(blkRect.width), h: Math.round(blkRect.height) },
+                    message: `בלוק 2-טורים עם עמודה ${emptyCol === 'right' ? 'ימנית' : 'שמאלית'} ריקה לחלוטין — ${rChildren} פריטים בימין (H=${rH}px), ${lChildren} בשמאל (H=${lH}px). זה באג: ה-engine הכניס את כל התוכן לטור אחד.`
+                });
+                return;
+            }
+
+            // מקרה 2: עמודה עם ילדים אבל scrollHeight קטן מאוד (כנראה ריקה בפועל — רק margin/padding)
+            // סף: 10px — מתחת לזה זה חשוד
+            const EMPTY_THRESHOLD = 10;
+            if (rH < EMPTY_THRESHOLD || lH < EMPTY_THRESHOLD) {
+                const emptyCol = rH < EMPTY_THRESHOLD ? 'right' : 'left';
+                issues.push({
+                    kind: 'empty-column',
+                    severity: 'high',
+                    pageIdx: page.idx,
+                    location: `page ${page.label} block ${bi + 1} (${emptyCol}-col near-empty H=${rH < EMPTY_THRESHOLD ? rH : lH}px)`,
+                    emptyColumn: emptyCol,
+                    rightChildren: rChildren,
+                    leftChildren: lChildren,
+                    rightHeight: rH,
+                    leftHeight: lH,
+                    childRect: { x: Math.round(blkRect.left - bcRect.left), y: Math.round(blkRect.top - bcRect.top), w: Math.round(blkRect.width), h: Math.round(blkRect.height) },
+                    message: `בלוק 2-טורים עם עמודה ${emptyCol === 'right' ? 'ימנית' : 'שמאלית'} כמעט ריקה (scrollHeight=${rH < EMPTY_THRESHOLD ? rH : lH}px) — חשד לתוכן שלא הוקצה כראוי.`
+                });
+            }
+        });
+    }
+}
+
+/* 1.12 — מספר חלונות מילה ראשונה בטור (multiple-first-word-window)
+   דיווח כשטור (.right-col / .left-col) מכיל יותר מאלמנט אחד עם class `first-word-window`.
+   כלל: רק הפסקה הראשונה בכל טור צריכה לקבל first-word-window.
+   ה-engine מטפל בזה ב-fixDropWordInColumns שנקראת בסוף balanceColumns.
+   סיבות אפשריות לכשלון:
+   1. balanceColumns לא נקראה (Branch 4 ב-engine — רק justifyColumnVertically).
+   2. fixDropWordInColumns נקראה אבל לא תפסה את כל ה-windows (למשל nested).
+   3. פסקה מפוצלת p-cut קיבלה first-word-window גם בחלק השני.
+   חומרה: HIGH — first-word-window על פסקה אמצעית גורם ל-float:right שמשבש את הטור.
+*/
+function auditMultipleFirstWordWindow(model, issues) {
+    if (!model.pages) return;
+    for (const page of model.pages) {
+        const el = window.__geomAudit?.findDom?.(page);
+        if (!el) continue;
+        const blocks = el.querySelectorAll('.block-2col');
+        blocks.forEach((blk, bi) => {
+            const cols = blk.querySelectorAll('.right-col, .left-col');
+            cols.forEach(col => {
+                const colName = col.classList.contains('right-col') ? 'right' : 'left';
+                const windows = col.querySelectorAll('p > .first-word-window');
+                if (windows.length <= 1) return;
+
+                // אסוף מידע על כל window: איזה פסקה, איזה טקסט, מיקום
+                const pInfos = [];
+                windows.forEach((w, i) => {
+                    const p = w.closest('p');
+                    if (p) {
+                        const pText = (p.textContent || '').slice(0, 30).replace(/\s+/g, ' ');
+                        const pIdx = Array.prototype.indexOf.call(col.querySelectorAll('p'), p);
+                        pInfos.push(`p${pIdx >= 0 ? pIdx + 1 : '?'}: "${pText}..."`);
+                    }
+                });
+
+                const bc = document.getElementById('book-container');
+                const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
+                const colRect = col.getBoundingClientRect();
+                issues.push({
+                    kind: 'multiple-first-word-window',
+                    severity: 'high',
+                    pageIdx: page.idx,
+                    location: `page ${page.label} block ${bi + 1} ${colName}-col (${windows.length} windows)`,
+                    windowCount: windows.length,
+                    column: colName,
+                    paragraphs: pInfos,
+                    childRect: { x: Math.round(colRect.left - bcRect.left), y: Math.round(colRect.top - bcRect.top), w: Math.round(colRect.width), h: Math.round(colRect.height) },
+                    message: `טור ${colName === 'right' ? 'ימני' : 'שמאלי'} מכיל ${windows.length} חלונות מילה ראשונה (first-word-window) — רק הפסקה הראשונה בטור צריכה לקבל window. ייתכן ש-fixDropWordInColumns לא רצה על הבלוק הזה. פסקאות: ${pInfos.join(' | ')}`
+                });
+            });
+        });
+    }
+}
+
 /* הלפרים — משתמשים בפונקציות הקיימות מ-geometry-audit.js דרך API ציבורי */
 function getPageIdxSafe(node) {
     try {
@@ -402,9 +529,11 @@ Object.assign(window.__geomAudit, {
     auditFontNotLoaded,
     auditCandidateVsFinalHeight,
     auditTofu,
-    auditNoteMarkerLineBreak
+    auditNoteMarkerLineBreak,
+    auditEmptyColumn,
+    auditMultipleFirstWordWindow
 });
 
-console.log('[audit-expansion] נטען. 8 בדיקות חדשות זמינות.');
+console.log('[audit-expansion] נטען. 10 בדיקות חדשות זמינות.');
 
 })();
