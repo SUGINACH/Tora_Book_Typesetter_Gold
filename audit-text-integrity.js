@@ -129,12 +129,23 @@ function auditTextCompleteness(model, sourceText, issues) {
 
     if (missing.length > 0) {
         const totalMissing = missing.reduce((a, m) => a + m.deficit, 0);
+        // [תיקון 2026-10-28 — הערת משתמש] אל תדווח גלובלית (pageIdx=-1)!
+        // מצא את העמוד הראשון שאינו שער — שם תצולם הבעיה.
+        let firstNonSpecialPage = -1;
+        for (let i = 0; i < model.pages.length; i++) {
+            const cls = model.pages[i].cls || '';
+            const isSpecial = cls.includes('blank-page') || cls.includes('sub-shaar-page') ||
+                              cls.includes('main-shaar-page') || cls.includes('back-shaar-page') ||
+                              cls.includes('toc-page');
+            if (!isSpecial) { firstNonSpecialPage = i; break; }
+        }
         issues.push({
             kind: 'text-completeness',
             // [כלל — החלטת משתמש] היעלמות מילים היא תמיד high, אפילו מילה אחת!
             // טקסט תורני — כל מילה קריטית. שום מילה לא אמורה להיעלם בעימוד.
             severity: 'high',
-            pageIdx: -1, location: 'global',
+            pageIdx: firstNonSpecialPage >= 0 ? firstNonSpecialPage : 0,
+            location: firstNonSpecialPage >= 0 ? `page ${model.pages[firstNonSpecialPage].label}` : 'global',
             missingWords: missing.slice(0, 20),
             totalMissing,
             message: `${totalMissing} מילים חסרות ב-DOM (קיימות במקור אבל לא בעמודים המרונדרים) — ייתכן שטקסט הלך לאיבוד בעימוד`
@@ -142,10 +153,19 @@ function auditTextCompleteness(model, sourceText, issues) {
     }
     if (extra.length > 5) {
         const totalExtra = extra.reduce((a, e) => a + e.excess, 0);
+        let firstNonSpecialPage = -1;
+        for (let i = 0; i < model.pages.length; i++) {
+            const cls = model.pages[i].cls || '';
+            const isSpecial = cls.includes('blank-page') || cls.includes('sub-shaar-page') ||
+                              cls.includes('main-shaar-page') || cls.includes('back-shaar-page') ||
+                              cls.includes('toc-page');
+            if (!isSpecial) { firstNonSpecialPage = i; break; }
+        }
         issues.push({
             kind: 'text-completeness',
             severity: totalExtra > 20 ? 'medium' : 'low',
-            pageIdx: -1, location: 'global',
+            pageIdx: firstNonSpecialPage >= 0 ? firstNonSpecialPage : 0,
+            location: firstNonSpecialPage >= 0 ? `page ${model.pages[firstNonSpecialPage].label}` : 'global',
             extraWords: extra.slice(0, 10),
             totalExtra,
             message: `${totalExtra} מילים עודפות ב-DOM (לא במקור) — ייתכן שטקסט מזהה סגנון לא סונן`
@@ -164,48 +184,64 @@ function auditH7ToSideNote(model, sourceText, issues) {
     // הגישה הישנה: חיפשה טקסט H7 בכל ה-DOM גלובלית → false positive כשהטקסט
     // מופיע גם בגוף כציטוט גמרא. גם דיווחה גלובלית (pageIdx=-1) וה-PDF צילם עמוד ראשון.
     //
-    // הגישה החדשה: לכל עמוד, לכל פסקה עם data-side-note, בדוק שה-side-note-anchor
-    // עם data-for-token התואם נמצא באותו עמוד. אם לא — דווח על העמוד הספציפי.
-    //
-    // יתרונות:
-    // 1. דיווח ספציפי לעמוד (לא גלובלי) — ה-PDF יצלם את העמוד הנכון.
-    // 2. אין false positive מציטוטי גמרא בגוף הטקסט.
-    // 3. בדיקה מדויקת קישור פסקה→הערת צד דרך token ID.
+    // הגישה החדשה: לכל עמוד, בצע שתי בדיקות:
+    // א. לכל פסקה עם data-side-note, בדוק שה-side-note-anchor עם data-for-token
+    //    התואם נמצא באותו עמוד. אם לא — דווח על העמוד הספציפי.
+    // ב. בדוק אם יש פסקה שמתחילה ב"כותרת 7" — זה אומר שה-H7 לא הומר כלל
+    //    (הכשל קרה לפני ההמרה, והפסקה הגיעה כטקסט גוף במקום כותרת צד).
+
     for (const page of model.pages) {
         const el = window.__geomAudit?.findDom?.(page);
         if (!el) continue;
 
-        // מצא את כל הפסקאות עם data-side-note בעמוד זה
+        const bc = document.getElementById('book-container');
+        const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
+
+        // בדיקה א: פסקה עם data-side-note אבל בלי side-note-anchor באותו עמוד
         const psWithSideNote = el.querySelectorAll('p[data-side-note]');
-        if (psWithSideNote.length === 0) continue;
+        if (psWithSideNote.length > 0) {
+            const sideNoteTokens = new Set();
+            el.querySelectorAll('.side-note-anchor').forEach(sn => {
+                const tid = sn.getAttribute('data-for-token');
+                if (tid) sideNoteTokens.add(tid);
+            });
 
-        // מצא את כל ה-side-note-anchor בעמוד זה, עם ה-token IDs שלהם
-        const sideNoteTokens = new Set();
-        el.querySelectorAll('.side-note-anchor').forEach(sn => {
-            const tid = sn.getAttribute('data-for-token');
-            if (tid) sideNoteTokens.add(tid);
-        });
+            for (const p of psWithSideNote) {
+                const tokenId = p.getAttribute('data-token-id');
+                const sideNoteText = p.getAttribute('data-side-note') || '';
+                if (!tokenId) continue;
 
-        // לכל פסקה עם data-side-note, בדוק שה-side-note-anchor שלה נמצא באותו עמוד
-        for (const p of psWithSideNote) {
-            const tokenId = p.getAttribute('data-token-id');
-            const sideNoteText = p.getAttribute('data-side-note') || '';
-            if (!tokenId) continue;
+                if (!sideNoteTokens.has(tokenId)) {
+                    const pRect = p.getBoundingClientRect();
+                    issues.push({
+                        kind: 'h7-conversion',
+                        severity: 'high',
+                        pageIdx: page.idx,
+                        location: `page ${page.label}`,
+                        tokenId: tokenId,
+                        sideNoteText: sideNoteText.slice(0, 60),
+                        childRect: { x: Math.round(pRect.left - bcRect.left), y: Math.round(pRect.top - bcRect.top), w: Math.round(pRect.width), h: Math.round(pRect.height) },
+                        message: `כותרת צד "${sideNoteText.slice(0, 40)}" (token ${tokenId}) לא נמצאה בעמוד ${page.label} — המרת H7→side-note נכשלה בעמוד זה`
+                    });
+                }
+            }
+        }
 
-            if (!sideNoteTokens.has(tokenId)) {
-                // ה-side-note-anchor לא נמצא בעמוד זה — בעיה!
-                const bc = document.getElementById('book-container');
-                const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
+        // בדיקה ב: פסקה שמתחילה ב"כותרת 7" — ה-H7 לא הומר כלל
+        const allPs = el.querySelectorAll('.main-column p, .single-wide-col p');
+        for (const p of allPs) {
+            const pText = (p.textContent || '').trim();
+            // בדוק אם הפסקה מתחילה ב"כותרת 7" (או "כותרת 7 מספר")
+            if (/^כותרת\s*7\b/.test(pText)) {
                 const pRect = p.getBoundingClientRect();
                 issues.push({
                     kind: 'h7-conversion',
                     severity: 'high',
                     pageIdx: page.idx,
                     location: `page ${page.label}`,
-                    tokenId: tokenId,
-                    sideNoteText: sideNoteText.slice(0, 60),
+                    paragraphText: pText.slice(0, 80),
                     childRect: { x: Math.round(pRect.left - bcRect.left), y: Math.round(pRect.top - bcRect.top), w: Math.round(pRect.width), h: Math.round(pRect.height) },
-                    message: `כותרת צד "${sideNoteText.slice(0, 40)}" (token ${tokenId}) לא נמצאה בעמוד ${page.label} — המרת H7→side-note נכשלה בעמוד זה`
+                    message: `פסקה בעמוד ${page.label} מתחילה ב"כותרת 7" — H7 לא הומר לכותרת צד. טקסט: "${pText.slice(0, 60)}..."`
                 });
             }
         }
@@ -246,30 +282,58 @@ function auditBracketToFootnote(model, sourceText, issues) {
         }
     }
 
-    // בדוק ש-[...] לא מופיע בגוף הטקסט
-    let inBodyCount = 0;
+    // [תיקון 2026-10-28 — הערת משתמש] אל תדווח גלובלית (pageIdx=-1)!
+    // בדוק עמוד-עמוד ודווח על העמוד שבו הסוגריים נמצאים.
     for (const page of model.pages) {
         const el = window.__geomAudit?.findDom?.(page);
         if (!el) continue;
+        // דלג על עמודי שער
+        const cls = page.cls || '';
+        const isSpecial = cls.includes('blank-page') || cls.includes('sub-shaar-page') ||
+                          cls.includes('main-shaar-page') || cls.includes('back-shaar-page') ||
+                          cls.includes('toc-page');
+        if (isSpecial) continue;
+
         const ps = el.querySelectorAll('.main-column p, .single-wide-col p');
         for (const p of ps) {
             const pText = p.textContent || '';
             for (const bracketText of parsed.bracketContents) {
                 if (bracketText.length < 3) continue;
-                // אם הסוגריים המרובעות עדיין בטקסט — בעיה
+                // אם הסוגריים המרובעות עדיין בטקסט — בעיה בעמוד זה
                 if (pText.includes('[' + bracketText.slice(0, 10))) {
-                    inBodyCount++;
-                    break;
+                    const bc = document.getElementById('book-container');
+                    const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
+                    const pRect = p.getBoundingClientRect();
+                    issues.push({
+                        kind: 'bracket-conversion',
+                        severity: 'high',
+                        pageIdx: page.idx,
+                        location: `page ${page.label}`,
+                        bracketText: bracketText.slice(0, 60),
+                        childRect: { x: Math.round(pRect.left - bcRect.left), y: Math.round(pRect.top - bcRect.top), w: Math.round(pRect.width), h: Math.round(pRect.height) },
+                        message: `סוגריים מרובעות "[${bracketText.slice(0, 40)}...]" נמצאו בגוף הטקסט בעמוד ${page.label} — המרת []→footnote נכשלה`
+                    });
+                    break; // דלג על שאר ה-brackets בפסקה זו
                 }
             }
         }
     }
 
     if (missingCount > 0) {
+        // [תיקון 2026-10-28] מצא עמוד נציג (ראשון שאינו שער)
+        let firstNonSpecialPage = -1;
+        for (let i = 0; i < model.pages.length; i++) {
+            const cls = model.pages[i].cls || '';
+            const isSpecial = cls.includes('blank-page') || cls.includes('sub-shaar-page') ||
+                              cls.includes('main-shaar-page') || cls.includes('back-shaar-page') ||
+                              cls.includes('toc-page');
+            if (!isSpecial) { firstNonSpecialPage = i; break; }
+        }
         issues.push({
             kind: 'bracket-conversion',
             severity: 'high',
-            pageIdx: -1, location: 'global',
+            pageIdx: firstNonSpecialPage >= 0 ? firstNonSpecialPage : 0,
+            location: firstNonSpecialPage >= 0 ? `page ${model.pages[firstNonSpecialPage].label}` : 'global',
             expected: `${parsed.bracketContents.length} bracket contents`,
             found: `${parsed.bracketContents.length - missingCount} in footnotes`,
             missing: missing.slice(0, 5),
@@ -277,15 +341,7 @@ function auditBracketToFootnote(model, sourceText, issues) {
             message: `${missingCount} מתוך ${parsed.bracketContents.length} תוכני סוגריים מרובעות לא נמצאו בהערות שוליים — ייתכן שהמרת []→footnote נכשלה`
         });
     }
-    if (inBodyCount > 0) {
-        issues.push({
-            kind: 'bracket-conversion',
-            severity: 'high',
-            pageIdx: -1, location: 'global',
-            inBodyCount,
-            message: `${inBodyCount} תוכני סוגריים מרובעות עדיין בגוף הטקסט (עם [) — המרת []→footnote נכשלה`
-        });
-    }
+    // [הוסר 2026-10-28] הבדיקה "inBodyCount" הוחלפה בבדיקה עמוד-עמוד למעלה.
 }
 
 /* ── רישום ב-API הציבורי ────────────────────────────────────────── */

@@ -1217,6 +1217,18 @@ function auditSettingsVerification(model, issues) {
 
     const totalPages = model.pages.length;
 
+    // [תיקון 2026-10-28 — הערת משתמש] אל תדווח גלובלית (pageIdx=-1)!
+    // מצא את העמוד הראשון שאינו שער — שם תצולם הבעיה ב-PDF.
+    let firstNonSpecialPage = -1;
+    for (let i = 0; i < model.pages.length; i++) {
+        const cls = model.pages[i].cls || '';
+        const isSpecial = cls.includes('blank-page') || cls.includes('sub-shaar-page') ||
+                          cls.includes('main-shaar-page') || cls.includes('back-shaar-page') ||
+                          cls.includes('toc-page');
+        if (!isSpecial) { firstNonSpecialPage = i; break; }
+    }
+    const reportPageIdx = firstNonSpecialPage >= 0 ? firstNonSpecialPage : 0;
+
     // בדיקה 1: שורה אחרונה ממורכזת
     // אם ההגדרה היא 'center', בדוק שיש p-end (שורות אחרונות ממורכזות)
     if (bodyLastLineAlign === 'center' || bodyLastLineAlign === 'centered' || bodyLastLineAlign === true) {
@@ -1224,7 +1236,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'medium',
-                pageIdx: -1,
+                pageIdx: reportPageIdx,
                 location: 'global',
                 setting: 'body-last-line-align',
                 expected: 'center',
@@ -1241,7 +1253,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'medium',
-                pageIdx: -1,
+                pageIdx: reportPageIdx,
                 location: 'global',
                 setting: 'drop-word-mode',
                 expected: dropWordMode,
@@ -1258,7 +1270,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'low',
-                pageIdx: -1,
+                pageIdx: reportPageIdx,
                 location: 'global',
                 setting: 'h2-ornament-top-style',
                 expected: h2OrnTopStyle,
@@ -1275,7 +1287,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'low',
-                pageIdx: -1,
+                pageIdx: reportPageIdx,
                 location: 'global',
                 setting: 'h2-ornament-bottom-style',
                 expected: h2OrnBtmStyle,
@@ -1291,7 +1303,7 @@ function auditSettingsVerification(model, issues) {
         issues.push({
             kind: 'settings-verification',
             severity: 'low',
-            pageIdx: -1,
+            pageIdx: reportPageIdx,
             location: 'global',
             setting: 'show-side-notes',
             expected: 'true',
@@ -1312,7 +1324,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'low',
-                pageIdx: -1,
+                pageIdx: reportPageIdx,
                 location: 'global',
                 setting: 'section-divider-style',
                 expected: secDivStyle,
@@ -1329,7 +1341,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'low',
-                pageIdx: -1,
+                pageIdx: reportPageIdx,
                 location: 'global',
                 setting: 'h2-auto-siman',
                 expected: 'true',
@@ -1345,7 +1357,7 @@ function auditSettingsVerification(model, issues) {
         issues.push({
             kind: 'settings-verification',
             severity: 'medium',
-            pageIdx: -1,
+            pageIdx: reportPageIdx,
             location: 'global',
             setting: 'page-num-position',
             expected: 'page numbers on pages',
@@ -1361,7 +1373,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'low',
-                pageIdx: -1,
+                pageIdx: reportPageIdx,
                 location: 'global',
                 setting: 'col-divider-style',
                 expected: colDividerStyle,
@@ -1481,7 +1493,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'low',
-                pageIdx: -1,
+                pageIdx: reportPageIdx,
                 location: 'global',
                 setting: 'heading-first-child-margin-top',
                 expected: '0',
@@ -1516,7 +1528,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'medium',
-                pageIdx: -1, location: 'global',
+                pageIdx: reportPageIdx, location: firstNonSpecialPage >= 0 ? `page ${model.pages[firstNonSpecialPage].label}` : 'global',
                 setting: 'show-main-shaar', expected: 'main-shaar-page', actual: 'not found',
                 note: ' (show-main-shaar פעיל אך לא נמצא main-shaar-page)',
                 message: 'show-main-shaar פעיל אך לא נמצא עמוד שער ראשי — ייתכן שלא הוחל'
@@ -1526,7 +1538,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'medium',
-                pageIdx: -1, location: 'global',
+                pageIdx: reportPageIdx, location: firstNonSpecialPage >= 0 ? `page ${model.pages[firstNonSpecialPage].label}` : 'global',
                 setting: 'show-back-shaar', expected: 'back-shaar-page', actual: 'not found',
                 note: ' (show-back-shaar פעיל אך לא נמצא back-shaar-page)',
                 message: 'show-back-shaar פעיל אך לא נמצא עמוד שער אחורי — ייתכן שלא הוחל'
@@ -1536,7 +1548,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'low',
-                pageIdx: -1, location: 'global',
+                pageIdx: reportPageIdx, location: firstNonSpecialPage >= 0 ? `page ${model.pages[firstNonSpecialPage].label}` : 'global',
                 setting: 'show-sub-shaar', expected: 'sub-shaar-page', actual: 'not found',
                 note: ' (show-sub-shaar פעיל אך לא נמצא sub-shaar-page)',
                 message: 'show-sub-shaar פעיל אך לא נמצא עמוד שער משנה — ייתכן שלא הוחל או שאין חלוקת משנה'
@@ -1547,7 +1559,7 @@ function auditSettingsVerification(model, issues) {
             issues.push({
                 kind: 'settings-verification',
                 severity: 'low',
-                pageIdx: -1, location: 'global',
+                pageIdx: reportPageIdx, location: firstNonSpecialPage >= 0 ? `page ${model.pages[firstNonSpecialPage].label}` : 'global',
                 setting: 'toc-pages', expected: 'toc-page', actual: 'not found',
                 note: ' (לא נמצאו עמודי תוכן עניינים)',
                 message: 'לא נמצאו עמודי תוכן עניינים (toc-page) — ייתכן ש-TOC כבוי או לא הוחל'
