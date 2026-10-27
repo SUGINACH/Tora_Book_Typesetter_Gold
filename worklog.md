@@ -5558,3 +5558,63 @@ Stage Summary:
 - `WORKING_RULES.md` עודכן עם הסברי יישום מפורטים לכל כלל.
 - scripts/test-sort-filter.js נוסף כבדיקת unit-test עבור המיון והסינון.
 - ה-UI כעת תומך ב: שמות עבריים ל-30 סוגי בעיות, הבהוב אזור הבעיה לכל סוג (כולל החדשים), דרופדאון צ'קליסט לסינון, מיון לפי page/type/severity עם חץ ↑/↓.
+
+---
+Task ID: github-actions-workflows
+Agent: main agent
+Task: יצירת GitHub Actions workflows להרצת פעולות ארוכות וכבדות ברקע.
+
+Work Log:
+
+נוספו 4 workflows חדשים ב-.github/workflows/:
+
+1. **step-by-step-audit.yml** — ידני, מריץ step-by-step audit על פרק בודד
+   - inputs: chapter (1-79), per_page_checkpoints, verbose, deltas_only
+   - outputs: JSON מלא + לוג + סיכום סיבתיות
+   - משתמש ב-`--causality --per-page-checkpoints --verbose --json`
+
+2. **full-baseline-audit.yml** — ידני, מריץ audit על כל 79 פרקים במקביל
+   - inputs: start_chapter, end_chapter, concurrency (1-5)
+   - matrix strategy: 79 פרקים מחולקים למקביל
+   - outputs: per-chapter JSON + full-baseline-summary.json
+   - שימושי לפני/אחרי שינוי גדול ב-engine
+
+3. **test-triggers-runner.yml** — auto + ידני, מריץ trigger texts
+   - triggers: push to V21 רק אם נעשה שינוי ב:
+     - audit-expansion.js / audit-text-integrity.js / geometry-audit.js / typesetter.js / test-triggers/**
+   - outputs: trigger-results (לוג + summary)
+   - מאמת שכל trigger אכן מייצר את ה-bugs הצפויים
+
+4. **issue-investigation.yml** — ידני, חקירה עמוקה של בעיה ספציפית
+   - inputs: issue_kind (dropdown של 18 סוגים מ-GEOM_KIND_NAMES), chapter, run_test_trigger
+   - ממפה issue_kind → trigger file
+   - מריץ את ה-trigger (אם requested) ומאמת זיהוי
+   - מריץ step-by-step-audit עם --causality --per-page-checkpoints --verbose
+   - מנתח הופעת הבעיה בכל checkpoint
+   - **ממליץ על צעדים הבאים** בהתבסס על causality category:
+     - created-at-first-checkpoint → בדוק parseSourceText()
+     - created-by-stage → מצא את השלב שיצר
+     - fixed-by-stage → ודא יציבות התיקון
+     - correction-reverted → מצא מי החזיר
+     - never-appeared → בדוק final-state
+     - unresolved → מועמד ישיר לפתרון
+
+תיעוד:
+- WORKFLOWS.md חדש — אינדקס מלא של כל 5 workflows עם מיפוי ל-9-step priority order
+- כל workflow כולל retention-days ל-artifacts (30-90 days)
+
+בדיקות:
+- YAML syntax: כל 5 קבצי workflow תקינים (python yaml.safe_load)
+- מבנה: jobs ו-steps תקינים
+- commit & push: 5b8bd7d נדחף ל-origin/V21 בהצלחה
+
+טריגרים אוטומטיים שיקרו כעת עקב push:
+- regression-test.yml (push to V21, כל שינוי)
+- test-triggers-runner.yml (paths: audit-expansion.js, typesetter.js)
+
+Stage Summary:
+- 4 workflows חדשים נוספו ל-CI
+- המשתמש יכול כעת להפעיל פעולות ארוכות דרך GitHub UI (Actions tab)
+- התראות אוטומטיות בסיום (success/failure) יישלחו לאימייל/GitHub
+- workflow issue-investigation מספק המלצות אוטומטיות לפי סדר ה-9-step
+- מערכת ה-CI כעת מכסה את כל השלבים של ה-9-step priority order
