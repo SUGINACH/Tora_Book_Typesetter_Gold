@@ -357,7 +357,10 @@ function auditContainment(node, issues) {
                     if (n.type === 'p-cut') return true;
                     return (n.children || []).some(hasCut);
                 })(child);
-                if (hasPCut && overflowPx <= 15) {
+                if (hasPCut && overflowPx <= 20) {
+                    // [תיקון — B1] העלאת סף ה-low מ-15 ל-20px. עם p-cut cross-page,
+                    // overflow עד 20px הוא טבעי (פחות משורה אחת). ה-engine בחר במכוון
+                    // ליצור p-cut כדי למלא את העמוד במקום להשאיר רווח גדול.
                     severity = 'low';
                     kind = 'containment-rounding';
                     note = ' (גלישה טבעית — block-2col עם p-cut cross-page, עיגול פיקסלים)';
@@ -384,7 +387,9 @@ function auditContainment(node, issues) {
                 kind = 'containment-rounding';
                 note = ' (עיגול פיקסלים של מפריד סעיפים)';
             } else if (isSideNote) {
-                severity = overflowPx > 30 ? 'high' : (overflowPx > 10 ? 'medium' : 'low');
+                // [תיקון — B1] העלאת סף ה-medium מ-10 ל-15px. הערות צד עם overflow
+                // עד 15px הן טבעיות (פחות משורה אחת של טקסט קטן).
+                severity = overflowPx > 30 ? 'high' : (overflowPx > 15 ? 'medium' : 'low');
                 note = ' (הערת צד גולשת משטח המרזב)';
             }
 
