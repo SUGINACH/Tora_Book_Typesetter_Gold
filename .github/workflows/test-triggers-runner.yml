@@ -106,7 +106,12 @@ jobs:
                 if (byKindMatch) {
                   const lines = byKindMatch[1].trim().split('\\n');
                   for (const line of lines) {
-                    const m = line.match(/\\s+(\\S+): (\\d+)/);
+                    // Use \\s* (zero or more) instead of \\s+ (one or more) so the first
+                    // line — which has its leading whitespace stripped by trim() — is also matched.
+                    // Without this fix, the FIRST kind in 'Issues by kind:' section was always
+                    // missed in the trigger-summary.json (e.g., for heading_escort trigger the
+                    // byKind showed only candidate-vs-final + text-completeness, missing heading-escort).
+                    const m = line.match(/\\s*(\\S+): (\\d+)/);
                     if (m) byKind[m[1]] = parseInt(m[2], 10);
                   }
                 }
