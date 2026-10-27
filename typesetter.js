@@ -2046,6 +2046,44 @@ function balanceColumns(block, colWidth, styleObj, snapshot, availableHeight = I
         consider(cross - d);
         consider(cross + d);
     }
+
+    // [תיקון 2026-10-28 — empty-column fix] Fallback כשהמועמד היחיד הוא {i: items.length, l: 0}.
+    // זה קורה כשאין פסקאות שיכולות להתפצל חוקית (כל פסקה קצרה מ-minFirst+minLast=4 שורות).
+    // במקרה כזה, balanceColumns בחרה להכניס את כל התוכן ל-rCol ולהשאיר lCol ריק —
+    // זה יוצר בלוק 2-טורים עם עמודה ריקה (empty-column bug, ראה auditEmptyColumn).
+    //
+    // פתרון: למצוא את הפסקה הארוכה ביותר (עם הכי הרבה שורות) ולפצל אותה למרות החוקים.
+    // widow/orphan אחד עדיף על עמודה ריקה לחלוטין. נפצל ל-n/2 (חלוקה הוגנת) כדי למזער
+    // את ה-widow/orphan. אם אין פסקה עם 2+ שורות — לא ניתן לפתור (הפסקה קטנה מדי).
+    //
+    // [Bug fix] מספר המועמדים m חושב לפני ה-push, ו-consider דוחה k >= m. לכן צריך
+    // לקרוא ל-evalCand ישירות (לא דרך consider) או לעדכן את best ידנית.
+    if (best && cands[best.k] && cands[best.k].i === items.length && cands[best.k].l === 0) {
+        // מצא את הפסקה הארוכה ביותר
+        let longestIdx = -1, longestN = 0;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type === 'p' && items[i].lines.length > longestN) {
+                longestN = items[i].lines.length;
+                longestIdx = i;
+            }
+        }
+        if (longestIdx >= 0 && longestN >= 2) {
+            // פצל את הפסקה הארוכה ביותר ל-n/2 שורות ב-rCol
+            const fallbackL = Math.max(1, Math.floor(longestN / 2));
+            const fallbackCand = { i: longestIdx, l: fallbackL };
+            cands.push(fallbackCand);
+            const fbIdx = cands.length - 1;
+            // [Bug fix] נקרא ל-evalCand ישירות (לא דרך consider שדוחה k >= m)
+            const e = evalCand(fbIdx);
+            if (better(e, best)) best = e;
+            // סמן את ה-block שנעשה fallback
+            try {
+                block.setAttribute('data-layout-balance-fallback', 'empty-column-fix');
+                block.setAttribute('data-layout-balance-fallback-split', `i=${longestIdx},l=${fallbackL},n=${longestN}`);
+            } catch (_) {}
+        }
+    }
+
     const bestSplit = cands[best.k];
 
     // [חדש — שקיפות סיבתית] הוסף data-layout-* attributes ל-block-2col שמתעדים את
@@ -5149,7 +5187,13 @@ function typesetDocumentCore() {
                         balanceColumns(block2Col, colWidth, styleObj, blockNoteSnapshot, actualAvailH);
                     } 
                     // 3. הטור הימני גלש לתוך שטח ההערה (כי ההערה הייתה בטור שמאל) או שיש פער משמעותי
-                    else if (rCol.scrollHeight > actualAvailH || Math.abs(rCol.scrollHeight - lCol.scrollHeight) > 60) {
+                    // [תיקון 2026-10-28 — empty-column fix] הוסף תנאי: אם אחת מהעמודות ריקה
+                    // לחלוטין (0 פסקאות/כותרות), לקרוא ל-balanceColumns כדי שה-fallback הפנימי
+                    // יפצל את הפסקה (ראה balanceColumns empty-column-fix fallback).
+                    else if (rCol.scrollHeight > actualAvailH ||
+                             Math.abs(rCol.scrollHeight - lCol.scrollHeight) > 60 ||
+                             (rCol.children.length === 0 && lCol.children.length > 0) ||
+                             (lCol.children.length === 0 && rCol.children.length > 0)) {
                         balanceColumns(block2Col, colWidth, styleObj, blockNoteSnapshot, actualAvailH);
                     } 
                     // 4. עמוד רגיל מאוזן שדורש רק יישור שורות עדין
