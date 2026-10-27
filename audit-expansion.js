@@ -482,95 +482,18 @@ function auditMultipleFirstWordWindow(model, issues) {
     }
 }
 
-/* 1.13 — שורה אחרונה דלילה בטור (sparse-line-in-column)
-   [נקודה ממשתמש 2026-10-28 — תיקון רגרסיה קריטית]
-   על פי ISSUES_TABLE.md, sparse-line בודקת "שורה אחרונה של p-cut (פסקה שנחתכה)".
-   סוף פסקה (p-end) — השורה האחרונה ממילא דלילה, וזה תקין כי הטקסט מסתיים שם.
-   בנוסף: בדיקות עימוד לא חלות על עמודי שער (main-shaar, back-shaar, sub-shaar, toc, blank).
-
-   טעות קודמת: בדקנו את הילד האחרון של הטור (כל פסקה) במקום רק p-cut.
-   זה גרם לדיווח על סוף פסקה (תקין) כאילו היתה בעיה.
-   במקביל, לא דיווחנו על p-cut אמיתי (שורה אחרונה בטור של פסקה שנחתכה באמצע).
-
-   תיקון: בדוק רק פסקאות עם class p-cut (פסקה שנחתכה). דלג על p-end (סוף פסקה טבעי).
-   חומרה: medium אם ratio < 50% (כי p-cut מיושר לשני צדדים, ודלילות פירושה רווח גדול בין מילים).
+/* 1.13 — REMOVED 2026-10-28 — auditSparseLineInColumn הייתה כפילות שגויה
+   של auditSparseLastLine ב-geometry-audit.js. הבדיקה המקורית (auditSparseLastLine)
+   כבר קיימת ועובדת נכון:
+   - בודקת רק p-cut (לא p-end) ✅
+   - משווה רוחב שורה אחרונה לשורה ראשונה (לא לרוחב טור) ✅
+   - דולגת על paren-text, note-marker, first-word-* spans ✅
+   הבדיקה החדשה הייתה גרועה יותר: מדדה לפי רוחב טור ולא דילגה על paren-text.
+   לכן הוסרה — הסתמכות על auditSparseLastLine המקורית בלבד.
 */
 function auditSparseLineInColumn(model, issues) {
-    if (!model.pages) return;
-    for (const page of model.pages) {
-        // [נקודה ממשתמש 2026-10-28] דלג על עמודי שער — אינם עמודי תוכן רגילים
-        if (isSpecialPage(page)) continue;
-        const el = window.__geomAudit?.findDom?.(page);
-        if (!el) continue;
-        const blocks = el.querySelectorAll('.block-2col');
-        blocks.forEach((blk, bi) => {
-            const cols = blk.querySelectorAll('.right-col, .left-col');
-            cols.forEach(col => {
-                const colName = col.classList.contains('right-col') ? 'right' : 'left';
-                // קח את הילד האחרון (פסקה או כותרת) של הטור
-                const children = Array.from(col.children);
-                if (children.length === 0) return;
-                const lastChild = children[children.length - 1];
-                if (lastChild.tagName !== 'P') return; // כותרת בסוף טור נתפסת ע"י heading-escort
-                // [תיקון קריטי 2026-10-28] בדוק רק p-cut (פסקה שנחתכה באמצע).
-                // p-end = סוף פסקה טבעי, השורה האחרונה ממילא דלילה — אינה בעיה.
-                if (!lastChild.classList.contains('p-cut')) return;
-
-                // קבל את רוחב הטור
-                const colWidth = col.getBoundingClientRect().width;
-                if (!colWidth || colWidth < 50) return;
-
-                try {
-                    const range = document.createRange();
-                    range.selectNodeContents(lastChild);
-                    const rects = Array.from(range.getClientRects())
-                        .filter(r => r.width > 0.5 && r.height > 0.5);
-                    if (rects.length < 2) return; // שורה אחת — לא ניתן לדווח
-
-                    // אחד שורות לפי top
-                    const map = new Map();
-                    for (const r of rects) {
-                        const k = Math.round(r.top * 2) / 2;
-                        if (!map.has(k)) map.set(k, { l: r.left, r: r.right, t: r.top, b: r.bottom });
-                        const e = map.get(k);
-                        e.l = Math.min(e.l, r.left);
-                        e.r = Math.max(e.r, r.right);
-                        e.t = Math.min(e.t, r.top);
-                        e.b = Math.max(e.b, r.bottom);
-                    }
-                    const lines = Array.from(map.values()).sort((a, b) => a.t - b.t);
-                    const lastLine = lines[lines.length - 1];
-                    const lastW = lastLine.r - lastLine.l;
-                    const ratio = lastW / colWidth;
-
-                    // [תיקון 2026-10-28] p-cut מיושר לשני צדדים, ודלילות פירושה רווח גדול
-                    // בין המילים. דיווח אם ratio < 50% (הסף המקורי מ-ISSUES_TABLE.md).
-                    // אין צורך ב-hasParens — זה היה false-positive indicator.
-                    if (lines.length >= 2 && ratio < 0.5) {
-                        const bc = document.getElementById('book-container');
-                        const bcRect = bc ? bc.getBoundingClientRect() : { left: 0, top: 0 };
-                        const colRect = col.getBoundingClientRect();
-                        const pText = (lastChild.textContent || '').slice(0, 50).replace(/\s+/g, ' ');
-                        const severity = ratio < 0.3 ? 'medium' : 'low';
-
-                        issues.push({
-                            kind: 'sparse-line-in-column',
-                            severity: severity,
-                            pageIdx: page.idx,
-                            location: `page ${page.label} block ${bi + 1} ${colName}-col (last line of cut paragraph)`,
-                            column: colName,
-                            lineCount: lines.length,
-                            lastLineWidth: Math.round(lastW),
-                            columnWidth: Math.round(colWidth),
-                            ratio: Math.round(ratio * 100) / 100,
-                            childRect: { x: Math.round(colRect.left - bcRect.left), y: Math.round(colRect.top - bcRect.top), w: Math.round(colRect.width), h: Math.round(colRect.height) },
-                            message: `שורה אחרונה דלילה של p-cut בטור ${colName === 'right' ? 'ימני' : 'שמאלי'}: ${Math.round(lastW)}px מתוך ${Math.round(colWidth)}px (${Math.round(ratio*100)}%). פסקה חתוכה: "${pText}..."`
-                        });
-                    }
-                } catch (e) { /* ignore — getClientRects עלול להיכשל */ }
-            });
-        });
-    }
+    // No-op — הוסרה. ראה auditSparseLastLine ב-geometry-audit.js.
+    return;
 }
 
 /* הלפרים — משתמשים בפונקציות הקיימות מ-geometry-audit.js דרך API ציבורי */
