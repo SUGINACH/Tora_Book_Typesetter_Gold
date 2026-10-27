@@ -60,44 +60,54 @@ function auditHeadingEscort(node, issues) {
     }
 }
 
-/* 1.4 — שני block-2col באותו עמוד */
-function auditMultipleBlocksPerPage(page, issues) {
-    let blockCount = 0;
-    let pCutBlockCount = 0;
-    function countBlocks(node) {
-        if (node.type === 'block-2col') {
-            blockCount++;
-            // בדוק אם יש p-cut (cross-page)
-            function hasPCut(n) {
-                if (n.type === 'p-cut') return true;
-                return (n.children || []).some(hasPCut);
-            }
-            if (hasPCut(node)) pCutBlockCount++;
+/* 1.4 — בלוק עם כותרת H3 בלבד (ללא טקסט גוף אחריה) — כותרת אלמנה
+   [תיקון — הערת משתמש] multiple-blocks אינה בעיה! זרימת הטקסט הטבעית היא:
+   עמוד → בלוק 1 → טור ימני ← טור שמאלי ← כותרת ← בלוק 2 → טור ימני ← טור שמאלי ← עמוד הבא.
+   אין שום פגם בשני בלוקים באותו עמוד.
+   אבל אם בלוק מכיל רק כותרת H3 רוחבית בלי טקסט גוף — זו כותרת אלמנה! */
+function auditOrphanH3Block(page, issues) {
+    function findBlocks(node) {
+        const blocks = [];
+        if (node.type === 'block-2col' || node.type === 'block-single-col' || node.type === 'block-h3-span') {
+            blocks.push(node);
         }
-        for (const c of (node.children || [])) countBlocks(c);
+        for (const c of (node.children || [])) {
+            blocks.push(...findBlocks(c));
+        }
+        return blocks;
     }
-    for (const c of (page.children || [])) countBlocks(c);
+    const blocks = [];
+    for (const c of (page.children || [])) blocks.push(...findBlocks(c));
 
-    if (blockCount > 1) {
-        let sev = 'medium';
-        let note = '';
-        if (pCutBlockCount > 1) {
-            sev = 'medium';
-            note = ` — ${pCutBlockCount} מתוכם עם p-cut cross-page (הקורא צריך להמשיך ${pCutBlockCount} פסקאות לעמוד הבא)`;
+    for (const block of blocks) {
+        // [תיקון] block-h3-span מכיל רק H3 רוחבית — זה תקין! הטקסט בא בבלוק הבא.
+        // רק block-2col או block-single-col עם כותרת בלבד היא בעיה.
+        if (block.type === 'block-h3-span') continue;
+        // בדוק אם הבלוק מכיל רק כותרות (ללא פסקאות טקסט)
+        function hasParagraph(n) {
+            if (n.type === 'p-cut' || n.type === 'p-end') return true;
+            return (n.children || []).some(hasParagraph);
         }
-        issues.push({
-            kind: 'multiple-blocks',
-            severity: sev,
-            pageIdx: page.idx,
-            location: `page ${page.label}`,
-            blockCount,
-            pCutBlockCount,
-            message: `${blockCount} block-2col בעמוד ${page.label}${note}`
-        });
+        const hasText = hasParagraph(block);
+        if (!hasText) {
+            // בלוק עם כותרת בלבד — כותרת אלמנה
+            const headingTypes = (block.children || []).map(c => c.type).filter(t => t && t.startsWith('h'));
+            issues.push({
+                kind: 'orphan-heading-block',
+                severity: 'medium',
+                pageIdx: page.idx,
+                location: `page ${page.label}`,
+                blockType: block.type,
+                headingTypes,
+                message: `בלוק ${block.type} בעמוד ${page.label} מכיל רק כותרת (${headingTypes.join(', ')}) ללא טקסט גוף — כותרת אלמנה`
+            });
+        }
     }
 }
 
-/* 1.5 — הערה שארוכה מעמוד (footnote overflow) */
+/* 1.5 — הערה שארוכה מעמוד (footnote overflow)
+   [תיקון — כלל עבודה] סף 15px — מתעלם מחריגות קטנות שאינן נראות לעין.
+   ה-engine מתיר חריגה קטנת באזור ההערות לצורכי עיגול והכלה. */
 function auditFootnoteOverflow(page, issues) {
     const wrapper = page.children[0];
     if (!wrapper) return;
@@ -118,10 +128,11 @@ function auditFootnoteOverflow(page, issues) {
 
     const fnAreaH = fnArea.rect ? fnArea.rect.h : 0;
     const overflow = totalNoteH - fnAreaH;
-    if (overflow > 5) {
+    // [כלל עבודה] סף 15px — אל תדווח על חריגות שאינן נראות לעין
+    if (overflow > 15) {
         issues.push({
             kind: 'footnote-overflow',
-            severity: overflow > 30 ? 'high' : (overflow > 15 ? 'medium' : 'low'),
+            severity: overflow > 30 ? 'high' : 'medium',
             pageIdx: page.idx,
             location: `page ${page.label}`,
             noteLines: noteLineCount,
@@ -348,7 +359,7 @@ function describePathSafe(node) {
 window.__geomAudit = window.__geomAudit || {};
 Object.assign(window.__geomAudit, {
     auditHeadingEscort,
-    auditMultipleBlocksPerPage,
+    auditOrphanH3Block,
     auditFootnoteOverflow,
     auditPrivateUseCharacters,
     auditFontNotLoaded,

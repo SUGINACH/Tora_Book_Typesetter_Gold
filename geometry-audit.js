@@ -443,11 +443,19 @@ function auditSiblingOverlap(node, issues) {
         for (let j = i + 1; j < node.children.length; j++) {
             const a = node.children[i], b = node.children[j];
             const ov = rOverlap(a, b);
-            if (ov > TOL.overlap) {
-                // אם שניהם טורים (column) באותו בלוק — זה תקין (ם נמצאים זה ליד זה, לא חופפים)
+            // [תיקון — כלל עבודה] סף חפיפה מותר: 5px² — מתעלם מחפיפות קטנות שנובעות
+            // מטווח מותר לצורכי הכלת טקסט, שאיבת שורות יתוממות, עיגול פיקסלים, וכו'.
+            if (ov > 5) {
+                // אם שניהם טורים (column) באותו בלוק — זה תקין (נמצאים זה ליד זה, לא חופפים)
                 if (a.type === 'column' && b.type === 'column') continue;
                 // הערות בתוך fn-line — לפעמים חופפות עם note-line-num
                 if (a.parentType === 'fn-line' || b.parentType === 'fn-line') continue;
+                // margin-col ו-column — תקין (שוליים וטור זה ליד זה)
+                if ((a.type === 'margin-col' && b.type === 'column') || (a.type === 'column' && b.type === 'margin-col')) continue;
+                // gutter ו-column — תקין (מפריד וטור זה ליד זה)
+                if ((a.type === 'gutter' && b.type === 'column') || (a.type === 'column' && b.type === 'gutter')) continue;
+                // side-note ו-margin-col — תקין (הערת צד בתוך עמודת שוליים)
+                if ((a.type === 'side-note' && b.type === 'margin-col') || (a.type === 'margin-col' && b.type === 'side-note')) continue;
                 issues.push({
                     kind: 'overlap',
                     severity: 'high',
@@ -1568,8 +1576,8 @@ function auditGeometry(model) {
         auditOverflowToFootnote(page, issues);
         auditPageOverflow(page, issues);
         auditOrnaments(page, issues); // [חדש] בדיקת עיטורים
-        // [חדש — AUDIT_EXPANSION_PLAN 1.4] שני block-2col בעמוד
-        if (window.__geomAudit.auditMultipleBlocksPerPage) window.__geomAudit.auditMultipleBlocksPerPage(page, issues);
+        // [חדש — AUDIT_EXPANSION_PLAN 1.4] בלוק עם כותרת בלבד (כותרת אלמנה)
+        if (window.__geomAudit.auditOrphanH3Block) window.__geomAudit.auditOrphanH3Block(page, issues);
         // [חדש — AUDIT_EXPANSION_PLAN 1.5] הערה ארוכה מעמוד
         if (window.__geomAudit.auditFootnoteOverflow) window.__geomAudit.auditFootnoteOverflow(page, issues);
     }
