@@ -5211,3 +5211,91 @@ Stage Summary:
 
 Files Modified:
 - WORK_PLAN.md: +206 lines, -79 lines, total 392 lines (was 265)
+
+---
+Task ID: systematic-fixes-round-1
+Agent: main agent
+Task: המשך בתיקון בעיות העימוד לפי הסדר המומלץ, בעזרת הבדיקות המתוחכמות, רד לעומק סיבות הבעיות, ופתור את כולן אחת אחרי השניה, בזהירות ובדיוק רב.
+
+Work Log:
+עברתי על הפריטים לפי הסדר המומלץ:
+
+A3 — settings-verification (11/15 → 16/16):
+- הוספתי findDescendantByType helper ב-geometry-audit.js
+- בדיקה 12: font-body matches computed font-family של <p>
+- בדיקה 13: line-height-body matches computed line-height ratio (>10% drift)
+- בדיקה 14: heading first-child margin-top:0 (CSS rule verification)
+- בדיקה 15: shaar pages (main/back/sub) כש-show-*-shaar מופעל
+- בדיקה 16: TOC pages exist במסמך מלא
+- תיקון false-positives: דלג על shaar/TOC כשפרק בודד (firstPage not main-shaar)
+- commit 72eedea
+
+B1 — imbalance with headings (15 → 14, structural):
+- חקרתי את שורש הבעיה עם debug-aq-settings.js — מצאתי שהבעיה היא structural:
+  block-2col עם p-cut cross-page, כש-rCol מכיל פסקה ענקית אחת (627px) ו-lCol מכיל 5 פסקאות קטנות (570px).
+- תיקון 1: justifyColumnVertically — כש-diff > maxStretch, מתיחה חלקית במקום ויתור מוחלט.
+- תיקון 2: stretchLastBlockToBottom — אם הטור הקצר לא יכול להגיע ל-target, מתיחה רק עד shortColReach.
+- תיקון 3: rebalance2 — fallback לכיווץ rCol לגובה lCol כש-lCol לא מצליח להימתח.
+- תוצאה: imbalance 15 → 14 (-1). ה-14 הנותרים הם structural — diff=64 בין טור עם פסקה ענקית לטור עם מספר פסקאות קטנות.
+- commit 72eedea
+
+B4 — tryReclaimOrphanTail (0 current issues):
+- בדקתי: 0 בעיות widow-orphan ב-baseline הנוכחי. המנגנון הנוכחי (tryReclaimOrphanTail) עובד.
+- לא נדרש תיקון כעת. אם יופיעו מקרים עם 3+ שורות יתומות בעתיד, יש להרחיב את tryReclaimOrphanTail.
+
+F4 — ch73 page 9 page-underfill (81%):
+- חקרתי עם step-by-step-audit.js 73 --ppc --causality:
+  causality: couldnt-appear-before — נוצר יחד עם page 9 ב-page-7 checkpoint.
+- ניתוח: bodyFlow.h=915, used=743 (172px empty). התוכן מסתיים מוקדם כי הפסקה הבאה לא נכנסת בשטח הפנוי.
+- זוהי דלילות טבעית — הפסקה הבאה גדולה מדי ל-172px שנשארו, אז היא עוברת לעמוד הבא.
+- לא ניתן לפתור ללא שינוי מבני של התוכן או פיצול הערות אוטומטי.
+
+F2 — sparse-line ch55+ch63 (2 → 0, RESOLVED!):
+- חקרתי עם step-by-step-audit.js --ppc --causality:
+  שניהם couldnt-appear-before — נוצרו יחד עם העמוד כשהוא נוצר לראשונה.
+- שורש הבעיה: line breaking של הפסקה מייצר שורה אחרונה עם מילה אחת קצרה (15-28px).
+- פתרון: הוספתי text-wrap: pretty ל-CSS של <p> ב-style.css.
+  זהו תכונת CSS נייטיבית (Chrome 117+) שאומרת לדפדפן לבצע אופטימיזציה של שבירת שורות
+  כדי למנוע שורה אחרונה דלילה. פתרון פשוט ויעיל ללא צורך ב-Knuth-Plass JavaScript.
+- תוצאה: ch55 sparse-line RESOLVED, ch63 sparse-line RESOLVED.
+- commit 0bb7898
+
+C1 — browser crashes (chapters 5, 71, 75):
+- בדקתי 3 הפרקים בבודדים — 0 קריסות.
+- הקריסות היו כנראה קשורות להצטברות GC בריצה מלאה (79 פרקים).
+- תיקון: RESTART_EVERY_N_CHAPTERS 5 → 3 ב-test-chapters-enhanced.js.
+  רענון תכוף יותר משחרר זיכרון ומונע הצטברות GC.
+- commit 0bb7898
+
+B2/B6 — Knuth-Plass:
+- לא מומש — לא נדרש עוד כי F2 נפתר ע"י text-wrap: pretty.
+- אם text-wrap: pretty לא יספיק בעתיד, אפשר לממש KP מלא עם caching.
+
+Commit: 72eedea + 0bb7898 + a08dcdd (pushed to origin/V21)
+
+Stage Summary:
+- A3: ✅ DONE (16/16 בדיקות, כולל font-body, line-height, heading first-child, shaar pages, TOC pages)
+- B1: ⚠️ PARTIAL (1 imbalance פחת, 14 structural נותרו — טור עם פסקה ענקית vs טור עם פסקאות קטנות)
+- B4: ✅ לא רלוונטי (0 widow-orphan issues כעת)
+- F2: ✅ DONE (כל 11 sparse-line תוקנו — 9 ע"י paren-text overlap + 2 ע"י text-wrap: pretty)
+- F4: ⚠️ PARTIAL (1 case נשאר — ch73 page 9, 81% fill, טבעי)
+- C1: ⚠️ PARTIAL (mitigated — restart frequency 5→3)
+- B2/B6: ❌ לא נדרש כי F2 נפתר אחרת
+
+ממצאים (Findings) סופי:
+- F1: ✅ DONE
+- F2: ✅ DONE (שונה מ-PARTIAL — כל 11 תוקנו)
+- F3: ✅ DONE
+- F4: ⚠️ PARTIAL (1 case טבעי נשאר)
+- F5: ✅ DONE
+סה"כ: 4/5 = 80% DONE, 1/5 = 20% PARTIAL
+
+סה"כ פריטים: 17/49 = 35% DONE, 7/49 = 14% PARTIAL, 25/49 = 51% OPEN
+
+Files Modified:
+- geometry-audit.js: auditSettingsVerification בדיקות 12-16 + findDescendantByType
+- typesetter.js: justifyColumnVertically (partial stretch), stretchLastBlockToBottom (shortColReach), rebalance2 (shrink fallback)
+- style.css: text-wrap: pretty ב-<p> selector
+- scripts/test-chapters-enhanced.js: RESTART_EVERY_N_CHAPTERS 5 → 3
+- scripts/debug-aq-settings.js: NEW — debug AQ settings + block contents
+- WORK_PLAN.md: F2 → ✅ DONE, C1 → ⚠️ PARTIAL, summary table updated
