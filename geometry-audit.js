@@ -1582,6 +1582,17 @@ function auditGeometry(model) {
     if (window.__geomAudit.auditCandidateVsFinalHeight) window.__geomAudit.auditCandidateVsFinalHeight(model, issues);
     // [חדש — AUDIT_EXPANSION_PLAN 1.8] טופו
     if (window.__geomAudit.auditTofu) window.__geomAudit.auditTofu(model, issues);
+    // [חדש — AUDIT_EXPANSION_PLAN פריט 2+3] בדיקות שלמות טקסט והמרות
+    // הטקסט המקור נשמר ב-window.__auditSourceText ע"י ה-runner החיצוני
+    if (window.__auditSourceText && window.__geomAudit.auditTextCompleteness) {
+        window.__geomAudit.auditTextCompleteness(model, window.__auditSourceText, issues);
+    }
+    if (window.__auditSourceText && window.__geomAudit.auditH7ToSideNote) {
+        window.__geomAudit.auditH7ToSideNote(model, window.__auditSourceText, issues);
+    }
+    if (window.__auditSourceText && window.__geomAudit.auditBracketToFootnote) {
+        window.__geomAudit.auditBracketToFootnote(model, window.__auditSourceText, issues);
+    }
     // עדכן pageIdx בכל בעיה ע"י חיפוש בעץ
     issues.forEach(iss => {
         if (iss.pageIdx === -1 || iss.pageIdx === undefined) {

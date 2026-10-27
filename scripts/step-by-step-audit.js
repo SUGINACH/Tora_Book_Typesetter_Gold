@@ -280,7 +280,11 @@ function fmtElement(el, verbose = false) {
         if (opts.perPageCheckpoints) {
             window.__stepByStepAuditPerPage = true;
         }
-    }, { noTypography: FLAGS.noTypography, noLineRects: FLAGS.noLineRects, perPageCheckpoints: FLAGS.perPageCheckpoints });
+        // [חדש — פריט 2+3] העבר את טקסט המקור ל-audit לבדיקת שלמות טקסט והמרות
+        if (opts.sourceText) {
+            window.__auditSourceText = opts.sourceText;
+        }
+    }, { noTypography: FLAGS.noTypography, noLineRects: FLAGS.noLineRects, perPageCheckpoints: FLAGS.perPageCheckpoints, sourceText: ch.text });
 
     // שלח טקסט + הגדרות
     const settings = await page.evaluate(() => {
