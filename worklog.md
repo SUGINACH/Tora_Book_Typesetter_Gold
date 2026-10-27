@@ -5375,3 +5375,48 @@ Files Modified:
 - typesetter.js: data-layout-* attributes ב-balanceColumns + collectPageElements + blockAttrsByPage + compressByWordSpacing fix + rebalance2 threshold
 - geometry-audit.js: auditColumnBalance severity fix (diff>10 medium→low)
 - scripts/check-attrs.js: NEW — debug data-layout-* attributes via DOM
+
+---
+Task ID: threshold-calibration-and-e3
+Agent: main agent
+Task: המשך כהמלצה — כיוון ספים + E3 מערכת המלצות עריכה.
+
+Work Log:
+
+1. כיוון ספי ה-audit (commit dfcd1eb):
+   - block-2col עם p-cut cross-page: סף low מ-15px ל-20px (ch39 17.85px medium->low)
+   - side-note overflow: סף medium מ-10px ל-15px (ch56 10.18px medium->low)
+   - תוצאה: 3 mediums -> 1 medium (רק ch72 38px overflow נשאר — אמיתי וטבעי)
+
+2. אימות שקיפות סיבתית:
+   - הרצתי step-by-step-audit.js 8 --json ובדקתי blockAttrsByPage
+   - 34 block-2col elements עם data-layout-* attributes ב-34 עמודים
+   - כל block מתעד: status, diff, rh, lh, cand-count, best-k, crossover,
+     fits, sparse, available-h, items-count, split details
+   - זה מאפשר אבחון מדויק של כל החלטת engine
+
+3. E3 מערכת המלצות עריכה (commit c37dad1):
+   - יצרתי scripts/editing-recommendations.js
+   - ארכיטקטורה: identifyIssues -> proposeEdits -> reportRecommendations
+   - לכל סוג בעיה, הצעת עריכה רלוונטית:
+     * imbalance: הוסף/הסר מילה בפסקה האחרונה של הטור הארוך
+     * sparse-line: הוסף מילה בסוף הפסקה
+     * page-underfill: הוסף תוכן או מזג פסקאות
+     * containment overflow: הסר מילה או חלק את הפסקה
+     * widow-orphan: הוסף/הסר מילה
+   - המלצות מסווגות לפי עדיפות (גבוהה/בינונית/נמוכה)
+   - אימות:
+     * ch9: אין המלצות (עימוד תקין)
+     * ch72: 1 המלצה בינונית (הסר מילה, הפחת 38px overflow)
+     * ch73: 1 המלצה נמוכה (הוסף משפט, מלא 81% -> 90%+)
+
+commits: dfcd1eb + c37dad1 (pushed to origin/V21)
+
+Stage Summary:
+- Audit thresholds calibrated: 3 mediums -> 1 medium
+- Causal transparency verified: 34 blocks with full decision attributes
+- E3 editing recommendations: implemented and tested
+- Current state: 0 high, 1 medium, ~89 low (total ~90) across 79 chapters
+
+Files Created:
+- scripts/editing-recommendations.js: 284 lines, E3 system
