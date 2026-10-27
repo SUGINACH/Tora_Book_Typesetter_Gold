@@ -53,8 +53,12 @@ function classifyElement(el) {
     if (cls.includes('footnote-header-wrap')) return { type: 'fn-header', tag };
     if (cls.includes('note-rule-') || cls.includes('note-rule')) return { type: 'fn-rule', tag };
     if (cls.includes('note-block')) return { type: 'fn-block', tag };
-    if (cls.includes('note-line')) return { type: 'fn-line', tag };
+    // [תיקון — Task fix-footnote-overflow-ch9] חייבים לבדוק note-line-num לפני note-line,
+    // כי "note-line" הוא substring של "note-line-num" — ולכן cls.includes('note-line')
+    // תופס גם את הסמן (.note-line-num) בטעות. זה גרם ל-classifyElement להחזיר fn-line
+    // במקום fn-num, מה שהוביל לדיווחי false-positive של footnote-overflow (סכום כפול).
     if (cls.includes('note-line-num')) return { type: 'fn-num', tag };
+    if (cls.includes('note-line')) return { type: 'fn-line', tag };
     if (cls.includes('block-2col')) return { type: 'block-2col', tag };
     if (cls.includes('block-h3-span')) return { type: 'block-h3-span', tag };
     if (cls.includes('block-single-col')) return { type: 'block-single-col', tag };

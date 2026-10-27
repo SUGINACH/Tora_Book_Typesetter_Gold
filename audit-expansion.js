@@ -122,9 +122,13 @@ function auditFootnoteOverflow(page, issues) {
     let totalNoteH = 0;
     let noteLineCount = 0;
     function sumNotes(node) {
-        if (node.type === 'fn-line' || node.type === 'fn-block') {
+        // [תיקון — Task fix-footnote-overflow-ch9] לא מוסיפים את fn-block.rect.h,
+        // כי הוא מכיל כבר את כל ילדיו מסוג fn-line (bounding box). הוספה של fn-block
+        // גורמת לסכום כפול — fn-block.h + sum(fn-line.h) — ולדיווחי false-positive של
+        // footnote-overflow. רוצים למדוד רק את סכום גובה ה-fn-line (השורות בפועל).
+        if (node.type === 'fn-line') {
             totalNoteH += node.rect ? node.rect.h : 0;
-            if (node.type === 'fn-line') noteLineCount++;
+            noteLineCount++;
         }
         for (const c of (node.children || [])) sumNotes(c);
     }
