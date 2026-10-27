@@ -2024,6 +2024,57 @@ function balanceColumns(block, colWidth, styleObj, snapshot, availableHeight = I
     }
     const bestSplit = cands[best.k];
 
+    // [חדש — שקיפות סיבתית] הוסף data-layout-* attributes ל-block-2col שמתעדים את
+    // החלטות ה-engine. ה-audit (auditSettingsVerification + enrichNode) קולט את ה-attributes
+    // האלה ומאפשר אבחון מדויק של סיבות imbalance, containment, וכו'.
+    // התכונות:
+    // - data-layout-balance-status: balanced | failed | skipped
+    // - data-layout-balance-diff: הפרש בין הטורים בפועל (px)
+    // - data-layout-balance-rh: גובה טור ימין (px)
+    // - data-layout-balance-lh: גובה טור שמאל (px)
+    // - data-layout-balance-cand-count: מספר מועמדים שנבדקו
+    // - data-layout-balance-best-k: אינדקס המועמד הנבחר
+    // - data-layout-balance-crossover: אינדקס הקרוסאובר (חיפוש בינארי)
+    // - data-layout-balance-fits: האם המועמד הנבחר נכנס בגובה הפנוי
+    // - data-layout-balance-sparse: האם המועמד הנבחר יש לו שורה אחרונה דלילה
+    // - data-layout-balance-available-h: גובה פנוי שהועבר ל-balanceColumns
+    // - data-layout-balance-items-count: מספר פריטים בבלוק
+    try {
+        const candItemsCount = items.length;
+        const candRH = best.rH;
+        const candLH = best.lH;
+        const candDiff = best.diff;
+        let status = 'balanced';
+        if (!best.fits) status = 'failed-overflow';
+        else if (Math.abs(candDiff) > 50) status = 'failed-imbalance';
+        else if (Math.abs(candDiff) > 15) status = 'partial';
+        block.setAttribute('data-layout-balance-status', status);
+        block.setAttribute('data-layout-balance-diff', String(Math.round(candDiff)));
+        block.setAttribute('data-layout-balance-rh', String(Math.round(candRH)));
+        block.setAttribute('data-layout-balance-lh', String(Math.round(candLH)));
+        block.setAttribute('data-layout-balance-cand-count', String(cands.length));
+        block.setAttribute('data-layout-balance-best-k', String(best.k));
+        block.setAttribute('data-layout-balance-crossover', String(cross));
+        block.setAttribute('data-layout-balance-fits', String(best.fits));
+        block.setAttribute('data-layout-balance-sparse', String(best.sparse || false));
+        block.setAttribute('data-layout-balance-available-h', String(Math.round(availableHeight)));
+        block.setAttribute('data-layout-balance-items-count', String(candItemsCount));
+        // תיעוד מיקום ה-split: איזה פריט נחתך וכמה שורות ממנו בטור ימין
+        if (bestSplit.l > 0) {
+            block.setAttribute('data-layout-split-item-idx', String(bestSplit.i));
+            block.setAttribute('data-layout-split-lines-in-right', String(bestSplit.l));
+            const item = items[bestSplit.i];
+            if (item && item.lines) {
+                block.setAttribute('data-layout-split-item-total-lines', String(item.lines.length));
+                block.setAttribute('data-layout-split-item-lines-in-left', String(item.lines.length - bestSplit.l));
+            }
+        } else {
+            // l=0: אין חיתוך בפריט הנוכחי, כל הפריטים 0..bestSplit.i-1 בטור ימין
+            block.setAttribute('data-layout-split-item-idx', String(bestSplit.i));
+            block.setAttribute('data-layout-split-lines-in-right', '0');
+        }
+    } catch (_) { /* ignore — תיעוד רכה */ }
+
     // ---- 4. רינדור סופי ----
     rCol.innerHTML = '';
     lCol.innerHTML = '';
