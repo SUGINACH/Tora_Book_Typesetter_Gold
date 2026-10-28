@@ -3,7 +3,7 @@
 👤 משתמש:
 שלום! אני ממשיך את השיחה הקודמת על מנוע העימוד התורני V21.
 הריפו שעליו עבדת:https://github.com/SUGINACH/Tora_Book_Typesetter_Gold
-טוקן (שמור אותו ולא את הטוקן הישן):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
+טוקן (שמור אותו ולא את הטוקן הישן):
 הכנתי מסמך העברה מפורט ב-SESSION_HANDOFF.md — קרא אותו במלואו לפני תחילת עבודה.
 
 **מצב נוכחי** (נכון ל-2026-10-27):
@@ -3341,7 +3341,7 @@ Explored 1 files，Wrote 1 files，Ran 4 commands
 text
 שלום! אני ממשיך את השיחה הקודמת על מנוע העימוד התורני V21.
 הריפו: https://github.com/SUGINACH/Tora_Book_Typesetter_Gold
-טוקן (שמור אותו): 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
+טוקן (שמור אותו): 
 
 
 הכנתי מסמך העברה מפורט ב-SESSION_HANDOFF.md — קרא אותו במלואו לפני תחילת עבודה.

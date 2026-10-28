@@ -7224,7 +7224,7 @@ Expiration: 7 ימים (מספיק)
 Repository access: Only select repositories → SUGINACH/IMUD_TORANI
 Permissions → Repository permissions → Contents: Read and write
 לחץ "Generate token"
-העתק את ה-token (מתחיל ב-github_pat_...)
+העתק את ה-token 
 איך לספק לי את ה-token:
 
 פשוט שלח אותו בהודעה הבאה. אני אשתמש בו רק לדחיפה ל-repo הזה ולא אשמור אותו לאחר השימוש.
@@ -7234,8 +7234,7 @@ Permissions → Repository permissions → Contents: Read and write
 ----------------------------------------
 
 👤 משתמש:
-תשמור אותו עד לסיום תיקון כל הבעיות : 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
-
+תשמור אותו עד לסיום תיקון כל הבעיות : 
 ----------------------------------------
 
 🤖 AI:
