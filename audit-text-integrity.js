@@ -59,6 +59,10 @@ function parseSourceText(rawText) {
 function normalizeText(text) {
     // הסר ניקוד וטעמים (U+0591-U+05C7, U+05F3-U+05F4)
     text = text.replace(/[\u0591-\u05C7\u05F3\u05F4]/g, '');
+    // [תיקון 2026-10-28 — נרמול תווי ציטוט] המקור יכול להכיל " ' וה-DOM יכול להכיל ״ ׳
+    // נרמל הכל לגרשיים רגילים כדי שההשוואה תעבוד נכון.
+    text = text.replace(/[\u201C\u201D\u201E\u05F4\u22EE]/g, '"');  // " " … → "
+    text = text.replace(/[\u2018\u2019\u05F3]/g, "'");  // ' ' ׳ → '
     // [תיקון טוקניזציה] נרמל את רווחים לפני/אחרי סימני פיסוק כדי למנוע הבדלי חלוקה
     // בין מקור ("בראשונה)" + ".") ל-DOM ("בראשונה).")
     // נתון: הוסף רווח לפני סוגריים סגירה ונקודה כדי שיהיו טוקנים נפרדים
@@ -101,12 +105,24 @@ function auditTextCompleteness(model, sourceText, issues) {
     }
 
     // השוואה כ-multiset (סדר לא חשוב)
+    // [תיקון 2026-10-28 — כלל 5 false positive] דלג על פיסוק בלבד ומילים שמתחילות ב-[
+    // אלו אינן מילים אמיתיות — פיסוק מנורמל שונה, ו-[ הוא תוכן סוגריים שהומר להערה.
+    const isRealWord = (w) => {
+        if (!w || w.length === 0) return false;
+        // דלג על פיסוק בלבד: . , ; : ! ? ) ( ] [ " ' -
+        if (/^[.,;:!?()[\]"'\-]+$/.test(w)) return false;
+        // דלג על מילים שמתחילות ב-[ (תוכן סוגריים שלא הוסר ע"י ה-regex)
+        if (w.startsWith('[')) return false;
+        return true;
+    };
     const sourceMap = new Map();
     for (const w of parsed.bodyWords) {
+        if (!isRealWord(w)) continue;
         sourceMap.set(w, (sourceMap.get(w) || 0) + 1);
     }
     const domMap = new Map();
     for (const w of domWords) {
+        if (!isRealWord(w)) continue;
         domMap.set(w, (domMap.get(w) || 0) + 1);
     }
 
