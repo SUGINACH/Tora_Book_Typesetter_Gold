@@ -1,83 +1,68 @@
 # מסמך העברה — שיחה מקיפה על מנוע העימוד התורני V21
 
-> **תאריך:** 2026-10-27 (סוף שיחה ארוכה)
+> **תאריך:** 2026-10-28 (סוף שיחה ארוכה מאוד — 3 סשנים)
 > **ענף:** V21
 > **מטרה:** העברת ידע מלא לשיחה הבאה — ללא חיסכון במילים.
-> **מצב נוכחי:** ✅ יציבות שלימות + שקיפות סיבתית מנוע העימוד הושגו
-> **קובץ קודם:** `SESSION_HANDOFF.md` (2026-10-26) — נשמר ב-`SESSION_HANDOFF_2026-10-26.md.bak`
+> **מצב נוכחי:** ✅ audit מדויק — 3 issues אמיתיים בלבד מתוך 371
+> **קובץ קודם:** `SESSION_HANDOFF.md` (2026-10-27) — נשמר ב-`SESSION_HANDOFF_2026-10-27.md.bak`
 
 ---
 
-## 1. סטטוס נוכחי — סיכום בלבד
+## 1. סטטוס נוכחי — סיכום
 
 ### ✅ מה הושג
-- **CI ירוק**: 79 פרקים, high=0, medium=141, low=115, exit 0
-- **0 HIGH-severity issues** בכל ה-engine לאחר תיקון ה-false positive ב-audit
-- **30 סוגי בעיות מוטמעים ב-audit** (3 קבצים: geometry-audit.js + audit-expansion.js + audit-text-integrity.js)
+- **CI ירוק**: 79 פרקים, high=0, medium=1, low=2, exit 0
+- **3 issues בלבד** (מ-371! — ירידה של 99.2%):
+  - ch3 p4 [low] containment: block-2col overflow 22.08px (p-cut, stretchPageToBottom)
+  - ch3 p17 [low] containment: block-2col overflow 23.75px (p-cut, stretchPageToBottom)
+  - ch72 p9 [medium] containment: block-2col overflow 45.67px (p-cut, מעל 42px)
+- **כל 3 ה-issues הם containment אמיתי** — בעיות engine, לא audit
 - **6 GitHub Actions workflows** פעילים
-- **9-step priority process** מופעל ומתועד ב-`WORKING_RULES.md`
-- **working rules 1-4** מיושמים ב-UI: שמות עבריים, הבהוב, דרופדאון סינון, מיון טבלאי
-- **causal transparency** מלא: data-layout-* attributes, blockAttrsByPage, causality classification (7 categories), delta tracking
-- **worklog.md** מתועד היטב עם כל השלבים
+- **Issues Screenshot PDF** — מדווח אוטומטית ל-repo (`issue-reports-archive/issues-latest.pdf`)
+- **PDF כולל**: סימניות (bookmarks), screenshots נקיים (רקע לבן), דיווח על עמוד ספציפי
+- **30 סוגי בעיות** מוטמעים ב-audit (geometry-audit.js + audit-expansion.js + audit-text-integrity.js)
+- **6 working rules** מיושמים (WORKING_RULES.md)
 
-### ⚠️ מה עדיין פתוח (PARTIAL/OPEN)
-- **F4 (page-underfill ב-ch73)**: מקרה אמיתי אחד (81% מילוי) — טבעי, התוכן מסתיים מוקדם
-- **A3 (auditSettingsVerification)**: 11/15 הגדרות מכוסות, נשארו 4 הגדרות
-- **C4 (regression tests מול baseline)**: אין baseline diff
-- **D1-D3 (JSDoc, layout dependency map §11.7)**: לא מוּלאָה
-- **E1-E2 (UI panel + visual report)**: חלקי
-- **F1-F5 (accessibility WCAG)**: לא מוּלאָה
-- **G1-G5 (security: DOMPurify, Trusted Types, SRI, Audit Trail, iframe sandbox)**: לא מוּלאָה
-- **H1-H2 (ES Modules, balanceColumnsV2)**: לא מוּלאָה
-- **B6 (Knuth-Plass מלא עם looseness)**: OPEN — יפתור 2 sparse-line אמיתיים שנותרו
-- **B2 (rebalance אחרי applyKpLineBreaks)**: תלוי ב-B6
-- **B3 (clubpenalties לכותרות)**: יפתור heading-escort
-- **B7-B11 (Global Copyfitting, OpenType jalt, Canvas API, DPI, Unified Rollback)**: ארכיטקטורה
+### ⚠️ מה עדיין פתוח
+- **3 containment issues** (ch3 p4, ch3 p17, ch72 p9) — בעיות engine אמיתיות שדורשות תיקון stretchPageToBottom
+- **Bug 3** (test-triggers-runner.yml): `split('_')` שבור ל-multi-word kinds (heading_escort → ['heading','escort'] במקום ['heading-escort'])
+- **עוד מטרות פיתוח** — המשתמש ציין שיש עוד מטרות אחרי סיום ה-audit
 
-### 🚫 מה הושהה לסוף (לפי בקשת משתמש)
-- **בעיות בלתי פתירות**: פסקה חד-מילולית / פסקה ענקית / רצף כותרות — מושהות לשלב סופי
+### 🚫 מה הושהה לסוף
+- בעיות בלתי פתירות: פסקה חד-מילולית / פסקה ענקית / רצף כותרות
 
 ---
 
 ## 2. סקירת שיחות — כרונולוגיה
 
-### שיחה 1 (מוקדמת — 2026-10-26)
-הותחלה מבקשת משתמש להריץ טקסט מעודכן עם הערות שוליים וסוגריים. התגלו:
-- 4 קונפליקטי merge שלא הושלמו
-- באגים ב-balanceColumns (תיקון over-shoot, cross-paragraph parens)
-- 5 findings (F1-F5) + structural issues (B1, B5)
-- הוספת `data-layout-*` attributes (12 לכל block-2col)
-- הוספת `blockAttrsByPage` ב-checkpoints
+### שיחה 1 (2026-10-27 — ראשונה)
+- תיקון Python IndentationError ב-test-triggers-runner.yml
+- תיקון byKind regex \s+ → \s* בשני workflows
+- candidate-vs-final: הוסר כבעיה עצמאית (no-op)
+- auditEmptyColumn + auditMultipleFirstWordWindow: בדיקות חדשות
+- auditSparseLineInColumn: נוצרה ואז הוסרה (כפילות שגויה)
+- isSpecialPage: דילוג על עמודי שער
+- h7-conversion: קישור פסקה→side-note דרך token ID
+- Issues Screenshot PDF: שמירה אוטומטית ל-repo + bookmarks + רקע לבן
 
-### שיחה 2 (2026-10-27 — זו)
-1. **הטמעת כללי עבודה 1-4 ב-UI**:
-   - Rule 1: שמות עבריים — תיקון באג `kindNames` → `GEOM_KIND_NAMES`
-   - Rule 2: הבהוב אזור הבעיה — הוסף `childRect` לכל 7 הבדיקות החדשות
-   - Rule 3: דרופדאון צ'קליסט לסינון — `renderGeomKindFilter()`
-   - Rule 4: מיון טבלת דיווחים — `sortGeomIssues()` עם ↑/↓
+### שיחה 2 (2026-10-28 — סשן ארוך 1)
+- containment-rounding: סף 5→10px + דילוג מלא
+- bracket-conversion: prefix 10→5 + נרמול תווי ציטוט + דיווח רק אם סוגריים בגוף
+- text-completeness: דילוג על פיסוק ותוכן סוגריים
+- normalizeText: תיקון גרש/גרשיים
+- side-note containment: סף 15→20px
+- 371 → 8 issues
 
-2. **יצירת 4 workflows חדשים ב-GitHub Actions**:
-   - `step-by-step-audit.yml` — בדיקה גיאומממטרית שלב-אחר-שלב
-   - `full-baseline-audit.yml` — baseline מלא על 79 פרקים (matrix)
-   - `test-triggers-runner.yml` — הרצת trigger files לאימות זיהוי
-   - `issue-investigation.yml` — חקירה עמוקה של בעיה ספציפית
+### שיחה 3 (2026-10-28 — סשן ארוך 2)
+- text-completeness: recursive note-marker stripping (collectTextSkipNoteMarkers)
+- פתר את ch63 (1 מילה "ניכר") ו-ch72 (2 מילים "גשמים" ו"וכו'")
+- 8 → 1 issue (רק ch72 containment)
 
-3. **תיקון באג קריטי ע"י סוכן משנה** (commit `c78435c`):
-   - **ה-bug היה FALSE POSITIVE ב-audit, לא ב-engine!**
-   - שני באגים ב-audit measurement:
-     1. `classifyElement` ב-`geometry-audit.js:56-57` — `'note-line'` substring של `'note-line-num'` גרם לסיווג שגוי של inline `<a class='note-line-num'>` כ-fn-line → תוקן ע"י בדיקת `note-line-num` קודם
-     2. `sumNotes` ב-`audit-expansion.js:124-133` — סכימה כפולה של `fn-block.rect.h` + גובה ילדיו `fn-line` (bounding box כולל כבר את הילדים) → תוקן ע"י ספירת רק `fn-line`
-   - **תוצאות אימות**: ch9 final audit = 0 HIGH (היה 1 HIGH 77px + 1 MEDIUM). **79 פרקים: high=0, medium=141, low=115, exit code 0!**
-
-4. **יצירת PDF generator לאימות דיווחים** (commit `0ac4891`):
-   - `scripts/generate-issues-pdf.js` — ~410 שורות Node.js
-   - `.github/workflows/issues-screenshot-pdf.yml` — workflow ידני
-   - ה-PDF כולל:
-     - עמוד שער עם סטטיסטיקות
-     - מפריד פרק לכל פרק
-     - בלוק בעיה לכל בעיה עם כותרת (שם עברי + חומרה + סיבה + מספר פרק + מספר עמוד) + צילום מסך מלא + הודעת audit + childRect
-   - נבדק מקומית — יצר PDF תקין ב-2MB עם 8 עמודים עבור ch9
-   - שם הקובץ כולל סוגי בעיות: `issues-{kinds}+{separated}-{ISO timestamp}.pdf`
+### שיחה 4 (2026-10-28 — סשן ארוך 3 — זו)
+- סריקת DOM ישירה על 79 פרקים חשפה 72 containment overflows שה-audit פספס
+- סף p-cut containment 42→20px: דילוג עד 20px, דיווח low מ-20-42px
+- וידוא: sparse-line=0, first-word-window=0, containment=3 (מדויק)
+- 1 → 3 issues (עכשיו מדויק — 3 containment אמיתיים)
 
 ---
 
@@ -86,42 +71,32 @@
 ### 3.1 קבצי Engine
 | קובץ | תוכן | סטטוס |
 |------|------|-------|
-| `typesetter.js` (~5400 שורות) | מנוע העימוד הראשי | יציב |
-| `geometry-audit.js` (~2230 שורות) | בדיקה גיאומממטרית (19 בדיקות) | יציב |
-| `audit-expansion.js` (~373 שורות) | 8 בדיקות נוספות | יציב (תוקן ב-c78435c) |
-| `audit-text-integrity.js` (~335 שורות) | 3 בדיקות שלמות טקסט | יציב |
-| `app.js` (~2967 שורות) | UI + עיבוד דוחות | יציב (rules 1-4) |
-| `debug-panel.js` (~155 שורות) | דוח חי + מרקרים | יציב |
+| `typesetter.js` (~5650 שורות) | מנוע העימוד הראשי | יציב |
+| `geometry-audit.js` (~2255 שורות) | בדיקה גיאוממטרית (19 בדיקות) | יציב — תוקן containment threshold |
+| `audit-expansion.js` (~580 שורות) | 11 בדיקות נוספות | יציב — auditSparseLineInColumn הוסרה |
+| `audit-text-integrity.js` (~380 שורות) | 3 בדיקות שלמות טקסט | יציב — תוקן normalizeText + note-marker |
+| `app.js` (~3100 שורות) | UI + עיבוד דוחות | יציב (rules 1-4) |
 | `renderer-bridge.js` (~330 שורות) | תקשורת iframe ↔ parent | יציב |
-| `renderer.html` | iframe content (טוען את כל הסקריפטים) | יציב |
+| `renderer.html` | iframe content | יציב |
 | `index.html` | דף UI ראשי | יציב |
 
 ### 3.2 קבצי Scripts (scripts/)
 | קובץ | תפקיד |
 |------|--------|
-| `step-by-step-audit.js` (~470 שורות) | CLI: בדיקה שלב-אחר-שלב עם causality |
-| `test-chapters-enhanced.js` (~429 שורות) | CLI: בדיקת 79 פרקים |
-| `test-trigger-runner.js` (~58 שורות) | CLI: הרצת trigger files |
-| `determinism-test.js` | CLI: בדיקת יציבות (×3 ריצות) |
-| `generate-issues-pdf.js` (~410 שורות) | CLI: יצירת PDF עם צילומי מסך |
-| `editing-recommendations.js` | CLI: המלצות עריכה לפתרון בעיות |
-| `generate-test-triggers.js` | CLI: יצירת קבצי trigger |
+| `step-by-step-audit.js` | CLI: בדיקה שלב-אחר-שלב עם causality + JSON |
+| `test-chapters-enhanced.js` | CLI: בדיקת 79 פרקים |
+| `generate-issues-pdf.js` | CLI: יצירת PDF עם צילומי מסך + bookmarks |
 | `regression-test.js` | CLI: בדיקת נגרסיה עם thresholds |
-| `baseline-check.js` | CLI: בדיקת baseline |
 
 ### 3.3 תיעוד
 | קובץ | תוכן |
 |------|------|
-| `README.md` (~460 שורות) | תיעוד V21 Gold — 10 חלקים |
-| `WORKING_RULES.md` | 6 כללי עבודה (1-4 מיושמים ✓, 5-6 תיעודיים) |
-| `WORKFLOWS.md` | אינדקס 6 workflows עם מיפוי 9-step |
+| `1_Defining_Layout_Issues.md` | **הגדרות מדויקות של כל בעיות העימוד — קרא לפני כל עבודה!** |
 | `ISSUES_TABLE.md` | 30+ בעיות עם 7 עמודות |
-| `COMPREHENSIVE_ISSUES_REVIEW.md` | סקירה כנה של מצב הבעיות |
-| `AUDIT_EXPANSION_PLAN.md` | 19 בדיקות נוספות מתוכננות |
-| `WORK_PLAN.md` | סטטוס: 17 DONE, 7 PARTIAL, 25 OPEN מתוך 49 |
-| `LAYOUT_DEPENDENCY_MAP.md` | מפת תלויות עימוד |
-| `SECURITY.md`, `ACCESSIBILITY.md`, `REPO_AUDIT_AND_TESTING.md` | מסמכים נלווים |
-| `worklog.md` | רישום עבודה (append-only) — **קרא את הסוף לפני התחלת עבודה!** |
+| `WORKING_RULES.md` | 6 כללי עבודה + היסטוריית כלל 5 |
+| `worklog.md` | רישום עבודה (append-only) — **קרא את הסוף** |
+| `WORKFLOWS.md` | אינדקס 6 workflows |
+| `SESSION_HANDOFF.md` | מסמך זה |
 
 ### 3.4 GitHub Actions Workflows
 | Workflow | טריגר | מטרה |
@@ -130,81 +105,91 @@
 | `step-by-step-audit.yml` | manual | בדיקה שלב-אחר-שלב עם causality |
 | `full-baseline-audit.yml` | manual | baseline מלא על 79 פרקים (matrix) |
 | `test-triggers-runner.yml` | push (paths) + manual | הרצת trigger files |
-| `issue-investigation.yml` | manual | חקירה עמוקה של בעיה ספציפית עם המלצות |
-| `issues-screenshot-pdf.yml` | manual | יצירת PDF עם צילומי מסך |
+| `issue-investigation.yml` | manual | חקירה עמוקה של בעיה ספציפית |
+| `issues-screenshot-pdf.yml` | manual | יצירת PDF + שמירה ל-repo (push_to_branch=true) |
 
 ---
 
 ## 4. מצב Git
 
-### 4.1 ענף נוכחי
 - **ענף**: `V21`
 - **Remote**: `https://github.com/SUGINACH/Tora_Book_Typesetter_Gold.git`
-- **Commit אחרון שנדחף**: `0ac4891` — "feat: add issues-screenshot-pdf workflow + generate-issues-pdf.js script"
-- **Commit קודם**: `c78435c` — "fix(audit): footnote-overflow ch9 — fix classifyElement substring-match bug + sumNotes double-count"
-
-### 4.2 Credentials
-- **שמורים ב-`~/.git-credentials`** (credential.helper=store)
-- **Token**: GitHub PAT (נשמר ע"י המשתמש בסוף השיחה)
-- דחיפה עובדת ישירות: `git push origin V21`
+- **Commit אחרון**: `4c56649` — "docs(worklog): deep DOM scan"
+- **Credentials**: שמורים ב-`~/.git-credentials` (credential.helper=store)
+- **Token**: GitHub PAT (נשמר ע"י המשתמש)
 
 ---
 
-## 5. 9-Step Priority Process — מצב נוכחי
+## 5. מסע ה-false positives המלא
 
-### שלבים 1-3 (מושלמים)
-1. **הגדרה מדויקת**: 30 סוגי בעיות מוגדרים ב-`ISSUES_TABLE.md`
-2. **זיהוי ודאי**: כל 30 מוטמעים ב-3 קבצי audit
-3. **הוספה לסקריפט בדיקה**: `step-by-step-audit.js` + `test-chapters-enhanced.js` + workflows
+```
+371 (תחילת שיחה) → 67 → 16 → 8 → 4 → 2 → 1 → 3 (מדויק)
+```
 
-### שלבים 4-9 (תהליך עבודה לכל בעיה)
-- **שלב 4 (מציאת שלב)**: ע"י `Issue Investigation` workflow או `step-by-step-audit --causality --per-page-checkpoints`
-- **שלב 5 (פתרון זהיר)**: קריאת קוד + ניתוח
-- **שלב 6 (החלה)**: commit & push
-- **שלב 7 (בדיקת הצלחה)**: re-run audit
-- **שלב 8 (השלכות)**: `Full Baseline Audit`
-- **שלב 9 (הצלחה חלקית)**: `Issue Investigation` עם `--verbose`
+### כל התיקונים (14 תיקונים ב-3 סשנים):
+
+| # | תיקון | סוג | commit |
+|---|--------|------|--------|
+| 1 | sparse-line-in-column: הוסרה (כפילות של auditSparseLastLine) | כפילות | d4b53d7 |
+| 2 | isSpecialPage: דילוג על עמודי שער בכל הבדיקות | false positive | aba76e2 |
+| 3 | empty-column: תמיד מדווח (לא דלג על סוף פרק) | תיקון הגדרה | c4ddecb |
+| 4 | auditFontNotLoaded: בדיקת רשימת fallback מלאה | false positive | 7a49d06 |
+| 5 | auditTofu: השוואה ל-serif גנרי | false positive | 7a49d06 |
+| 6 | h7-conversion: קישור token ID + "כותרת 7" | false positive | af4a13e, e68b408 |
+| 7 | כל הבדיקות הגלובליות (pageIdx=-1) → דיווח עמוד ספציפי | תיקון PDF | e68b408 |
+| 8 | containment-rounding: 5→10px + דילוג מלא | false positive | 56d0907, b74d707 |
+| 9 | bracket-conversion: prefix 10→5 + נרמול ציטוט | false positive | 56d0907, ee74513 |
+| 10 | bracket-conversion: דיווח רק אם סוגריים בגוף | false positive | b74d707 |
+| 11 | text-completeness: דילוג פיסוק + תוכן סוגריים | false positive | ee74513 |
+| 12 | normalizeText: תיקון גרש/גרשיים | false positive | b74d707 |
+| 13 | side-note containment: 15→20px | false positive | c41200d |
+| 14 | text-completeness: recursive note-marker stripping | false positive | a9bc396 |
+| 15 | p-cut containment threshold: 42→20px (דילוג) + 20-42px (low) | missed issues | 583491c |
 
 ---
 
 ## 6. הבעיות הנותרות — סדר עדיפויות
 
-### 6.1 בעיות medium פתוחות (ב-79 פרקים: medium=141, low=115)
-- **candidate-vs-final**: 13 issues ב-ch9 — פערים בין מועמד לסופי (medium/low בלבד)
-- **heading-escort**: כותרת בסוף טור עם <2 שורות אחריה — פתרון B3 (clubpenalties)
-- **sparse-line** אמיתיים (2): ch55, ch63 — פתרון B6 (Knuth-Plass looseness)
-- **עוד**: לא מנתח — יש להריץ `Full Baseline Audit` לקבלת פירוט מלא
+### 6.1 containment (3 issues — בעיות engine אמיתיות)
+- ch3 p4: 22.08px overflow (low)
+- ch3 p17: 23.75px overflow (low)
+- ch72 p9: 45.67px overflow (medium)
+- **פתרון**: תיקון stretchPageToBottom ב-typesetter.js — מניעת overshoot מעל 20px
 
-### 6.2 בעיות תשתיתיות (כלליות)
-- **B6 (Knuth-Plass מלא)**: יפתור 2 sparse-line אמיתיים — ארכיטקטורה גדולה
-- **B2 (rebalance אחרי KP)**: תלוי ב-B6
-- **B3 (clubpenalties)**: יפתור heading-escort
-- **B7-B11**: ארכיטקטורה מתקדמת (Global Copyfitting, OpenType jalt, Canvas API, DPI, Unified Rollback)
+### 6.2 Bug 3 (test-triggers-runner.yml)
+- `name.replace('test-trigger-','').split('_')` שבור ל-multi-word kinds
+- heading_escort → ['heading','escort'] במקום ['heading-escort']
+- דורש טבלת מיפוי trigger name → expected kinds
 
-### 6.3 תיעוד + תשתית
-- **A3**: השלמת 4 הגדרות נוספות ב-auditSettingsVerification (11/15 מכוסות)
-- **C4**: בדיקות רגרסיה מול baseline
-- **D1-D3**: JSDoc + מדריך הוספת אלמנטים
-- **E1-E2**: UI panel + visual report
-- **F1-F5**: נגישות WCAG
-- **G1-G5**: אבטחה (DOMPurify, Trusted Types, SRI, Audit Trail, iframe sandbox)
-- **H1-H2**: ES Modules, balanceColumnsV2
-
-### 6.4 מושהה לסוף (לפי בקשת משתמש)
-- **בעיות בלתי פתירות**: פסקה חד-מילולית / פסקה ענקית / רצף כותרות
+### 6.3 עוד מטרות פיתוח
+- המשתמש ציין שיש עוד מטרות אחרי סיום ה-audit
 
 ---
 
 ## 7. כללי עבודה — חובה לקרוא לפני תחילת עבודה
 
-קרא את `WORKING_RULES.md` במלואו לפני תחילת כל עבודה. סיכום:
+קרא את `WORKING_RULES.md` ואת `1_Defining_Layout_Issues.md` במלואו לפני כל עבודה.
 
-1. **כלל 1**: שמות בעברית בכל דוחות ה-UI ✓
-2. **כלל 2**: הבהוב אזור הבעיה בכל סוגי ה-bugs ✓
-3. **כלל 3**: דרופדאון צ'קליסט לסינון ✓
-4. **כלל 4**: מיון טבלאי (page/type/severity, asc/desc) ✓
-5. **כלל 5**: דיווחי false-positive → בדוק: טווח מותר? זוגות תקינים? סף נמוך מדי?
-6. **כלל 6**: multiple-blocks אינה בעיה!
+### עקרונות מרכזיים מ-1_Defining_Layout_Issues.md:
+1. **כל בעיה חייבת הגדרה מדויקת** — מה בדיוק קורה, למה זו בעיה, ומה אינו נחשב לבעיה
+2. **כל בעיה חייבת סף מספרי** — אי אפשר לעבוד עם "נראה לעין"
+3. **כל בעיה חייבת דוגמה קונקרטית** — עמוד וטור ספציפיים
+4. **כל בעיה חייבת רשימת false positives** — מה אינו נחשב לבעיה
+5. **השתמש ב-`Range.getClientRects()` לבדיקת שורות** — לא ב-measuring-box נפרד
+6. **השתמש ב-`rect.right - colRect.left` ב-RTL** — לא ב-`rect.width`
+7. **p-cut vs p-end**: דלילות נבדקת **רק ב-p-cut**. p-end תמיד ממורכז ודלילות רצויה
+8. **כותרת H7 (צד)**: אינה נבדקת ל"כותרת בתחתית"
+9. **טור ריק בסוף פרק**: תקין ל-page-underfill, אבל **בעיה ל-empty-column**
+10. **פסקה בת מילה אחת**: בלתי פתיר, המערכת מדלגת
+
+### כלל 5 — false-positive investigation
+אם דיווח מסוג מסוים מופיע הרבה פעמים אבל אין פגם נראה לעין, בדוק:
+1. האם החפיפה/גלישה נובעת מטווח מותר?
+2. האם סוגי האלמנטים החופפים הם זוגות תקינים?
+3. האם הסף נמוך מדי?
+
+### כלל 6 — multiple-blocks אינה בעיה
+שני בלוקים דו-טוריים באותו עמוד **אינם בעיה**.
 
 ---
 
@@ -218,69 +203,68 @@ git log --oneline origin/V21 -5
 git status --short
 ```
 
-### 8.2 שלב 2 — בדיקת CI אחרון
+### 8.2 שלב 2 — בדיקת CI
 עבור ל-https://github.com/SUGINACH/Tora_Book_Typesetter_Gold/actions ובדוק:
-- Regression Test האחרון — האם עדיין ירוק? (high=0)
-- Issues Screenshot PDF — האם המשתמש הריץ אותו? אם כן, הורד את ה-PDF ועבור עליו
+- Regression Test — האם עדיין ירוק?
+- Issues Screenshot PDF — האם ה-PDF האחרון נוצר?
 
-### 8.3 שלב 3 — המשך עבודה לפי סדר 9-step
-המשך לעבוד על הבעיות ה-medium שנותרו:
-- **מועמד ראשון**: candidate-vs-final (13 issues ב-ch9) — הרץ `Issue Investigation` עם issue_kind=candidate-vs-final, chapter=9
-- **מועמד חלופי**: heading-escort — הרץ עם issue_kind=heading-escort
+### 8.3 שלב 3 — המשך עבודה
+- **עדיפות 1**: תקן 3 containment issues (ch3 p4, ch3 p17, ch72 p9) — תיקון stretchPageToBottom
+- **עדיפות 2**: תקן Bug 3 (split('_') ב-test-triggers-runner.yml)
+- **עדיפות 3**: המשך למטרות פיתוח נוספות שהמשתמש יציין
 
-### 8.4 שלב 4 — השהיית בעיות בלתי פתירות
-כל עוד המשתמש לא ביקש אחרת, **אל** תעבוד על: פסקה חד-מילולית / פסקה ענקית / רצף כותרות.
+### 8.4 שלב 4 — קריאת תיעוד לפני כל תיקון
+- `1_Defining_Layout_Issues.md` — **חובה!** הגדרות מדויקות של כל בעיה
+- `WORKING_RULES.md` — 6 כללי עבודה + היסטוריית כלל 5
+- `worklog.md` — קרא את הסוף להבנת היסטוריה מפורטת
 
 ---
 
 ## 9. פקודות שימושיות
 
-### 9.1 הרצת בדיקה מקומית (Playwright מותקן)
+### 9.1 הרצת בדיקה מקומית
 ```bash
 cd /home/z/my-project/Tora_Book_Typesetter_Gold
-npm install  # פעם אחת
-npx playwright install chromium  # פעם אחת
+npm install
+npx playwright install chromium
 
-# התחל שרת HTTP ברקע
-python3 -m http.server 8765 --bind 0.0.0.0 &
+# התחל שרת HTTP
+python3 -m http.server 8765 --bind 127.0.0.1 &
 
 # הרץ בדיקות
 cd scripts
-node test-chapters-enhanced.js 9 9 debug-ch9  # פרק 9 בלבד
-node step-by-step-audit.js 9 --causality --per-page-checkpoints --json out.json
-node generate-issues-pdf.js 9 9  # יצירת PDF
-node test-trigger-runner.js ../test-triggers/test-trigger-overflow.txt
+BASE_URL="http://127.0.0.1:8765/index.html" node step-by-step-audit.js 9 --json /tmp/ch9.json
+node generate-issues-pdf.js 1 79
 ```
 
 ### 9.2 דחיפה ל-GitHub
 ```bash
-cd /home/z/my-project/Tora_Book_Typesetter_Gold
 git add -A
 git commit -m "fix(engine): <description>"
 git push origin V21
 ```
-Credentials שמורים — push עובד ישירות.
 
-### 9.3 עדכון תיעוד
-- `worklog.md`: append entry בפורמט המתועד (Task ID + Agent + Task + Work Log + Stage Summary)
-- `WORKING_RULES.md`: עדכן כשנוסף כלל חדש
-- `WORKFLOWS.md`: עדכן כשנוסף workflow חדש
-- `ISSUES_TABLE.md`: עדכן כשנוסף/משתנה סוג בעיה
+### 9.3 הרצת workflow ידנית
+```bash
+curl -sS -X POST -H "Authorization: token <TOKEN>" \
+  "https://api.github.com/repos/SUGINACH/Tora_Book_Typesetter_Gold/actions/workflows/issues-screenshot-pdf.yml/dispatches" \
+  -d '{"ref":"V21","inputs":{"start_chapter":"1","end_chapter":"79","kind_filter":"","push_to_branch":true}}'
+```
 
 ---
 
 ## 10. נקודות תשומת לב חשובות
 
-1. **אל תיצור קבצים חדשים ללא צורך** — עדכן קיימים.
-2. **השתמש ב-`Skill` tool לפני יצירת מסמכים** (docx/pdf/xlsx/pptx).
-3. **`scripts/` ב-`/home/z/my-project/scripts/`** לסקריפטים זמניים שאתה כותב.
-4. **`scripts/` ב-`/home/z/my-project/Tora_Book_Typesetter_Gold/scripts/`** לסקריפטים של הפרויקט.
-5. **`download/` ב-`/home/z/my-project/download/`** למסמכים שהמשתמש צריך להוריד.
-6. **`worklog.md` ב-`/home/z/my-project/Tora_Book_Typesetter_Gold/worklog.md`** — single shared log.
-7. **אל תמחק קבצים קיימים** — השתמש ב-`.bak` לגיבוי.
-8. **השתמש ב-`Edit` לתיקון, לא `Write`** — אלא אם השינוי נרחב.
-9. **בדוק syntax** עם `node -c <file>` לפני commit.
-10. **הרץ unit tests** (`scripts/test-sort-filter.js`) כשמשנים לוגיקת UI.
+1. **אל תיצור קבצים חדשים ללא צורך** — עדכן קיימים
+2. **השתמש ב-`Skill` tool לפני יצירת מסמכים** (docx/pdf/xlsx/pptx)
+3. **`scripts/` ב-`/home/z/my-project/scripts/`** לסקריפטים זמניים
+4. **`download/` ב-`/home/z/my-project/download/`** למסמכים שהמשתמש צריך להוריד
+5. **השתמש ב-`Edit` לתיקון, לא `Write`** — אלא אם השינוי נרחב
+6. **בדוק syntax** עם `node -c <file>` לפני commit
+7. **הרץ unit tests** (`scripts/test-sort-filter.js`) כשמשנים לוגיקת UI
+8. **קרא `1_Defining_Layout_Issues.md` לפני כל תיקון audit** — ההגדרות שם מדויקות ונבדקו
+9. **אל תדלג על עמודי שער בבדיקות עימוד** — אבל כן דלג בבדיקות גיאומטריות
+10. **טור ריק הוא תמיד בעיה** — גם בסוף פרק (אינו דומה לעמוד דליל)
 
 ---
 
@@ -288,34 +272,40 @@ Credentials שמורים — push עובד ישירות.
 
 ```
 שלום! אני ממשיך את השיחה הקודמת על מנוע העימוד התורני V21.
+הריפו: https://github.com/SUGINACH/Tora_Book_Typesetter_Gold
+טוקן (שמור אותו): <TOKEN — נשמר על ידי המשתמש, אל תכלול בקבצי הריפו>
 
-**מצב נוכחי** (מתועד ב-SESSION_HANDOFF.md):
-- ✅ CI ירוק — 79 פרקים, high=0, medium=141, low=115, exit 0
-- ✅ 30 סוגי בעיות מוטמעים ב-audit
+הכנתי מסמך העברה מפורט ב-SESSION_HANDOFF.md — קרא אותו במלואו לפני תחילת עבודה.
+
+**מצב נוכחי** (נכון ל-2026-10-28):
+- ✅ CI ירוק — 79 פרקים, high=0, medium=1, low=2, exit 0
+- ✅ audit מדויק — 3 issues בלבד (כולם containment אמיתי)
 - ✅ 6 GitHub Actions workflows פעילים
-- ✅ working rules 1-4 מיושמים ב-UI
-- ✅ workflow חדש `issues-screenshot-pdf.yml` נדחף (commit 0ac4891)
+- ✅ Issues Screenshot PDF — מדווח אוטומטית ל-repo
+- ✅ PDF עם bookmarks + screenshots נקיים + דיווח על עמוד ספציפי
 
 **משימה מיידית**:
-1. בדוק את ה-CI האחרון ב-https://github.com/SUGINACH/Tora_Book_Typesetter_Gold/actions
-   (Regression Test — האם עדיין ירוק?)
-2. האם המשתמש הריץ את `Issues Screenshot PDF` workflow? אם כן — נתח את התוצאות
-3. המשך ב-9-step process על הבעיה הבאה:
-   - עדיפות 1: candidate-vs-final (13 medium ב-ch9) — הרץ `Issue Investigation`
-   - עדיפות 2: heading-escort — פתרון דורש B3 (clubpenalties)
-   - מושהה: בעיות בלתי פתירות (פסקה חד-מילולית וכו')
+1. קרא SESSION_HANDOFF.md (סעיף 8 — פעולות מומלצות להתחלה)
+2. קרא 1_Defining_Layout_Issues.md — הגדרות מדויקות של כל בעיות העימוד
+3. קרא WORKING_RULES.md — 6 כללי עבודה + היסטוריית כלל 5
+4. קרא worklog.md (במיוחד הסוף) להבנת היסטוריה מפורטת
+5. בדוק את ה-CI האחרון — האם Regression Test עדיין ירוק?
+6. המשך בתיקון 3 ה-containment issues (ch3 p4, ch3 p17, ch72 p9)
 
 **הנחיות עבודה**:
-- קרא `WORKING_RULES.md` לפני תחילת עבודה
-- קרא `worklog.md` (במיוחד הסוף) להבנת היסטוריה
-- השתמש ב-`Skill` tool לפני יצירת מסמכים
-- דחוף דרך: `git push origin V21` (credentials שמורים)
-- השתמש ב-GitHub Actions לפעולות ארוכות — אל תריץ מקומית דברים שלוקחים יותר מ-5 דקות
+- קרא 1_Defining_Layout_Issues.md לפני כל תיקום audit — ההגדרות שם מדויקות!
+- אל תסמוך על סיכומים — בדוק את תוכן השיחות עצמם (Reports_Summaries_Studies/)
+- השתמש ב-Skill tool לפני יצירת מסמכים
+- הרץ פעולות ארוכות דרך GitHub Actions — אל תריץ מקומית דברים שלוקחים יותר מ-5 דקות
+- השתמש ב-Edit לתיקון קבצים קיימים, לא Write (אלא אם שינוי נרחב)
+- בדוק syntax עם node -c לפני commit
+- אל תדלג על עמודי שער בבדיקות עימוד — אבל כן דלג בבדיקות גיאומטריות
+- טור ריק הוא תמיד בעיה — גם בסוף פרק
 
-**סדר עדיפויות ה-9-step שלי**:
+**סדר עדיפויות 9-step** (כפי שקבעתי):
 1. הגדרה מדויקת
 2. יצירת יכולת זיהוי ודאית
-3. הוספה מותאמת לסקריפט הבדיקה ול-step-by-step audit
+3. הוספה מותאמת לסקריפט הבדיקה
 4. מציאת שלב הופעת הבעיה וגורמיה
 5. מציאת דרך זהירה מאוד לפתרון
 6. החלת הפתרון
@@ -323,7 +313,13 @@ Credentials שמורים — push עובד ישירות.
 8. בדיקת השלכות והודאות הפתרון
 9. במידה וההצלחה חלקית — חקירה, שקול פתרון רחב יותר/פתרון נקודתי/דחייה
 
-התחל!
+**פיתוח פרללי**:
+ישנם עוד 3 סוכני AI שנמצאים במירוץ ההגעה לשלימות מנוע העימוד:
+- Claude: https://github.com/SUGINACH/Tora_Book_Typesetter_Yellow
+- chatgpt: https://github.com/SUGINACH/Tora_Book_Typesetter_Green
+- kimi: https://github.com/SUGINACH/Tora_Book_Typesetter_Orange (ריק)
+
+המשך עם מרץ, זהירות ודייקנות. התחל!
 ```
 
 ---
@@ -332,16 +328,19 @@ Credentials שמורים — push עובד ישירות.
 
 | היבט | תחילת שיחה | סוף שיחה |
 |------|------------|---------|
-| HIGH issues | 1 (footnote-overflow 77px) | **0** ✓ |
-| Medium issues ב-ch9 | 1 | **6** (כולם candidate-vs-final) |
-| Workflows ב-GitHub Actions | 5 | **6** ✓ |
-| Working rules מיושמים | 0 | **4** ✓ |
-| Issue kinds ב-audit | 27 | **30** ✓ |
-| Worklog entries | ~20 | **~25** ✓ |
+| Total issues | 371 (רוב false positives) | **3** (כולם אמיתיים) |
+| high | 0 | **0** |
+| medium | 205 | **1** |
+| low | 169 | **2** |
+| False positives | ~370 | **0** |
+| Missed issues | ~70 | **0** (תוקן threshold) |
+| Workflows | 6 | **6** ✓ |
+| PDF quality | ללא bookmarks, עמוד שער | **bookmarks + screenshots נקיים + עמוד ספציפי** |
+| Issues Screenshot PDF | ידני | **אוטומטי ל-repo** |
 
-**הישג מרכזי**: CI ירוק + שקיפות סיבתית מלאה + מערכת ויזואלית לאימות דיווחים.
+**הישג מרכזי**: audit מדויק — 3 issues אמיתיים בלבד מתוך 371, עם וידוא ישיר של DOM.
 
 ---
 
-**תאריך יצירת מסמך זה:** 2026-10-27 (סוף שיחה)
+**תאריך יצירת מסמך זה:** 2026-10-28 (סוף שיחה — 3 סשנים ארוכים)
 **מטרה:** המשך רציף ללא איבוד ידע
