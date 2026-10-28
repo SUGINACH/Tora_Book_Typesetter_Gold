@@ -377,13 +377,17 @@ function auditContainment(node, issues) {
                     if (n.type === 'p-cut') return true;
                     return (n.children || []).some(hasCut);
                 })(child);
-                if (hasPCut && overflowPx <= 42) {
-                    // [תיקון — final cleanup] עם p-cut cross-page, overflow עד 42px הוא טבעי
-                    // (פחות מ-2 שורות של 21px). ה-engine בחר במכוון ליצור p-cut כדי למלא
-                    // את העמוד. אל תדווח — הגלישה היא מעיגול פיקסלים ומבחירת ה-engine
-                    // למלא את העמוד במקום להשאיר רווח גדול.
+                if (hasPCut && overflowPx <= 20) {
+                    // [תיקון 2026-10-28 — כלל 5 + ISSUES_TABLE.md] עם p-cut cross-page,
+                    // overflow עד 20px (פחות משורה אחת של 21px) הוא טבעי — ה-engine
+                    // בחר למלא את העמוד. אל תדווח.
+                    // סף קודם 42px היה גבוה מדי — דילג על overflows אמיתיים של 22-41px.
                     auditContainment(child, issues);
                     continue;
+                } else if (hasPCut && overflowPx <= 42) {
+                    // [תיקון 2026-10-28] 20-42px עם p-cut = low (נראה אבל טבעי)
+                    severity = 'low';
+                    note = ' (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)';
                 } else if (hasPCut && overflowPx <= 80) {
                     severity = 'medium';
                     note = ' (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)';
