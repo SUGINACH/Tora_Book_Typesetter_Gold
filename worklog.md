@@ -6440,3 +6440,37 @@ Task: סשן ארוך נוסף של תיקוני false positives ודיוקים 
 371 → 67 → 16 → 8 → 4 → 2 → 1
 
 CI: Regression Test ✅, Test Triggers Runner ✅, Issues Screenshot PDF ✅
+
+---
+Task ID: long-session-3-deep-scan
+Agent: main agent (long session 3 — 2026-10-28)
+Task: סריקה ישירה של DOM + תיקון חריגות הכלה שהאודיט פספס
+
+סריקה ישירה של DOM (ללא תלות ב-audit) על 79 פרקים חשפה:
+- 0 sparse-line issues ב-p-cut (auditSparseLastLine עובדת נכון)
+- 0 multiple-first-word-window issues (fixDropWordInColumns עובד)
+- 72 containment overflows >5px שלא דווחו על ידי ה-audit!
+
+סיבת הפספוס: סף 42px לדילוג על p-cut containment היה גבוה מדי.
+הסף הקודם: כל overflow עד 42px עם p-cut → דילוג מלא (continue).
+תוצאה: 70 block-2col overflows של 5-42px לא דווחו כלל.
+
+תיקון (commit 583491c):
+- עד 20px (פחות משורה): דילוג מלא (טבעי)
+- 20-42px: דיווח low (נראה אבל טבעי — stretchPageToBottom)
+- 42-80px: medium
+- >80px: high
+
+תוצאה: 3 issues מדווחים נכון:
+  ch3 p4: 22.08px (low) — מעל 20px ✓
+  ch3 p17: 23.75px (low) — מעל 20px ✓
+  ch72 p9: 45.67px (medium) — מעל 42px ✓
+
+בדיקות נוספות:
+- sparse-line: 0 issues בכל 79 פרקים (auditSparseLastLine מקורית עובדת נכון)
+- first-word-window: 0 issues (fixDropWordInColumns עובד)
+- שורות דלילות באמצע פסקה: 6215 "sparse" lines, אבל כולן עם paren-text/note-marker
+  (טקסט מוסגר/סמני הערות שמקצרים שורות באופן טבעי) — אינן בעיות.
+
+מסע ה-false positives + פספוסים המלא:
+371 → 67 → 16 → 8 → 4 → 2 → 1 → 3 (עכשיו מדויק — 3 containment אמיתיים)
