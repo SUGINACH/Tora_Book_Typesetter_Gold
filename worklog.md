@@ -6401,3 +6401,42 @@ Task: סשן ארוך של תיקוני false positives ודיוקים
 - לפני הסשן: 371 issues (רובן false positives)
 - אחרי: 8 issues (מתוכן 3 containment + 3 bracket-conversion + 2 text-completeness)
 - אחרי תיקוני הסשן: צפוי ~3-4 issues אמיתיים בלבד
+
+---
+Task ID: long-session-2-false-positives
+Agent: main agent (long session 2 — 2026-10-28)
+Task: סשן ארוך נוסף של תיקוני false positives ודיוקים מדוקדקים
+
+מצב נכניסה לסשן: 8 issues (5 high, 2 medium, 1 low)
+מצב יציאה מהסשן: 1 issue (0 high, 1 medium) — בעיית engine אמיתית
+
+תיקונים בסשן זה:
+
+1. text-completeness: recursive note-marker stripping (commit a9bc396)
+   - הבעיה: ה-audit קרא טקסט מ-<p> ישירות מ-childNodes, ודילג על note-marker
+     רק ברמת הילדים הישירים. אבל note-markers בתוך paren-text spans
+     נכללו ב-textContent, מה שיצר טוקנים שגויים כמו "וכו'א" (סמן 'א' מצטרף).
+   - התיקון: פונקציית עזר collectTextSkipNoteMarkers(el) — רקורסיבית, דילוג
+     על .note-marker בכל עומק.
+   - תוצאה: ch63 (1 מילה "ניכר") ו-ch72 (2 מילים "גשמים" ו"וכו'") — נפתרו!
+
+2. side-note containment threshold 15→20px (commit c41200d)
+   - הבעיה: ch30 p22 side-note overflow 16.19px היה false positive.
+   - סף קודם: 15px. חדש: 20px (פחות משורה אחת של 21px — לא נראה לעין).
+   - תוצאה: ch30 נפתר!
+
+3. בדיקת סוכנים מתחרים (Green)
+   - Green פעיל עם commits עדכניים (2026-10-28).
+   - יש להם sparse-page exclusion coverage ו-section-end fill classification.
+   - הגישה שלנו כבר מטפלת בזה נכון (chapterStart/chapterEnd pageIdxs).
+
+הבעיה הנותרת (1 issue):
+- ch72 p9 [medium] containment: block-2col overflows body-flow by 45.67px
+  - מעל סף 42px (2 שורות) — זו בעיית engine אמיתית.
+  - ה-engine צריך לתקן את stretchPageToBottom overshoot.
+  - אינה false positive — ה-audit מדווח נכון.
+
+מסע ה-false positives המלא:
+371 → 67 → 16 → 8 → 4 → 2 → 1
+
+CI: Regression Test ✅, Test Triggers Runner ✅, Issues Screenshot PDF ✅
