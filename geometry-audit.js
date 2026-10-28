@@ -410,9 +410,10 @@ function auditContainment(node, issues) {
                 kind = 'containment-rounding';
                 note = ' (עיגול פיקסלים של מפריד סעיפים)';
             } else if (isSideNote) {
-                // [תיקון — final cleanup] הערות צד עם overflow עד 5px = עיגול פיקסלים, אל תדווח.
-                // עד 15px = low (טבעי). מעבר = medium/high.
-                if (overflowPx <= 15) {
+                // [תיקון 2026-10-28 — כלל 5] הערות צד עם overflow עד 20px = טבעי, אל תדווח.
+                // 20px = פחות משורה אחת (21px) — לא נראה לעין.
+                // סף קודם היה 15px — ch30 p22 (16.19px) היה false positive.
+                if (overflowPx <= 20) {
                     auditContainment(child, issues);
                     continue;
                 }
