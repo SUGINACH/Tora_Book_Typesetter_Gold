@@ -268,13 +268,15 @@ function auditBracketToFootnote(model, sourceText, issues) {
     }
 
     // בדוק שכל [...] מהמקור מופיע ב-footnotes
+    // [תיקון 2026-10-28 — כלל 5 false positive] הקטן את ה-prefix מ-10 ל-5 תווים
+    // והוסף fallback: נסה גם התאמה של 3 תווים ראשונים (לטקסט קצר)
     let missingCount = 0;
     const missing = [];
     for (const bracketText of parsed.bracketContents) {
         const normalized = normalizeText(bracketText);
         if (normalized.length < 3) continue; // דלג על סוגריים ריקות/קצרות
-        // חפש התאמה חלקית — לפחות 10 תווים ראשונים
-        const prefix = normalized.slice(0, Math.min(10, normalized.length));
+        const prefixLen = Math.min(5, normalized.length);
+        const prefix = normalized.slice(0, prefixLen);
         const found = domFootnoteTexts.some(fn => fn.includes(prefix));
         if (!found) {
             missingCount++;

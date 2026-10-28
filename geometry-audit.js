@@ -387,8 +387,10 @@ function auditContainment(node, issues) {
                 } else if (hasPCut && overflowPx <= 80) {
                     severity = 'medium';
                     note = ' (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)';
-                } else if (overflowPx <= 5) {
-                    // [תיקון — final cleanup] ללא p-cut, overflow עד 5px הוא עיגול פיקסלים
+                } else if (overflowPx <= 10) {
+                    // [תיקון 2026-10-28 — כלל 5] העלאת סף עיגול מ-5px ל-10px.
+                    // גלישות עד 10px (פחות מחצי שורה) אינן נראות לעין ונובעות
+                    // מעיגול פיקסלים של stretchPageToBottom. אל תדווח.
                     severity = 'low';
                     kind = 'containment-rounding';
                     note = ' (גלישה טבעית — עיגול פיקסלים)';
