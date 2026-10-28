@@ -57,11 +57,12 @@ function parseSourceText(rawText) {
 }
 
 function normalizeText(text) {
-    // הסר ניקוד וטעמים (U+0591-U+05C7, U+05F3-U+05F4)
-    text = text.replace(/[\u0591-\u05C7\u05F3\u05F4]/g, '');
+    // הסר ניקוד וטעמים בלבד (U+0591-U+05C7) — לא כולל גרש/גרשיים (U+05F3-U+05F4)
+    // [תיקון 2026-10-28] גרש/גרשיים מנורמלים להלן, לא נמחקים!
+    text = text.replace(/[\u0591-\u05C7]/g, '');
     // [תיקון 2026-10-28 — נרמול תווי ציטוט] המקור יכול להכיל " ' וה-DOM יכול להכיל ״ ׳
     // נרמל הכל לגרשיים רגילים כדי שההשוואה תעבוד נכון.
-    text = text.replace(/[\u201C\u201D\u201E\u05F4\u22EE]/g, '"');  // " " … → "
+    text = text.replace(/[\u201C\u201D\u201E\u05F4\u22EE]/g, '"');  // " " … ״ → "
     text = text.replace(/[\u2018\u2019\u05F3]/g, "'");  // ' ' ׳ → '
     // [תיקון טוקניזציה] נרמל את רווחים לפני/אחרי סימני פיסוק כדי למנוע הבדלי חלוקה
     // בין מקור ("בראשונה)" + ".") ל-DOM ("בראשונה).")
@@ -337,7 +338,11 @@ function auditBracketToFootnote(model, sourceText, issues) {
         }
     }
 
-    if (missingCount > 0) {
+    // [תיקון 2026-10-28 — כלל 5 false positive] דווח missingCount רק אם גם נמצאו
+    // סוגריים בגוף הטקסט (ההמרה נכשלה). אם הסוגריים הוסרו מהגוף (ההמרה הצליחה)
+    // אבל הטקסט ב-footnote שונה מעט — זה false positive, אל תדווח.
+    const hasBracketInBody = issues.some(i => i.kind === 'bracket-conversion' && i.bracketText);
+    if (missingCount > 0 && hasBracketInBody) {
         // [תיקון 2026-10-28] מצא עמוד נציג (ראשון שאינו שער)
         let firstNonSpecialPage = -1;
         for (let i = 0; i < model.pages.length; i++) {

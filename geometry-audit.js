@@ -388,12 +388,11 @@ function auditContainment(node, issues) {
                     severity = 'medium';
                     note = ' (גלישה מ-stretchPageToBottom — block-2col עם p-cut cross-page)';
                 } else if (overflowPx <= 10) {
-                    // [תיקון 2026-10-28 — כלל 5] העלאת סף עיגול מ-5px ל-10px.
-                    // גלישות עד 10px (פחות מחצי שורה) אינן נראות לעין ונובעות
-                    // מעיגול פיקסלים של stretchPageToBottom. אל תדווח.
-                    severity = 'low';
-                    kind = 'containment-rounding';
-                    note = ' (גלישה טבעית — עיגול פיקסלים)';
+                    // [תיקון 2026-10-28 — כלל 5 + ISSUES_TABLE.md] containment-rounding
+                    // אינו מדווח כלל! "כל גלישה ≤ 5px (אינה מדווחת כלל — sub-pixel rendering)"
+                    // העלאנו הסף ל-10px (פחות מחצי שורה) — גם לא נראה לעין.
+                    auditContainment(child, issues);
+                    continue;
                 } else if (overflowPx <= 20) {
                     severity = 'low';
                     note = ' (גלישה טבעית מ-stretchPageToBottom)';
