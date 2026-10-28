@@ -77,6 +77,23 @@ function normalizeText(text) {
 
 /* ── פריט 2: בדיקת שלמות טקסט ─────────────────────────────────────── */
 
+// [תיקון 2026-10-28 — כלל 5 false positive]
+// אסוף טקסט מאלמנט תוך דילוג על note-marker בכל העומק.
+// סמני הערות יכולים להיות בתוך paren-text spans, והטקסט שלהם
+// נכלל ב-textContent, מה שיוצר טוקנים שגויים כמו "וכו'א" (סמן 'א' מצטרף למילה).
+function collectTextSkipNoteMarkers(el) {
+    let text = '';
+    for (const child of el.childNodes) {
+        if (child.nodeType === 3) {
+            text += child.textContent;
+        } else if (child.nodeType === 1) {
+            if (child.classList?.contains('note-marker')) continue;
+            text += collectTextSkipNoteMarkers(child);
+        }
+    }
+    return text;
+}
+
 function auditTextCompleteness(model, sourceText, issues) {
     if (!sourceText || !model.pages || model.pages.length === 0) return;
     const parsed = parseSourceText(sourceText);
@@ -89,16 +106,12 @@ function auditTextCompleteness(model, sourceText, issues) {
         // אסוף מ-<p> ב-main-column ו-single-wide-col (גוף הטקסט)
         const ps = el.querySelectorAll('.main-column p, .single-wide-col p');
         for (const p of ps) {
-            // התעלם מ-.note-marker (סמני הערות), אבל כלול .paren-text (טקסט מוסגר עדיין טקסט גוף)
-            let text = '';
-            for (const child of p.childNodes) {
-                if (child.nodeType === 3) { // text node
-                    text += child.textContent;
-                } else if (child.nodeType === 1) { // element
-                    if (child.classList?.contains('note-marker')) continue; // דלג על סמני הערות
-                    text += child.textContent || '';
-                }
-            }
+            // [תיקון 2026-10-28 — כלל 5 false positive]
+            // התעלם מ-.note-marker (סמני הערות) בכל העומק — לא רק ילדים ישירים של <p>.
+            // סמני הערות יכולים להיות בתוך paren-text spans, והטקסט שלהם נכלל
+            // ב-textContent של paren-text, מה שיוצר טוקנים שגויים כמו "וכו'א"
+            // (כשהסמן 'א' מצטרף למילה שלפניו).
+            let text = collectTextSkipNoteMarkers(p);
             text = normalizeText(text);
             const words = text.split(/\s+/).filter(w => w.length > 0);
             domWords.push(...words);
