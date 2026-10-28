@@ -6348,3 +6348,56 @@ Stage Summary:
 - sparse-line-in-column: רק p-cut נבדק, רק על עמודי תוכן רגילים.
 - 4 פונקציות מבוססות model עכשיו דולגות על עמודי שער.
 - חומרה חזרה ל-ISSUES_TABLE.md (medium < 30%, low 30-50%).
+
+---
+Task ID: long-session-false-positives
+Agent: main agent (long session 2026-10-28)
+Task: סשן ארוך של תיקוני false positives ודיוקים
+
+תיקונים בסשן זה (commits 56d0907, ee74513):
+
+1. containment-rounding: סף 5px → 10px (geometry-audit.js)
+   - ch28 p11 (6.23px) היה false positive — מעל 5px אבל מתחת ל-10px.
+   - 10px = פחות מחצי שורה (21px) — לא נראה לעין.
+
+2. bracket-conversion: prefix match 10 → 5 תווים (audit-text-integrity.js)
+   - ch64/ch68/ch71: ה-prefix של 10 תווים היה ארוך מדי ולא מצא התאמה ב-footnotes.
+
+3. normalizeText: נרמול תווי ציטוט (audit-text-integrity.js)
+   - " → " (מרכאות שונות לרגילות)
+   - ' → ' (גרשים שונים לרגילים)
+   - זה פתר את bracket-conversion false positives כי המקור משתמש ב" וה-DOM ב״.
+
+4. text-completeness: דלג על פיסוק ותוכן סוגריים (audit-text-integrity.js)
+   - ch63: "." (פיסוק, לא מילה), "[ואם" (תוכן סוגריים שהומר — צפוי!)
+   - דלג על מילים שהן רק פיסוק ועל מילים שמתחילות ב-[.
+
+5. h7-conversion: בדיקה נוספת — פסקה שמתחילה ב"כותרת 7" (audit-text-integrity.js, commit e68b408)
+   - אם ה-H7 לא הומר כלל, הפסקה מגיעה כטקסט גוף שמתחיל ב"כותרת 7".
+
+6. כל הבדיקות הגלובליות (pageIdx=-1) תוקנו לדווח על עמוד ספציפי (commit e68b408)
+   - text-completeness: מדווח על עמוד ראשון שאינו שער
+   - bracket-conversion: מדווח על העמוד שבו הסוגריים נמצאים
+   - settings-verification: מדווח על עמוד ראשון שאינו שער
+   - h7-conversion: מדווח על העמוד שבו הפסקה נמצאת
+
+7. sparse-line-in-column: הוסרה (commit d4b53d7)
+   - כפילות שגויה של auditSparseLastLine המקורית ב-geometry-audit.js.
+   - auditSparseLastLine כבר פותרת את זה נכון: רק p-cut, משווה לשורה ראשונה, דולגת על paren-text.
+
+8. auditFontNotLoaded: בדיקת רשימת fallback מלאה (commit 7a49d06)
+   - הקוד הישן בדק רק את הגופן הראשון — false positive כשהראשון לא נטען אבל השני כן.
+
+9. auditTofu: השוואה ל-serif גנרי במקום ל-□ (commit 7a49d06)
+   - ההגדרה (סעיף 14.6): השוואה ל-serif גנרי היא השיטה הנכונה.
+
+10. auditEmptyColumn: טור ריק תמיד מדווח (commit c4ddecb)
+    - הדילוג על "סוף פרק" נכון רק ל-page-underfill, לא ל-empty-column.
+
+11. isSpecialPage: דילוג על עמודי שער בכל הבדיקות (commit aba76e2)
+    - main-shaar, back-shaar, sub-shaar, toc, blank — לא נבדקים.
+
+תוצאות מצטברות:
+- לפני הסשן: 371 issues (רובן false positives)
+- אחרי: 8 issues (מתוכן 3 containment + 3 bracket-conversion + 2 text-completeness)
+- אחרי תיקוני הסשן: צפוי ~3-4 issues אמיתיים בלבד
